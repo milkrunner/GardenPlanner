@@ -1,18 +1,10 @@
 # 🌱 Garten Planner# 🌱 Garten Planner
 
-
-
 Eine moderne Web-Anwendung zur Verwaltung von Gartenarbeiten, Aufgaben und Zeitplänen.Eine moderne Web-Anwendung zur Verwaltung von Gartenarbeiten, Aufgaben und Zeitplänen.
-
-
 
 **Keine Installation erforderlich** - läuft direkt im Browser! 🚀## Features
 
-
-
 ## Features### 👷 Worker-Frontend
-
-
 
 ### 👷 Worker-Frontend- **Tagesübersicht**: Zeigt alle geplanten Aufgaben für den aktuellen Tag
 
@@ -26,37 +18,33 @@ Eine moderne Web-Anwendung zur Verwaltung von Gartenarbeiten, Aufgaben und Zeitp
 
 ### 🛠️ Admin-Dashboard
 
-### 🛠️ Admin-Dashboard
-
 - **Aufgabenverwaltung**: Erstellen, Bearbeiten und Löschen von Aufgaben- **Aufgabenverwaltung**: Erstellen, Bearbeiten und Löschen von Aufgaben
 
-  - Titel, Beschreibung, Standort  - Titel, Beschreibung, Standort
+  - Titel, Beschreibung, Standort - Titel, Beschreibung, Standort
 
-  - Priorität (Hoch, Mittel, Niedrig)  - Priorität (Hoch, Mittel, Niedrig)
+  - Priorität (Hoch, Mittel, Niedrig) - Priorität (Hoch, Mittel, Niedrig)
 
-  - Status (Ausstehend, In Arbeit, Erledigt)  - Status (Ausstehend, In Arbeit, Erledigt)
+  - Status (Ausstehend, In Arbeit, Erledigt) - Status (Ausstehend, In Arbeit, Erledigt)
 
-  - Geschätzte Arbeitsstunden  - Geschätzte Arbeitsstunden
+  - Geschätzte Arbeitsstunden - Geschätzte Arbeitsstunden
 
   - **Arbeiterverwaltung**: Verwaltung des Arbeitsteams
 
-- **Arbeiterverwaltung**: Verwaltung des Arbeitsteams  - Name und E-Mail
+- **Arbeiterverwaltung**: Verwaltung des Arbeitsteams - Name und E-Mail
 
-  - Name und E-Mail  - Aktiv/Inaktiv Status
+  - Name und E-Mail - Aktiv/Inaktiv Status
 
   - Aktiv/Inaktiv Status- **Zeitplanung**: Planung von Arbeitszeiten
 
     - Zuordnung von Aufgaben zu Arbeitern
 
-- **Zeitplanung**: Planung von Arbeitszeiten  - Datum und Uhrzeiten
+- **Zeitplanung**: Planung von Arbeitszeiten - Datum und Uhrzeiten
 
-  - Zuordnung von Aufgaben zu Arbeitern  - Notizen für besondere Hinweise
+  - Zuordnung von Aufgaben zu Arbeitern - Notizen für besondere Hinweise
 
   - Datum und Uhrzeiten
 
   - Notizen für besondere Hinweise## Technologie-Stack
-
-
 
 ## 🎯 Installation & Start- **React 18** mit TypeScript
 
@@ -80,7 +68,7 @@ Das war's! Die App läuft sofort. ✨
 
 ## Technologie-Stack
 
-```bash
+````bash
 
 - **HTML5** - Moderne Web-Standardsnpm install
 
@@ -207,3 +195,4 @@ Die gesamte App ist in einer einzigen `index.html` Datei. Öffnen Sie diese mit 
 - Texte zu übersetzen
 
 Alle JavaScript-Logik befindet sich im `<script>`-Tag am Ende der Datei.
+````
