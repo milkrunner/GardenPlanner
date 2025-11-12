@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#16a34a">
+    <meta name="description" content="Gartenplanungs-App zur Verwaltung von Aufgaben, Arbeitern und Zeitplänen">
     <title>🌱 Garten Planner</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%2316a34a'/%3E%3Cpath d='M50 20 Q35 35 35 50 Q35 65 50 80 Q65 65 65 50 Q65 35 50 20Z' fill='%23dcfce7'/%3E%3Cellipse cx='50' cy='40' rx='8' ry='12' fill='%2386efac'/%3E%3Cellipse cx='40' cy='55' rx='10' ry='15' fill='%2386efac'/%3E%3Cellipse cx='60' cy='55' rx='10' ry='15' fill='%2386efac'/%3E%3Crect x='48' y='75' width='4' height='8' fill='%23166534'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%2316a34a'/%3E%3Cpath d='M50 20 Q35 35 35 50 Q35 65 50 80 Q65 65 65 50 Q65 35 50 20Z' fill='%23dcfce7'/%3E%3Cellipse cx='50' cy='40' rx='8' ry='12' fill='%2386efac'/%3E%3Cellipse cx='40' cy='55' rx='10' ry='15' fill='%2386efac'/%3E%3Cellipse cx='60' cy='55' rx='10' ry='15' fill='%2386efac'/%3E%3Crect x='48' y='75' width='4' height='8' fill='%23166534'/%3E%3C/svg%3E">
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -477,65 +481,111 @@
                 editingId: null,
                 formData: {},
                 
-                workers: [
-                    { id: '1', name: 'Max Mustermann', email: 'max@example.com', active: true },
-                    { id: '2', name: 'Anna Schmidt', email: 'anna@example.com', active: true },
-                    { id: '3', name: 'Tom Weber', email: 'tom@example.com', active: true },
-                ],
-                
-                tasks: [
-                    {
-                        id: '1',
-                        title: 'Rasen mähen',
-                        description: 'Hauptrasen im Vorgarten mähen und Kanten schneiden',
-                        location: 'Vorgarten',
-                        priority: 'high',
-                        status: 'pending',
-                        assignedTo: ['1'],
-                        estimatedHours: 2,
-                    },
-                    {
-                        id: '2',
-                        title: 'Blumenbeete anlegen',
-                        description: 'Neue Blumenbeete im hinteren Bereich anlegen',
-                        location: 'Hintergarten',
-                        priority: 'medium',
-                        status: 'in-progress',
-                        assignedTo: ['2'],
-                        estimatedHours: 4,
-                    },
-                    {
-                        id: '3',
-                        title: 'Hecke schneiden',
-                        description: 'Gesamte Grundstückshecke zurückschneiden',
-                        location: 'Grundstücksgrenze',
-                        priority: 'low',
-                        status: 'pending',
-                        assignedTo: ['3'],
-                        estimatedHours: 3,
-                    },
-                ],
-                
-                schedules: [
-                    {
-                        id: '1',
-                        taskId: '1',
-                        workerId: '1',
-                        date: new Date().toISOString().split('T')[0],
-                        startTime: '08:00',
-                        endTime: '10:00',
-                        notes: 'Morgens, wenn es noch kühl ist',
-                    },
-                    {
-                        id: '2',
-                        taskId: '2',
-                        workerId: '2',
-                        date: new Date().toISOString().split('T')[0],
-                        startTime: '09:00',
-                        endTime: '13:00',
-                        notes: 'Materialien bereits vor Ort',
-                    },
-                ],
+                workers: [],
+                tasks: [],
+                schedules: [],
+
+                init() {
+                    // Daten aus LocalStorage laden
+                    this.loadData();
+                    
+                    // Service Worker für PWA registrieren
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('/sw.js').catch(() => {});
+                    }
+                },
+
+                loadData() {
+                    // Versuche Daten aus LocalStorage zu laden
+                    const savedWorkers = localStorage.getItem('gardenplanner_workers');
+                    const savedTasks = localStorage.getItem('gardenplanner_tasks');
+                    const savedSchedules = localStorage.getItem('gardenplanner_schedules');
+
+                    if (savedWorkers) {
+                        this.workers = JSON.parse(savedWorkers);
+                    } else {
+                        // Fallback auf Beispieldaten
+                        this.workers = [
+                            { id: '1', name: 'Max Mustermann', email: 'max@example.com', active: true },
+                            { id: '2', name: 'Anna Schmidt', email: 'anna@example.com', active: true },
+                            { id: '3', name: 'Tom Weber', email: 'tom@example.com', active: true },
+                        ];
+                        this.saveData();
+                    }
+
+                    if (savedTasks) {
+                        this.tasks = JSON.parse(savedTasks);
+                    } else {
+                        // Fallback auf Beispieldaten
+                        this.tasks = [
+                            {
+                                id: '1',
+                                title: 'Rasen mähen',
+                                description: 'Hauptrasen im Vorgarten mähen und Kanten schneiden',
+                                location: 'Vorgarten',
+                                priority: 'high',
+                                status: 'pending',
+                                assignedTo: ['1'],
+                                estimatedHours: 2,
+                            },
+                            {
+                                id: '2',
+                                title: 'Blumenbeete anlegen',
+                                description: 'Neue Blumenbeete im hinteren Bereich anlegen',
+                                location: 'Hintergarten',
+                                priority: 'medium',
+                                status: 'in-progress',
+                                assignedTo: ['2'],
+                                estimatedHours: 4,
+                            },
+                            {
+                                id: '3',
+                                title: 'Hecke schneiden',
+                                description: 'Gesamte Grundstückshecke zurückschneiden',
+                                location: 'Grundstücksgrenze',
+                                priority: 'low',
+                                status: 'pending',
+                                assignedTo: ['3'],
+                                estimatedHours: 3,
+                            },
+                        ];
+                        this.saveData();
+                    }
+
+                    if (savedSchedules) {
+                        this.schedules = JSON.parse(savedSchedules);
+                    } else {
+                        // Fallback auf Beispieldaten
+                        this.schedules = [
+                            {
+                                id: '1',
+                                taskId: '1',
+                                workerId: '1',
+                                date: new Date().toISOString().split('T')[0],
+                                startTime: '08:00',
+                                endTime: '10:00',
+                                notes: 'Morgens, wenn es noch kühl ist',
+                            },
+                            {
+                                id: '2',
+                                taskId: '2',
+                                workerId: '2',
+                                date: new Date().toISOString().split('T')[0],
+                                startTime: '09:00',
+                                endTime: '13:00',
+                                notes: 'Materialien bereits vor Ort',
+                            },
+                        ];
+                        this.saveData();
+                    }
+                },
+
+                saveData() {
+                    // Speichere alle Daten in LocalStorage
+                    localStorage.setItem('gardenplanner_workers', JSON.stringify(this.workers));
+                    localStorage.setItem('gardenplanner_tasks', JSON.stringify(this.tasks));
+                    localStorage.setItem('gardenplanner_schedules', JSON.stringify(this.schedules));
+                },
 
                 toggleView() {
                     this.currentView = this.currentView === 'worker' ? 'admin' : 'worker';
@@ -668,6 +718,7 @@
                         };
                         this.tasks.push(newTask);
                     }
+                    this.saveData(); // Speichern nach Änderung
                     this.resetForm();
                 },
 
@@ -684,6 +735,7 @@
                         };
                         this.workers.push(newWorker);
                     }
+                    this.saveData(); // Speichern nach Änderung
                     this.resetForm();
                 },
 
@@ -700,6 +752,7 @@
                         };
                         this.schedules.push(newSchedule);
                     }
+                    this.saveData(); // Speichern nach Änderung
                     this.resetForm();
                 },
 
@@ -715,6 +768,7 @@
                     } else if (type === 'schedule') {
                         this.schedules = this.schedules.filter(s => s.id !== id);
                     }
+                    this.saveData(); // Speichern nach Löschen
                 }
             }
         }
