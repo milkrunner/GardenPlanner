@@ -13,34 +13,36 @@ Eine Webanwendung zur Verwaltung von Gartenarbeiten, Arbeitern und Zeitplänen m
 ## Installation
 
 ### Voraussetzungen
+
 - Node.js (Version 14 oder höher)
 - npm oder yarn
 
 ### Setup
 
 1. **Dependencies installieren:**
+
    ```bash
    npm install
    ```
 
 2. **Server starten:**
+
    ```bash
    npm start
    ```
 
    Oder für Entwicklung mit Auto-Reload:
+
    ```bash
    npm run dev
    ```
 
 3. **App öffnen:**
-   ```
-   http://localhost:3000
-   ```
+   <http://localhost:3000>
 
 ## Projektstruktur
 
-```
+```file
 GardenPlanner/
 ├── server.js              # Express-Server und API-Endpoints
 ├── package.json           # Projekt-Dependencies
@@ -52,18 +54,21 @@ GardenPlanner/
 ## API Endpoints
 
 ### Workers
+
 - `GET /api/workers` - Alle Arbeiter abrufen
 - `POST /api/workers` - Neuen Arbeiter erstellen
 - `PUT /api/workers/:id` - Arbeiter aktualisieren
 - `DELETE /api/workers/:id` - Arbeiter löschen
 
 ### Tasks
+
 - `GET /api/tasks` - Alle Aufgaben abrufen
 - `POST /api/tasks` - Neue Aufgabe erstellen
 - `PUT /api/tasks/:id` - Aufgabe aktualisieren
 - `DELETE /api/tasks/:id` - Aufgabe löschen
 
 ### Schedules
+
 - `GET /api/schedules` - Alle Zeitpläne abrufen
 - `POST /api/schedules` - Neuen Zeitplan erstellen
 - `PUT /api/schedules/:id` - Zeitplan aktualisieren
@@ -83,6 +88,7 @@ Beim ersten Start werden automatisch Beispieldaten eingefügt.
 ## Technologie-Stack
 
 - **Backend:**
+
   - Node.js
   - Express.js
   - SQLite3
@@ -101,7 +107,8 @@ Die Anwendung kann auf jedem Node.js-fähigen Server deployed werden:
 3. `npm start` ausführen
 4. Optional: Process Manager wie PM2 verwenden
 
-### Beispiel mit PM2:
+### Beispiel mit PM2
+
 ```bash
 npm install -g pm2
 pm2 start server.js --name garden-planner
@@ -113,6 +120,7 @@ pm2 save
 - `PORT` - Server-Port (Standard: 3000)
 
 Beispiel:
+
 ```bash
 PORT=8080 npm start
 ```
