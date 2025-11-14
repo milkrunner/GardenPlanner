@@ -10,7 +10,11 @@ Eine Webanwendung zur Verwaltung von Gartenarbeiten, Arbeitern und Zeitplänen m
 - ✅ **REST API**: Vollständige API für alle CRUD-Operationen
 - ✅ **Moderne UI**: Responsive Design mit Tailwind CSS
 
-## Installation
+**Desktop (Chrome/Edge):**
+
+- Klicken Sie auf das Install-Symbol (⊕) in der Adressleiste## Installation
+
+- Oder: Menü → "Garten Planner installieren"
 
 ### Voraussetzungen
 
