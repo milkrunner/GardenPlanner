@@ -33,7 +33,7 @@
     </style>
 </head>
 <body class="bg-gray-50">
-    <div id="app" x-data="gardenPlanner()" x-cloak>
+    <div id="app" x-data="gardenPlanner()" x-init="init()" x-cloak>
         <!-- Navigation Button -->
         <div class="fixed top-4 right-4 z-50">
             <button 
@@ -274,12 +274,6 @@
                                                 <div class="flex justify-between items-start">
                                                     <div class="flex-1">
                                                         <h3 class="font-semibold text-gray-800" x-text="worker.name"></h3>
-                                                        <p class="text-sm text-gray-600" x-text="worker.email"></p>
-                                                        <span 
-                                                            class="inline-block mt-2 px-2 py-1 text-xs rounded"
-                                                            :class="worker.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'"
-                                                            x-text="worker.active ? 'Aktiv' : 'Inaktiv'"
-                                                        ></span>
                                                     </div>
                                                     <div class="flex gap-2">
                                                         <button @click="startEdit('worker', worker)" class="p-2 text-blue-600 hover:bg-blue-50 rounded">
@@ -397,14 +391,6 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
                                     <input type="text" x-model="formData.name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-garden-green-500 focus:border-transparent">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">E-Mail</label>
-                                    <input type="email" x-model="formData.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-garden-green-500 focus:border-transparent">
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <input type="checkbox" x-model="formData.active" class="w-4 h-4 text-garden-green-600 rounded focus:ring-2 focus:ring-garden-green-500">
-                                    <label class="text-sm font-medium text-gray-700">Aktiv</label>
-                                </div>
                                 <button @click="saveWorker()" class="w-full flex items-center justify-center gap-2 bg-garden-green-600 text-white px-4 py-2 rounded-lg hover:bg-garden-green-700 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
@@ -477,65 +463,49 @@
                 editingId: null,
                 formData: {},
                 
-                workers: [
-                    { id: '1', name: 'Max Mustermann', email: 'max@example.com', active: true },
-                    { id: '2', name: 'Anna Schmidt', email: 'anna@example.com', active: true },
-                    { id: '3', name: 'Tom Weber', email: 'tom@example.com', active: true },
-                ],
-                
-                tasks: [
-                    {
-                        id: '1',
-                        title: 'Rasen mähen',
-                        description: 'Hauptrasen im Vorgarten mähen und Kanten schneiden',
-                        location: 'Vorgarten',
-                        priority: 'high',
-                        status: 'pending',
-                        assignedTo: ['1'],
-                        estimatedHours: 2,
-                    },
-                    {
-                        id: '2',
-                        title: 'Blumenbeete anlegen',
-                        description: 'Neue Blumenbeete im hinteren Bereich anlegen',
-                        location: 'Hintergarten',
-                        priority: 'medium',
-                        status: 'in-progress',
-                        assignedTo: ['2'],
-                        estimatedHours: 4,
-                    },
-                    {
-                        id: '3',
-                        title: 'Hecke schneiden',
-                        description: 'Gesamte Grundstückshecke zurückschneiden',
-                        location: 'Grundstücksgrenze',
-                        priority: 'low',
-                        status: 'pending',
-                        assignedTo: ['3'],
-                        estimatedHours: 3,
-                    },
-                ],
-                
-                schedules: [
-                    {
-                        id: '1',
-                        taskId: '1',
-                        workerId: '1',
-                        date: new Date().toISOString().split('T')[0],
-                        startTime: '08:00',
-                        endTime: '10:00',
-                        notes: 'Morgens, wenn es noch kühl ist',
-                    },
-                    {
-                        id: '2',
-                        taskId: '2',
-                        workerId: '2',
-                        date: new Date().toISOString().split('T')[0],
-                        startTime: '09:00',
-                        endTime: '13:00',
-                        notes: 'Materialien bereits vor Ort',
-                    },
-                ],
+                workers: [],
+                tasks: [],
+                schedules: [],
+
+                // API Base URL
+                apiBase: window.location.origin + '/api',
+
+                // Initialisierung - Daten von API laden
+                async init() {
+                    await this.loadAllData();
+                },
+
+                // Alle Daten von der API laden
+                async loadAllData() {
+                    try {
+                        await Promise.all([
+                            this.loadWorkers(),
+                            this.loadTasks(),
+                            this.loadSchedules()
+                        ]);
+                    } catch (error) {
+                        console.error('Fehler beim Laden der Daten:', error);
+                        alert('Fehler beim Laden der Daten. Bitte Seite neu laden.');
+                    }
+                },
+
+                // Workers von API laden
+                async loadWorkers() {
+                    const response = await fetch(`${this.apiBase}/workers`);
+                    this.workers = await response.json();
+                },
+
+                // Tasks von API laden
+                async loadTasks() {
+                    const response = await fetch(`${this.apiBase}/tasks`);
+                    this.tasks = await response.json();
+                },
+
+                // Schedules von API laden
+                async loadSchedules() {
+                    const response = await fetch(`${this.apiBase}/schedules`);
+                    this.schedules = await response.json();
+                },
 
                 toggleView() {
                     this.currentView = this.currentView === 'worker' ? 'admin' : 'worker';
@@ -636,7 +606,7 @@
                             estimatedHours: 1,
                         };
                     } else if (this.activeTab === 'workers') {
-                        this.formData = { name: '', email: '', active: true };
+                        this.formData = { name: '' };
                     } else if (this.activeTab === 'schedule') {
                         this.formData = {
                             taskId: '',
@@ -655,65 +625,118 @@
                     this.showForm = true;
                 },
 
-                saveTask() {
-                    if (this.editingId) {
-                        const index = this.tasks.findIndex(t => t.id === this.editingId);
-                        if (index !== -1) {
-                            this.tasks[index] = { ...this.tasks[index], ...this.formData };
+                async saveTask() {
+                    try {
+                        if (this.editingId) {
+                            // Task aktualisieren
+                            const response = await fetch(`${this.apiBase}/tasks/${this.editingId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formData)
+                            });
+                            const updatedTask = await response.json();
+                            const index = this.tasks.findIndex(t => t.id === this.editingId);
+                            if (index !== -1) {
+                                this.tasks[index] = updatedTask;
+                            }
+                        } else {
+                            // Neue Task erstellen
+                            const response = await fetch(`${this.apiBase}/tasks`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formData)
+                            });
+                            const newTask = await response.json();
+                            this.tasks.push(newTask);
                         }
-                    } else {
-                        const newTask = {
-                            ...this.formData,
-                            id: Date.now().toString(),
-                        };
-                        this.tasks.push(newTask);
+                        this.resetForm();
+                    } catch (error) {
+                        console.error('Fehler beim Speichern der Aufgabe:', error);
+                        alert('Fehler beim Speichern!');
                     }
-                    this.resetForm();
                 },
 
-                saveWorker() {
-                    if (this.editingId) {
-                        const index = this.workers.findIndex(w => w.id === this.editingId);
-                        if (index !== -1) {
-                            this.workers[index] = { ...this.workers[index], ...this.formData };
+                async saveWorker() {
+                    try {
+                        if (this.editingId) {
+                            // Worker aktualisieren
+                            const response = await fetch(`${this.apiBase}/workers/${this.editingId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formData)
+                            });
+                            const updatedWorker = await response.json();
+                            const index = this.workers.findIndex(w => w.id === this.editingId);
+                            if (index !== -1) {
+                                this.workers[index] = updatedWorker;
+                            }
+                        } else {
+                            // Neuen Worker erstellen
+                            const response = await fetch(`${this.apiBase}/workers`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formData)
+                            });
+                            const newWorker = await response.json();
+                            this.workers.push(newWorker);
                         }
-                    } else {
-                        const newWorker = {
-                            ...this.formData,
-                            id: Date.now().toString(),
-                        };
-                        this.workers.push(newWorker);
+                        this.resetForm();
+                    } catch (error) {
+                        console.error('Fehler beim Speichern des Arbeiters:', error);
+                        alert('Fehler beim Speichern!');
                     }
-                    this.resetForm();
                 },
 
-                saveSchedule() {
-                    if (this.editingId) {
-                        const index = this.schedules.findIndex(s => s.id === this.editingId);
-                        if (index !== -1) {
-                            this.schedules[index] = { ...this.schedules[index], ...this.formData };
+                async saveSchedule() {
+                    try {
+                        if (this.editingId) {
+                            // Schedule aktualisieren
+                            const response = await fetch(`${this.apiBase}/schedules/${this.editingId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formData)
+                            });
+                            const updatedSchedule = await response.json();
+                            const index = this.schedules.findIndex(s => s.id === this.editingId);
+                            if (index !== -1) {
+                                this.schedules[index] = updatedSchedule;
+                            }
+                        } else {
+                            // Neuen Schedule erstellen
+                            const response = await fetch(`${this.apiBase}/schedules`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formData)
+                            });
+                            const newSchedule = await response.json();
+                            this.schedules.push(newSchedule);
                         }
-                    } else {
-                        const newSchedule = {
-                            ...this.formData,
-                            id: Date.now().toString(),
-                        };
-                        this.schedules.push(newSchedule);
+                        this.resetForm();
+                    } catch (error) {
+                        console.error('Fehler beim Speichern des Zeitplans:', error);
+                        alert('Fehler beim Speichern!');
                     }
-                    this.resetForm();
                 },
 
-                deleteItem(type, id) {
+                async deleteItem(type, id) {
                     if (!confirm('Möchten Sie diesen Eintrag wirklich löschen?')) return;
                     
-                    if (type === 'task') {
-                        this.tasks = this.tasks.filter(t => t.id !== id);
-                        this.schedules = this.schedules.filter(s => s.taskId !== id);
-                    } else if (type === 'worker') {
-                        this.workers = this.workers.filter(w => w.id !== id);
-                        this.schedules = this.schedules.filter(s => s.workerId !== id);
-                    } else if (type === 'schedule') {
-                        this.schedules = this.schedules.filter(s => s.id !== id);
+                    try {
+                        if (type === 'task') {
+                            await fetch(`${this.apiBase}/tasks/${id}`, { method: 'DELETE' });
+                            this.tasks = this.tasks.filter(t => t.id !== id);
+                            this.schedules = this.schedules.filter(s => s.taskId !== id);
+                        } else if (type === 'worker') {
+                            await fetch(`${this.apiBase}/workers/${id}`, { method: 'DELETE' });
+                            this.workers = this.workers.filter(w => w.id !== id);
+                            this.schedules = this.schedules.filter(s => s.workerId !== id);
+                        } else if (type === 'schedule') {
+                            await fetch(`${this.apiBase}/schedules/${id}`, { method: 'DELETE' });
+                            this.schedules = this.schedules.filter(s => s.id !== id);
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Löschen:', error);
+                        alert('Fehler beim Löschen!');
                     }
                 }
             }
