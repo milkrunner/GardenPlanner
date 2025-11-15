@@ -305,6 +305,12 @@ textarea {
     border-bottom: none;
 }
 
+.tasks-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
 /* Bulk Actions Toolbar */
 .bulk-toolbar {
     background: var(--light);
@@ -370,6 +376,26 @@ textarea {
     border-left-color: var(--info-color);
     background: #e3f2fd;
     box-shadow: 0 5px 20px rgba(52, 152, 219, 0.3);
+}
+
+.task-card.archived {
+    background: #fafafa;
+    border-left-color: #95a5a6;
+    opacity: 0.85;
+}
+
+.task-card.archived .drag-handle {
+    display: none;
+}
+
+.archived-badge {
+    display: inline-block;
+    background: #95a5a6;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    margin-left: 10px;
 }
 
 /* Task Checkbox */
@@ -494,6 +520,24 @@ textarea {
 
 .uncomplete-btn:hover {
     background: #e67e22;
+}
+
+.archive-btn {
+    background: #95a5a6;
+    color: white;
+}
+
+.archive-btn:hover {
+    background: #7f8c8d;
+}
+
+.unarchive-btn {
+    background: var(--info-color);
+    color: white;
+}
+
+.unarchive-btn:hover {
+    background: #2980b9;
 }
 
 /* Calendar View */

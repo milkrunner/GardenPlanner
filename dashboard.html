@@ -66,8 +66,11 @@
             <!-- Aufgabenliste -->
             <section class="tasks-section">
                 <div class="tasks-header">
-                    <h2>Alle Aufgaben</h2>
-                    <button id="bulkModeBtn" class="btn btn-secondary">✓ Mehrfachauswahl</button>
+                    <h2 id="tasksHeaderTitle">Alle Aufgaben</h2>
+                    <div class="tasks-header-actions">
+                        <button id="toggleArchiveBtn" class="btn btn-secondary">📦 Archiv anzeigen</button>
+                        <button id="bulkModeBtn" class="btn btn-secondary">✓ Mehrfachauswahl</button>
+                    </div>
                 </div>
 
                 <!-- Bulk-Aktions-Toolbar -->
@@ -78,6 +81,7 @@
                     <div class="bulk-actions">
                         <button id="bulkCompleteBtn" class="btn btn-primary">✓ Als erledigt markieren</button>
                         <button id="bulkUncompleteBtn" class="btn btn-secondary">↻ Reaktivieren</button>
+                        <button id="bulkArchiveBtn" class="btn btn-secondary">📦 Archivieren</button>
                         <button id="bulkDeleteBtn" class="btn btn-danger">🗑️ Löschen</button>
                         <button id="selectAllBtn" class="btn btn-secondary">Alle auswählen</button>
                         <button id="deselectAllBtn" class="btn btn-secondary">Keine auswählen</button>
