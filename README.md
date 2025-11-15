@@ -1,134 +1,246 @@
-# Garten Planner 🌱
+# 🌱 Gartenplaner Dashboard
 
-Eine Webanwendung zur Verwaltung von Gartenarbeiten, Arbeitern und Zeitplänen mit persistenter Datenspeicherung.
+Eine übersichtliche Webanwendung zur Optimierung der Gartenplanung und Koordination von Mitarbeitern.
 
-## Features
+## ✨ Features
 
-- ✅ **Worker-Ansicht**: Übersicht über den heutigen Zeitplan und offene Aufgaben
-- ✅ **Admin-Dashboard**: Verwaltung von Aufgaben, Arbeitern und Zeitplänen
-- ✅ **Persistente Datenspeicherung**: SQLite-Datenbank für dauerhafte Speicherung
-- ✅ **REST API**: Vollständige API für alle CRUD-Operationen
-- ✅ **Moderne UI**: Responsive Design mit Tailwind CSS
+### 📊 Dashboard-Übersicht
 
-**Desktop (Chrome/Edge):**
+- **Statistiken auf einen Blick**: Offene Aufgaben, erledigte Aufgaben, aktive Mitarbeiter, Aufgaben mit hoher Priorität
+- **Übersichtliche Aufgabenliste**: Alle Aufgaben sortiert nach Datum und Priorität
+- **Kalenderansicht**: 14-Tage-Vorschau mit allen geplanten Aufgaben
 
-- Klicken Sie auf das Install-Symbol (⊕) in der Adressleiste## Installation
+### 📝 Aufgabenverwaltung
 
-- Oder: Menü → "Garten Planner installieren"
+- **Aufgaben erstellen** mit folgenden Informationen:
+  - Titel der Aufgabe
+  - Zugewiesener Mitarbeiter
+  - Datum und Uhrzeit
+  - Priorität (Hoch, Mittel, Niedrig)
+  - Ausführliche Beschreibung
+- **Status-Verwaltung**: Aufgaben als "Erledigt" markieren oder reaktivieren
+- **Aufgaben löschen**: Unwiderrufliches Entfernen von Aufgaben
 
-### Voraussetzungen
+### 🔍 Filter & Ansichten
 
-- Node.js (Version 14 oder höher)
-- npm oder yarn
+- **Filter nach Mitarbeiter**: Zeige nur Aufgaben eines bestimmten Mitarbeiters
+- **Filter nach Status**: Ausstehende oder erledigte Aufgaben
+- **Filter nach Priorität**: Hoch, Mittel oder Niedrig
+- **Listenansicht**: Detaillierte Aufgabenliste mit allen Informationen
+- **Kalenderansicht**: Zeitliche Übersicht der nächsten 14 Tage
 
-### Setup
+### 💾 Datenpersistenz
 
-1. **Dependencies installieren:**
+- **Automatisches Speichern**: Alle Änderungen werden sofort im Browser gespeichert (LocalStorage)
+- **Daten exportieren**: Backup als JSON-Datei herunterladen
+- **Daten importieren**: Backup-Dateien wiederherstellen
+- **Daten löschen**: Alle Aufgaben auf einmal entfernen (mit Sicherheitsabfrage)
 
-   ```bash
-   npm install
-   ```
+## 🚀 Installation & Verwendung
 
-2. **Server starten:**
+### Ohne Server (Einfachste Methode)
 
-   ```bash
-   npm start
-   ```
+1. Alle drei Dateien (`index.html`, `styles.css`, `app.js`) in einem Ordner speichern
+2. `index.html` im Browser öffnen (Doppelklick)
+3. Die Anwendung ist sofort einsatzbereit!
 
-   Oder für Entwicklung mit Auto-Reload:
+**Vorteil**: Kein Server oder Installation erforderlich, funktioniert vollständig offline
 
-   ```bash
-   npm run dev
-   ```
+### Mit lokalem Webserver (Optional)
 
-3. **App öffnen:**
-   <http://localhost:3000>
+Falls du einen lokalen Webserver verwenden möchtest:
 
-## Projektstruktur
+#### Python (falls installiert)
 
-```file
-GardenPlanner/
-├── server.js              # Express-Server und API-Endpoints
-├── package.json           # Projekt-Dependencies
-├── garden_planner.db      # SQLite-Datenbank (wird automatisch erstellt)
-└── public/
-    └── index.html         # Frontend-Anwendung
+```powershell
+# Im Projektordner ausführen
+python -m http.server 8000
 ```
 
-## API Endpoints
+Dann öffne: `http://localhost:8000`
 
-### Workers
+#### Alternative: Live Server VS Code Extension
 
-- `GET /api/workers` - Alle Arbeiter abrufen
-- `POST /api/workers` - Neuen Arbeiter erstellen
-- `PUT /api/workers/:id` - Arbeiter aktualisieren
-- `DELETE /api/workers/:id` - Arbeiter löschen
+1. VS Code Extension "Live Server" installieren
+2. Rechtsklick auf `index.html` → "Open with Live Server"
 
-### Tasks
+## 📖 Bedienungsanleitung
 
-- `GET /api/tasks` - Alle Aufgaben abrufen
-- `POST /api/tasks` - Neue Aufgabe erstellen
-- `PUT /api/tasks/:id` - Aufgabe aktualisieren
-- `DELETE /api/tasks/:id` - Aufgabe löschen
+### Neue Aufgabe erstellen
 
-### Schedules
+1. Formular im oberen Bereich ausfüllen:
+   - Aufgabentitel eingeben
+   - Mitarbeiternamen eingeben
+   - Datum und Uhrzeit wählen
+   - Priorität festlegen
+   - Optional: Beschreibung hinzufügen
+2. Auf "Aufgabe hinzufügen" klicken
+3. Die Aufgabe erscheint sofort in der Liste
 
-- `GET /api/schedules` - Alle Zeitpläne abrufen
-- `POST /api/schedules` - Neuen Zeitplan erstellen
-- `PUT /api/schedules/:id` - Zeitplan aktualisieren
-- `DELETE /api/schedules/:id` - Zeitplan löschen
+### Aufgaben verwalten
 
-## Datenbank
+- **Erledigt markieren**: Klick auf "Erledigt"-Button
+- **Reaktivieren**: Klick auf "Reaktivieren"-Button bei erledigten Aufgaben
+- **Löschen**: Klick auf "Löschen"-Button (mit Sicherheitsabfrage)
 
-Die Anwendung verwendet SQLite als Datenbank. Die Datenbankdatei `garden_planner.db` wird automatisch beim ersten Start erstellt und enthält:
+### Aufgaben filtern
 
-- **workers** - Arbeiter-Informationen
-- **tasks** - Aufgaben mit Details
-- **task_assignments** - Zuordnung von Aufgaben zu Arbeitern
-- **schedules** - Zeitplan-Einträge
+- Wähle im Filter-Bereich einen Mitarbeiter aus dem Dropdown
+- Filtere nach Status (Ausstehend/Erledigt)
+- Filtere nach Priorität (Hoch/Mittel/Niedrig)
+- Filter können kombiniert werden
 
-Beim ersten Start werden automatisch Beispieldaten eingefügt.
+### Ansicht wechseln
 
-## Technologie-Stack
+- **Listen-Ansicht**: Detaillierte Aufgabenliste mit allen Informationen
+- **Kalender-Ansicht**: Zeitliche Übersicht der nächsten 14 Tage
 
-- **Backend:**
+### Daten sichern
 
-  - Node.js
-  - Express.js
-  - SQLite3
+- **Exportieren**: Klick auf "Daten exportieren" → JSON-Datei wird heruntergeladen
+- **Importieren**: Klick auf "Daten importieren" → JSON-Datei auswählen
+- **Löschen**: Klick auf "Alle Daten löschen" (2× bestätigen erforderlich)
 
-- **Frontend:**
-  - Alpine.js
-  - Tailwind CSS
-  - Vanilla JavaScript
+## 🎨 Farb-Kodierung
 
-## Deployment
+### Prioritäten
 
-Die Anwendung kann auf jedem Node.js-fähigen Server deployed werden:
+- 🔴 **Rot**: Hohe Priorität
+- 🟠 **Orange**: Mittlere Priorität
+- 🔵 **Blau**: Niedrige Priorität
 
-1. Repository auf Server klonen
-2. `npm install` ausführen
-3. `npm start` ausführen
-4. Optional: Process Manager wie PM2 verwenden
+### Status
 
-### Beispiel mit PM2
+- **Volle Farbe**: Ausstehende Aufgaben
+- **Ausgegraut**: Erledigte Aufgaben
 
-```bash
-npm install -g pm2
-pm2 start server.js --name garden-planner
-pm2 save
+## 💡 Technische Details
+
+### Verwendete Technologien
+
+- **HTML5**: Strukturierung der Webseite
+- **CSS3**: Modernes, responsives Design mit Flexbox und Grid
+- **Vanilla JavaScript (ES6+)**: Keine externen Abhängigkeiten
+- **LocalStorage API**: Clientseitige Datenspeicherung
+
+### Browser-Kompatibilität
+
+- ✅ Chrome/Edge (empfohlen)
+- ✅ Firefox
+- ✅ Safari
+- ✅ Opera
+
+### Datenspeicherung
+
+- Alle Daten werden im **Browser LocalStorage** gespeichert
+- Daten bleiben auch nach Schließen des Browsers erhalten
+- Daten sind **nur auf diesem Gerät** verfügbar
+- Maximale Speichergröße: ~5-10 MB (ausreichend für tausende Aufgaben)
+
+### Sicherheit & Datenschutz
+
+- ✅ Keine Server-Kommunikation erforderlich
+- ✅ Alle Daten bleiben auf deinem Gerät
+- ✅ Keine Cookies oder Tracking
+- ✅ Funktioniert vollständig offline
+
+## 📱 Responsive Design
+
+Die Anwendung passt sich automatisch an verschiedene Bildschirmgrößen an:
+
+- 💻 **Desktop**: Vollständige Ansicht mit allen Features
+- 📱 **Tablet**: Optimiertes Layout
+- 📱 **Smartphone**: Mobile-optimierte Ansicht
+
+## 🔧 Anpassungen & Erweiterungen
+
+### Farben anpassen
+
+Öffne `styles.css` und ändere die CSS-Variablen im `:root` Block:
+
+```css
+:root {
+  --primary-color: #2ecc71; /* Hauptfarbe */
+  --secondary-color: #27ae60; /* Sekundärfarbe */
+  /* ... weitere Farben */
+}
 ```
 
-## Umgebungsvariablen
+### Funktionen erweitern
 
-- `PORT` - Server-Port (Standard: 3000)
+Die JavaScript-Klasse `GartenPlaner` in `app.js` kann einfach erweitert werden:
 
-Beispiel:
+- Neue Methoden hinzufügen
+- Bestehende Funktionen anpassen
+- Weitere Filteroptionen implementieren
 
-```bash
-PORT=8080 npm start
-```
+## ⚠️ Wichtige Hinweise
 
-## Lizenz
+### Datensicherung
 
-ISC
+- Regelmäßig Backups erstellen (Daten exportieren)!
+- LocalStorage kann bei Browser-Reset gelöscht werden
+- Keine automatische Cloud-Synchronisation
+
+### Browser-Daten löschen
+
+Beim Löschen von Browser-Daten gehen die Aufgaben verloren!
+**Vorher Export durchführen!**
+
+### Mehrere Geräte
+
+- Daten werden **nicht** zwischen Geräten synchronisiert
+- Für mehrere Geräte: Export/Import verwenden
+- Alternative: Auf einem Server hosten (siehe unten)
+
+## 🚀 Erweiterte Optionen
+
+### Server-basierte Lösung (Optional)
+
+Für Multi-User-Zugriff und zentrale Datenspeicherung kann ein Backend hinzugefügt werden:
+
+- Node.js + Express
+- Python + Flask/FastAPI
+- PHP Backend
+- Datenbank: MySQL, PostgreSQL, MongoDB
+
+### Cloud-Hosting
+
+Die Anwendung kann auf folgenden Plattformen gehostet werden:
+
+- GitHub Pages (kostenlos)
+- Netlify (kostenlos)
+- Vercel (kostenlos)
+- Eigener Webserver
+
+## 🐛 Fehlerbehebung
+
+### Aufgaben werden nicht gespeichert
+
+- Überprüfe, ob LocalStorage im Browser aktiviert ist
+- Im Inkognito-Modus werden Daten nicht dauerhaft gespeichert
+- Browser-Einstellungen für Cookies/LocalStorage prüfen
+
+### Design wird nicht korrekt angezeigt
+
+- Cache leeren (Strg + F5)
+- Sicherstellen, dass `styles.css` im gleichen Ordner liegt
+- Browser-Konsole auf Fehler prüfen (F12)
+
+### JavaScript-Fehler
+
+- Browser-Konsole öffnen (F12)
+- Fehlermeldungen prüfen
+- Sicherstellen, dass `app.js` im gleichen Ordner liegt
+
+## 📄 Lizenz
+
+Dieses Projekt steht zur freien Verfügung und kann beliebig angepasst werden.
+
+## 🤝 Support
+
+Bei Fragen oder Problemen:
+
+1. Browser-Konsole auf Fehler prüfen (F12)
+2. Sicherstellen, dass alle drei Dateien im gleichen Ordner sind
+3. Kompatiblen Browser verwenden

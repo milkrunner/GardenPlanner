@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gartenplaner</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Dashboard - Aufgabenübersicht</h1>
+            <p class="subtitle">Alle Aufgaben und Statistiken im Überblick</p>
+        </header>
+
+        <nav class="main-nav">
+            <a href="index.html" class="nav-link">➕ Neue Aufgabe</a>
+            <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+        </nav>
+
+        <main>
+            <!-- Statistiken -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <h3>Offene Aufgaben</h3>
+                    <p class="stat-number" id="statPending">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Erledigte Aufgaben</h3>
+                    <p class="stat-number" id="statCompleted">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Aktive Mitarbeiter</h3>
+                    <p class="stat-number" id="statEmployees">0</p>
+                </div>
+            </section>
+
+            <!-- Filter und Ansicht -->
+            <section class="filter-section">
+                <h2>Aufgaben filtern</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filterEmployee">Nach Mitarbeiter:</label>
+                        <select id="filterEmployee">
+                            <option value="">Alle Mitarbeiter</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterStatus">Nach Status:</label>
+                        <select id="filterStatus">
+                            <option value="">Alle Status</option>
+                            <option value="pending">Ausstehend</option>
+                            <option value="completed">Erledigt</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Aufgabenliste -->
+            <section class="tasks-section">
+                <h2>Alle Aufgaben</h2>
+                
+                <div id="tasksList" class="tasks-list">
+                    <!-- Aufgaben werden hier dynamisch eingefügt -->
+                </div>
+            </section>
+
+            <!-- Datenverwaltung -->
+            <section class="data-management">
+                <h3>Datenverwaltung</h3>
+                <div class="btn-group">
+                    <button id="exportBtn" class="btn btn-secondary">💾 Daten exportieren (JSON)</button>
+                    <button id="importBtn" class="btn btn-secondary">📥 Daten importieren</button>
+                    <button id="clearBtn" class="btn btn-danger">🗑️ Alle Daten löschen</button>
+                </div>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Gartenplaner | Alle Änderungen werden automatisch gespeichert</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Dashboard-spezifische Initialisierung
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialisiere die Dashboard-Ansicht
+            if (window.gartenPlaner) {
+                console.log('📊 Dashboard geladen');
+            }
+        });
+    </script>
+</body>
+</html>
