@@ -2,6 +2,8 @@
 class GartenPlaner {
     constructor() {
         this.tasks = this.loadTasks();
+        this.archivedTasks = this.loadArchivedTasks();
+        this.showArchive = false;
         this.currentFilter = {
             employee: '',
             location: '',
@@ -95,6 +97,12 @@ class GartenPlaner {
         const clearBtn = document.getElementById('clearBtn');
         if (clearBtn) {
             clearBtn.addEventListener('click', () => this.clearAllData());
+        }
+
+        // Archiv-Toggle
+        const toggleArchiveBtn = document.getElementById('toggleArchiveBtn');
+        if (toggleArchiveBtn) {
+            toggleArchiveBtn.addEventListener('click', () => this.toggleArchiveView());
         }
     }
 
@@ -217,7 +225,90 @@ class GartenPlaner {
         this.renderTasks();
         this.updateStatistics();
         this.updateEmployeeFilter();
+        this.updateLocationFilter();
         this.showNotification('✅ Aufgabe erfolgreich aktualisiert!');
+    }
+
+    // Archiv-Ansicht umschalten
+    toggleArchiveView() {
+        this.showArchive = !this.showArchive;
+        const btn = document.getElementById('toggleArchiveBtn');
+        const title = document.getElementById('tasksHeaderTitle');
+        const bulkModeBtn = document.getElementById('bulkModeBtn');
+
+        if (this.showArchive) {
+            btn.textContent = '📋 Aktive Aufgaben anzeigen';
+            title.textContent = 'Archivierte Aufgaben';
+            if (bulkModeBtn) bulkModeBtn.style.display = 'none';
+        } else {
+            btn.textContent = '📦 Archiv anzeigen';
+            title.textContent = 'Alle Aufgaben';
+            if (bulkModeBtn) bulkModeBtn.style.display = 'block';
+        }
+
+        // Bulk-Modus deaktivieren wenn aktiv
+        if (this.bulkMode) {
+            this.toggleBulkMode();
+        }
+
+        this.renderTasks();
+        this.updateStatistics();
+    }
+
+    // Aufgabe archivieren
+    archiveTask(id) {
+        const task = this.tasks.find(t => t.id === id);
+        if (!task) return;
+
+        if (confirm('Möchten Sie diese Aufgabe wirklich archivieren?')) {
+            // Füge Archivierungsdatum hinzu
+            task.archivedAt = new Date().toISOString();
+            
+            // Verschiebe in Archiv
+            this.archivedTasks.push(task);
+            this.tasks = this.tasks.filter(t => t.id !== id);
+
+            this.saveTasks();
+            this.saveArchivedTasks();
+            this.renderTasks();
+            this.updateStatistics();
+            this.updateEmployeeFilter();
+            this.updateLocationFilter();
+            this.showNotification('📦 Aufgabe archiviert');
+        }
+    }
+
+    // Aufgabe aus Archiv wiederherstellen
+    unarchiveTask(id) {
+        const task = this.archivedTasks.find(t => t.id === id);
+        if (!task) return;
+
+        if (confirm('Möchten Sie diese Aufgabe wiederherstellen?')) {
+            // Entferne Archivierungsdatum
+            delete task.archivedAt;
+            
+            // Verschiebe zurück zu aktiven Aufgaben
+            this.tasks.push(task);
+            this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+
+            this.saveTasks();
+            this.saveArchivedTasks();
+            this.renderTasks();
+            this.updateStatistics();
+            this.updateEmployeeFilter();
+            this.updateLocationFilter();
+            this.showNotification('↻ Aufgabe wiederhergestellt');
+        }
+    }
+
+    // Archivierte Aufgabe endgültig löschen
+    deleteArchivedTask(id) {
+        if (confirm('Möchten Sie diese archivierte Aufgabe endgültig löschen?')) {
+            this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+            this.saveArchivedTasks();
+            this.renderTasks();
+            this.showNotification('🗑️ Archivierte Aufgabe gelöscht');
+        }
     }
 
     // Aufgabe als erledigt markieren
@@ -235,7 +326,8 @@ class GartenPlaner {
 
     // Aufgaben filtern
     getFilteredTasks() {
-        return this.tasks.filter(task => {
+        const tasksToFilter = this.showArchive ? this.archivedTasks : this.tasks;
+        return tasksToFilter.filter(task => {
             const employeeMatch = !this.currentFilter.employee || task.employee === this.currentFilter.employee;
             const locationMatch = !this.currentFilter.location || task.location === this.currentFilter.location;
             const statusMatch = !this.currentFilter.status || task.status === this.currentFilter.status;
@@ -293,11 +385,21 @@ class GartenPlaner {
                 card.querySelector('.complete-btn, .uncomplete-btn')?.addEventListener('click', () => {
                     this.toggleTaskStatus(task.id);
                 });
+                card.querySelector('.archive-btn')?.addEventListener('click', () => {
+                    this.archiveTask(task.id);
+                });
+                card.querySelector('.unarchive-btn')?.addEventListener('click', () => {
+                    this.unarchiveTask(task.id);
+                });
                 card.querySelector('.delete-btn')?.addEventListener('click', () => {
-                    this.deleteTask(task.id);
+                    if (this.showArchive) {
+                        this.deleteArchivedTask(task.id);
+                    } else {
+                        this.deleteTask(task.id);
+                    }
                 });
 
-                // Drag & Drop Event Listeners
+                // Drag & Drop Event Listeners (nur für aktive Aufgaben)
                 card.addEventListener('dragstart', (e) => this.handleDragStart(e, task.id));
                 card.addEventListener('dragend', (e) => this.handleDragEnd(e));
                 card.addEventListener('dragover', (e) => this.handleDragOver(e));
@@ -315,18 +417,20 @@ class GartenPlaner {
     createTaskCard(task) {
         const isCompleted = task.status === 'completed';
         const isSelected = this.selectedTasks.has(task.id);
+        const isArchived = this.showArchive;
 
         return `
-            <div class="task-card ${isCompleted ? 'completed' : ''} ${isSelected ? 'selected' : ''}" data-task-id="${task.id}" draggable="true">
-                ${this.bulkMode ? `
+            <div class="task-card ${isCompleted ? 'completed' : ''} ${isSelected ? 'selected' : ''} ${isArchived ? 'archived' : ''}" data-task-id="${task.id}" draggable="${!isArchived}">
+                ${this.bulkMode && !isArchived ? `
                     <div class="task-checkbox">
                         <input type="checkbox" class="task-select-checkbox" ${isSelected ? 'checked' : ''}>
                     </div>
                 ` : ''}
                 <div class="task-info">
                     <div class="task-header">
-                        <span class="drag-handle">☰</span>
+                        ${!isArchived ? '<span class="drag-handle">☰</span>' : ''}
                         <span class="task-title">${task.title}</span>
+                        ${isArchived && task.archivedAt ? `<span class="archived-badge">📦 Archiviert am ${new Date(task.archivedAt).toLocaleDateString('de-DE')}</span>` : ''}
                     </div>
                     <div class="task-meta">
                         <span>👤 ${task.employee}</span>
@@ -335,12 +439,18 @@ class GartenPlaner {
                     ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
                 </div>
                 <div class="task-actions">
-                    <button class="task-btn edit-btn">✏️ Bearbeiten</button>
-                    ${isCompleted ? 
-                        '<button class="task-btn uncomplete-btn">Reaktivieren</button>' :
-                        '<button class="task-btn complete-btn">Erledigt</button>'
-                    }
-                    <button class="task-btn delete-btn">Löschen</button>
+                    ${!isArchived ? `
+                        <button class="task-btn edit-btn">✏️ Bearbeiten</button>
+                        ${isCompleted ? 
+                            '<button class="task-btn uncomplete-btn">Reaktivieren</button>' :
+                            '<button class="task-btn complete-btn">Erledigt</button>'
+                        }
+                        <button class="task-btn archive-btn">📦 Archivieren</button>
+                        <button class="task-btn delete-btn">Löschen</button>
+                    ` : `
+                        <button class="task-btn unarchive-btn">↻ Wiederherstellen</button>
+                        <button class="task-btn delete-btn">Endgültig löschen</button>
+                    `}
                 </div>
             </div>
         `;
@@ -413,17 +523,33 @@ class GartenPlaner {
 
     // Statistiken aktualisieren
     updateStatistics() {
-        const pending = this.tasks.filter(t => t.status === 'pending').length;
-        const completed = this.tasks.filter(t => t.status === 'completed').length;
-        const employees = new Set(this.tasks.map(t => t.employee)).size;
+        if (this.showArchive) {
+            // Archiv-Statistiken
+            const archivedCount = this.archivedTasks.length;
+            const archivedCompleted = this.archivedTasks.filter(t => t.status === 'completed').length;
+            const archivedPending = this.archivedTasks.filter(t => t.status === 'pending').length;
 
-        const statPending = document.getElementById('statPending');
-        const statCompleted = document.getElementById('statCompleted');
-        const statEmployees = document.getElementById('statEmployees');
+            const statPending = document.getElementById('statPending');
+            const statCompleted = document.getElementById('statCompleted');
+            const statEmployees = document.getElementById('statEmployees');
 
-        if (statPending) statPending.textContent = pending;
-        if (statCompleted) statCompleted.textContent = completed;
-        if (statEmployees) statEmployees.textContent = employees;
+            if (statPending) statPending.textContent = archivedPending;
+            if (statCompleted) statCompleted.textContent = archivedCompleted;
+            if (statEmployees) statEmployees.textContent = archivedCount;
+        } else {
+            // Aktive Aufgaben-Statistiken
+            const pending = this.tasks.filter(t => t.status === 'pending').length;
+            const completed = this.tasks.filter(t => t.status === 'completed').length;
+            const employees = new Set(this.tasks.map(t => t.employee)).size;
+
+            const statPending = document.getElementById('statPending');
+            const statCompleted = document.getElementById('statCompleted');
+            const statEmployees = document.getElementById('statEmployees');
+
+            if (statPending) statPending.textContent = pending;
+            if (statCompleted) statCompleted.textContent = completed;
+            if (statEmployees) statEmployees.textContent = employees;
+        }
     }
 
     // Daten speichern (LocalStorage)
@@ -435,6 +561,17 @@ class GartenPlaner {
     loadTasks() {
         const saved = localStorage.getItem('gartenplaner_tasks');
         return saved ? JSON.parse(saved) : [];
+    }
+
+    // Archivierte Aufgaben laden
+    loadArchivedTasks() {
+        const saved = localStorage.getItem('gartenplaner_archived_tasks');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    // Archivierte Aufgaben speichern
+    saveArchivedTasks() {
+        localStorage.setItem('gartenplaner_archived_tasks', JSON.stringify(this.archivedTasks));
     }
 
     // Daten exportieren
@@ -1005,9 +1142,43 @@ class GartenPlaner {
             bulkUncompleteBtn.addEventListener('click', () => this.bulkUncompleteTasksAction());
         }
 
+        const bulkArchiveBtn = document.getElementById('bulkArchiveBtn');
+        if (bulkArchiveBtn) {
+            bulkArchiveBtn.addEventListener('click', () => this.bulkArchiveTasksAction());
+        }
+
         const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.bulkDeleteTasksAction());
+        }
+    }
+
+    // Bulk-Archivierung
+    bulkArchiveTasksAction() {
+        if (this.selectedTasks.size === 0) {
+            alert('Bitte wählen Sie mindestens eine Aufgabe aus.');
+            return;
+        }
+
+        const count = this.selectedTasks.size;
+        if (confirm(`Möchten Sie wirklich ${count} Aufgabe(n) archivieren?`)) {
+            const tasksToArchive = this.tasks.filter(task => this.selectedTasks.has(task.id));
+            
+            tasksToArchive.forEach(task => {
+                task.archivedAt = new Date().toISOString();
+                this.archivedTasks.push(task);
+            });
+
+            this.tasks = this.tasks.filter(task => !this.selectedTasks.has(task.id));
+            this.selectedTasks.clear();
+            
+            this.saveTasks();
+            this.saveArchivedTasks();
+            this.renderTasks();
+            this.updateStatistics();
+            this.updateEmployeeFilter();
+            this.updateLocationFilter();
+            this.showNotification(`📦 ${count} Aufgabe(n) archiviert`);
         }
     }
 }
