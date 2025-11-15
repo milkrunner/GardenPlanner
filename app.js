@@ -132,8 +132,17 @@ class GartenPlaner {
     }
 
     // Aufgabe löschen
-    deleteTask(id) {
-        if (confirm('Möchten Sie diese Aufgabe wirklich löschen?')) {
+    async deleteTask(id) {
+        const confirmed = await this.showConfirm({
+            title: 'Aufgabe löschen',
+            icon: '🗑️',
+            message: 'Möchten Sie diese Aufgabe wirklich löschen?',
+            confirmText: 'Löschen',
+            cancelText: 'Abbrechen',
+            danger: true
+        });
+
+        if (confirmed) {
             this.tasks = this.tasks.filter(task => task.id !== id);
             this.saveTasks();
             this.renderTasks();
@@ -579,10 +588,17 @@ class GartenPlaner {
     }
 
     // PDF exportieren
-    exportPDF() {
+    async exportPDF() {
         // Prüfe ob jsPDF verfügbar ist
         if (typeof window.jspdf === 'undefined') {
-            alert('PDF-Export ist nicht verfügbar. Bitte laden Sie die Seite neu.');
+            await this.showConfirm({
+                title: 'Fehler',
+                icon: '❌',
+                message: 'PDF-Export ist nicht verfügbar. Bitte laden Sie die Seite neu.',
+                confirmText: 'OK',
+                cancelText: '',
+                danger: false
+            });
             return;
         }
 
@@ -593,7 +609,14 @@ class GartenPlaner {
         const tasksToExport = this.getFilteredTasks();
 
         if (tasksToExport.length === 0) {
-            alert('Keine Aufgaben zum Exportieren vorhanden.');
+            await this.showConfirm({
+                title: 'Keine Aufgaben',
+                icon: 'ℹ️',
+                message: 'Keine Aufgaben zum Exportieren vorhanden.',
+                confirmText: 'OK',
+                cancelText: '',
+                danger: false
+            });
             return;
         }
 
@@ -701,15 +724,24 @@ class GartenPlaner {
     }
 
     // Daten importieren
-    importData(event) {
+    async importData(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             try {
                 const imported = JSON.parse(e.target.result);
-                if (confirm(`${imported.length} Aufgaben gefunden. Möchten Sie diese importieren? (Aktuelle Daten werden überschrieben)`)) {
+                const confirmed = await this.showConfirm({
+                    title: 'Daten importieren',
+                    icon: '📥',
+                    message: `${imported.length} Aufgaben gefunden. Möchten Sie diese importieren?\n\nAchtung: Aktuelle Daten werden überschrieben!`,
+                    confirmText: 'Importieren',
+                    cancelText: 'Abbrechen',
+                    danger: false
+                });
+
+                if (confirmed) {
                     this.tasks = imported;
                     this.saveTasks();
                     this.renderTasks();
@@ -719,7 +751,14 @@ class GartenPlaner {
                     this.showNotification('📥 Daten erfolgreich importiert!');
                 }
             } catch (error) {
-                alert('Fehler beim Importieren: Ungültige Datei');
+                await this.showConfirm({
+                    title: 'Fehler',
+                    icon: '❌',
+                    message: 'Fehler beim Importieren: Ungültige Datei',
+                    confirmText: 'OK',
+                    cancelText: '',
+                    danger: true
+                });
             }
         };
         reader.readAsText(file);
@@ -727,9 +766,27 @@ class GartenPlaner {
     }
 
     // Alle Daten löschen
-    clearAllData() {
-        if (confirm('⚠️ WARNUNG: Möchten Sie wirklich ALLE Daten löschen? Diese Aktion kann nicht rückgängig gemacht werden!')) {
-            if (confirm('Sind Sie sich absolut sicher? Alle Aufgaben werden unwiderruflich gelöscht!')) {
+    async clearAllData() {
+        const confirmed1 = await this.showConfirm({
+            title: '⚠️ WARNUNG',
+            icon: '⚠️',
+            message: 'Möchten Sie wirklich ALLE Daten löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!',
+            confirmText: 'Weiter',
+            cancelText: 'Abbrechen',
+            danger: true
+        });
+
+        if (confirmed1) {
+            const confirmed2 = await this.showConfirm({
+                title: '⚠️ LETZTE WARNUNG',
+                icon: '🚨',
+                message: 'Sind Sie sich absolut sicher?\n\nAlle Aufgaben werden unwiderruflich gelöscht!',
+                confirmText: 'Ja, alles löschen',
+                cancelText: 'Abbrechen',
+                danger: true
+            });
+
+            if (confirmed2) {
                 this.tasks = [];
                 this.saveTasks();
                 this.renderTasks();
@@ -780,6 +837,84 @@ class GartenPlaner {
             notification.style.animation = 'slideIn 0.3s ease reverse';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
+    }
+
+    // Schöner Confirm-Dialog
+    showConfirm(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const title = document.getElementById('confirmModalTitle');
+            const icon = document.getElementById('confirmModalIcon');
+            const message = document.getElementById('confirmModalMessage');
+            const okBtn = document.getElementById('confirmOkBtn');
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+
+            // Setze Inhalte
+            title.textContent = options.title || 'Bestätigung erforderlich';
+            icon.textContent = options.icon || '⚠️';
+            // Unterstütze Zeilenumbrüche in der Nachricht
+            message.innerHTML = (options.message || 'Möchten Sie fortfahren?').replace(/\n/g, '<br>');
+            okBtn.textContent = options.confirmText || 'Bestätigen';
+            cancelBtn.textContent = options.cancelText || 'Abbrechen';
+
+            // Verstecke Cancel-Button wenn kein Text vorhanden
+            if (!options.cancelText) {
+                cancelBtn.style.display = 'none';
+            } else {
+                cancelBtn.style.display = 'block';
+            }
+
+            // Setze Button-Stil
+            if (options.danger) {
+                okBtn.classList.add('btn-danger');
+            } else {
+                okBtn.classList.remove('btn-danger');
+            }
+
+            // Zeige Modal
+            modal.style.display = 'flex';
+
+            // Event Handler
+            const handleOk = () => {
+                modal.style.display = 'none';
+                cleanup();
+                resolve(true);
+            };
+
+            const handleCancel = () => {
+                modal.style.display = 'none';
+                cleanup();
+                resolve(false);
+            };
+
+            const cleanup = () => {
+                okBtn.removeEventListener('click', handleOk);
+                cancelBtn.removeEventListener('click', handleCancel);
+                modal.removeEventListener('click', handleBackdropClick);
+            };
+
+            const handleBackdropClick = (e) => {
+                if (e.target === modal) {
+                    handleCancel();
+                }
+            };
+
+            okBtn.addEventListener('click', handleOk);
+            cancelBtn.addEventListener('click', handleCancel);
+            modal.addEventListener('click', handleBackdropClick);
+        });
+    }
+
+    // Hilfsfunktion für Info-Dialoge (nur OK-Button)
+    showAlert(title, message, icon = 'ℹ️') {
+        return this.showConfirm({
+            title: title,
+            icon: icon,
+            message: message,
+            confirmText: 'OK',
+            cancelText: '',
+            danger: false
+        });
     }
 
     // Drag & Drop Handler
@@ -943,14 +1078,23 @@ class GartenPlaner {
         this.showNotification('🔄 Aufgaben reaktiviert!');
     }
 
-    bulkDeleteTasksAction() {
+    async bulkDeleteTasksAction() {
         if (this.selectedTasks.size === 0) {
             this.showNotification('⚠️ Keine Aufgaben ausgewählt');
             return;
         }
 
         const count = this.selectedTasks.size;
-        if (confirm(`Möchten Sie wirklich ${count} Aufgabe(n) löschen?`)) {
+        const confirmed = await this.showConfirm({
+            title: 'Aufgaben löschen',
+            icon: '🗑️',
+            message: `Möchten Sie wirklich ${count} Aufgabe(n) löschen?`,
+            confirmText: 'Löschen',
+            cancelText: 'Abbrechen',
+            danger: true
+        });
+
+        if (confirmed) {
             this.tasks = this.tasks.filter(task => !this.selectedTasks.has(task.id));
             this.selectedTasks.clear();
             this.saveTasks();
