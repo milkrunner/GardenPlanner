@@ -70,6 +70,11 @@ class GartenPlaner {
         });
 
         // Datenverwaltung (nur wenn vorhanden)
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        if (exportPdfBtn) {
+            exportPdfBtn.addEventListener('click', () => this.exportPDF());
+        }
+
         const exportBtn = document.getElementById('exportBtn');
         if (exportBtn) {
             exportBtn.addEventListener('click', () => this.exportData());
@@ -434,6 +439,128 @@ class GartenPlaner {
         link.click();
         URL.revokeObjectURL(url);
         this.showNotification('💾 Daten exportiert!');
+    }
+
+    // PDF exportieren
+    exportPDF() {
+        // Prüfe ob jsPDF verfügbar ist
+        if (typeof window.jspdf === 'undefined') {
+            alert('PDF-Export ist nicht verfügbar. Bitte laden Sie die Seite neu.');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Filtere Aufgaben basierend auf aktuellen Filtern
+        const tasksToExport = this.getFilteredTasks();
+
+        if (tasksToExport.length === 0) {
+            alert('Keine Aufgaben zum Exportieren vorhanden.');
+            return;
+        }
+
+        // PDF-Titel
+        doc.setFontSize(20);
+        doc.text('Gartenplaner - Aufgabenliste', 14, 20);
+
+        // Datum
+        doc.setFontSize(10);
+        doc.text(`Erstellt am: ${new Date().toLocaleDateString('de-DE')}`, 14, 28);
+
+        // Statistiken
+        const pending = tasksToExport.filter(t => t.status === 'pending').length;
+        const completed = tasksToExport.filter(t => t.status === 'completed').length;
+        doc.text(`Gesamt: ${tasksToExport.length} | Offen: ${pending} | Erledigt: ${completed}`, 14, 34);
+
+        // Linie
+        doc.setLineWidth(0.5);
+        doc.line(14, 38, 196, 38);
+
+        let yPosition = 46;
+        const pageHeight = 280;
+        const margin = 14;
+
+        // Aufgaben durchgehen
+        tasksToExport.forEach((task, index) => {
+            // Neue Seite wenn nötig
+            if (yPosition > pageHeight - 40) {
+                doc.addPage();
+                yPosition = 20;
+            }
+
+            // Aufgabennummer und Titel
+            doc.setFontSize(12);
+            doc.setFont(undefined, 'bold');
+            const statusIcon = task.status === 'completed' ? '[✓]' : '[ ]';
+            doc.text(`${statusIcon} ${index + 1}. ${task.title}`, margin, yPosition);
+            yPosition += 7;
+
+            // Details
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            
+            // Mitarbeiter
+            doc.text(`Mitarbeiter: ${task.employee}`, margin + 5, yPosition);
+            yPosition += 6;
+
+            // Standort
+            if (task.location) {
+                doc.text(`Standort: ${task.location}`, margin + 5, yPosition);
+                yPosition += 6;
+            }
+
+            // Status
+            doc.text(`Status: ${task.status === 'pending' ? 'Ausstehend' : 'Erledigt'}`, margin + 5, yPosition);
+            yPosition += 6;
+
+            // Beschreibung
+            if (task.description) {
+                doc.text('Beschreibung:', margin + 5, yPosition);
+                yPosition += 6;
+                
+                // Text umbrechen bei langen Beschreibungen
+                const maxWidth = 180;
+                const lines = doc.splitTextToSize(task.description, maxWidth);
+                lines.forEach(line => {
+                    if (yPosition > pageHeight - 20) {
+                        doc.addPage();
+                        yPosition = 20;
+                    }
+                    doc.text(line, margin + 10, yPosition);
+                    yPosition += 5;
+                });
+            }
+
+            // Erstellt am
+            if (task.createdAt) {
+                const date = new Date(task.createdAt).toLocaleDateString('de-DE');
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Erstellt: ${date}`, margin + 5, yPosition);
+                doc.setTextColor(0, 0, 0);
+                yPosition += 6;
+            }
+
+            // Trennlinie
+            doc.setDrawColor(200, 200, 200);
+            doc.line(margin, yPosition, 196, yPosition);
+            yPosition += 10;
+        });
+
+        // Footer auf allen Seiten
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.text(`Seite ${i} von ${pageCount}`, 196, 290, { align: 'right' });
+        }
+
+        // PDF speichern
+        const filename = `gartenplaner_aufgaben_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(filename);
+        this.showNotification('📄 PDF erfolgreich exportiert!');
     }
 
     // Daten importieren
