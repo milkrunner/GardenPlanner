@@ -4,6 +4,7 @@ class GartenPlaner {
         this.tasks = this.loadTasks();
         this.currentFilter = {
             employee: '',
+            location: '',
             status: ''
         };
         this.currentView = 'list';
@@ -17,6 +18,7 @@ class GartenPlaner {
     init() {
         this.setupEventListeners();
         this.updateEmployeeFilter();
+        this.updateLocationFilter();
         this.renderTasks();
         this.updateStatistics();
     }
@@ -37,6 +39,14 @@ class GartenPlaner {
         if (filterEmployee) {
             filterEmployee.addEventListener('change', (e) => {
                 this.currentFilter.employee = e.target.value;
+                this.renderTasks();
+            });
+        }
+
+        const filterLocation = document.getElementById('filterLocation');
+        if (filterLocation) {
+            filterLocation.addEventListener('change', (e) => {
+                this.currentFilter.location = e.target.value;
                 this.renderTasks();
             });
         }
@@ -102,6 +112,7 @@ class GartenPlaner {
         this.renderTasks();
         this.updateStatistics();
         this.updateEmployeeFilter();
+        this.updateLocationFilter();
         document.getElementById('taskForm').reset();
         
         this.showNotification('✅ Aufgabe erfolgreich hinzugefügt!');
@@ -115,6 +126,7 @@ class GartenPlaner {
             this.renderTasks();
             this.updateStatistics();
             this.updateEmployeeFilter();
+            this.updateLocationFilter();
             this.showNotification('🗑️ Aufgabe gelöscht');
         }
     }
@@ -136,8 +148,9 @@ class GartenPlaner {
     getFilteredTasks() {
         return this.tasks.filter(task => {
             const employeeMatch = !this.currentFilter.employee || task.employee === this.currentFilter.employee;
+            const locationMatch = !this.currentFilter.location || task.location === this.currentFilter.location;
             const statusMatch = !this.currentFilter.status || task.status === this.currentFilter.status;
-            return employeeMatch && statusMatch;
+            return employeeMatch && locationMatch && statusMatch;
         });
     }
 
@@ -290,6 +303,21 @@ class GartenPlaner {
         filterSelect.value = currentValue;
     }
 
+    updateLocationFilter() {
+        const filterSelect = document.getElementById('filterLocation');
+        if (!filterSelect) {
+            return;
+        }
+
+        const locations = [...new Set(this.tasks.map(task => task.location).filter(loc => loc))].sort();
+        const currentValue = filterSelect.value;
+
+        filterSelect.innerHTML = '<option value="">Alle Standorte</option>' +
+            locations.map(loc => `<option value="${loc}">${loc}</option>`).join('');
+        
+        filterSelect.value = currentValue;
+    }
+
     // Statistiken aktualisieren
     updateStatistics() {
         const pending = this.tasks.filter(t => t.status === 'pending').length;
@@ -344,6 +372,7 @@ class GartenPlaner {
                     this.renderTasks();
                     this.updateStatistics();
                     this.updateEmployeeFilter();
+                    this.updateLocationFilter();
                     this.showNotification('📥 Daten erfolgreich importiert!');
                 }
             } catch (error) {
@@ -363,6 +392,7 @@ class GartenPlaner {
                 this.renderTasks();
                 this.updateStatistics();
                 this.updateEmployeeFilter();
+                this.updateLocationFilter();
                 this.showNotification('🗑️ Alle Daten gelöscht');
             }
         }
@@ -584,6 +614,7 @@ class GartenPlaner {
             this.renderTasks();
             this.updateStatistics();
             this.updateEmployeeFilter();
+            this.updateLocationFilter();
             this.showNotification(`🗑️ ${count} Aufgabe(n) gelöscht`);
         }
     }
