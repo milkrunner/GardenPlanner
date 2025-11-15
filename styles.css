@@ -672,6 +672,59 @@ footer {
     background-color: var(--border);
 }
 
+/* Confirm Modal Styles */
+.confirm-modal-content {
+    max-width: 500px;
+}
+
+.confirm-modal-header {
+    background: linear-gradient(135deg, var(--warning-color), #e67e22);
+}
+
+.confirm-modal-body {
+    padding: 30px;
+    text-align: center;
+}
+
+.confirm-modal-content .modal-actions {
+    padding: 20px 30px;
+    margin-top: 0;
+    border-top: 1px solid var(--border);
+}
+
+.confirm-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.confirm-modal-body p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: var(--dark);
+    margin: 0;
+}
+
+.modal-actions .btn-danger,
+#confirmOkBtn.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.modal-actions .btn-danger:hover,
+#confirmOkBtn.btn-danger:hover {
+    background-color: #c0392b;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .form-row {

@@ -139,6 +139,23 @@
         </div>
     </div>
 
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header confirm-modal-header">
+                <h2 id="confirmModalTitle">Bestätigung erforderlich</h2>
+            </div>
+            <div class="confirm-modal-body">
+                <div id="confirmModalIcon" class="confirm-icon">⚠️</div>
+                <p id="confirmModalMessage">Möchten Sie fortfahren?</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Abbrechen</button>
+                <button type="button" class="btn" id="confirmOkBtn">Bestätigen</button>
+            </div>
+        </div>
+    </div>
+
     <!-- jsPDF für PDF-Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
