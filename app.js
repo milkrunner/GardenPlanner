@@ -8,6 +8,8 @@ class GartenPlaner {
         };
         this.currentView = 'list';
         this.draggedTaskId = null;
+        this.selectedTasks = new Set();
+        this.bulkMode = false;
         this.init();
     }
 
@@ -173,6 +175,15 @@ class GartenPlaner {
         filteredTasks.forEach(task => {
             const card = document.querySelector(`[data-task-id="${task.id}"]`);
             if (card) {
+                // Checkbox Event Listener
+                const checkbox = card.querySelector('.task-select-checkbox');
+                if (checkbox) {
+                    checkbox.addEventListener('change', (e) => {
+                        e.stopPropagation();
+                        this.toggleTaskSelection(task.id);
+                    });
+                }
+
                 // Button Event Listeners
                 card.querySelector('.complete-btn, .uncomplete-btn')?.addEventListener('click', () => {
                     this.toggleTaskStatus(task.id);
@@ -190,14 +201,23 @@ class GartenPlaner {
                 card.addEventListener('dragleave', (e) => this.handleDragLeave(e));
             }
         });
+
+        // Bulk-Toolbar aktualisieren
+        this.updateBulkToolbar();
     }
 
     // Aufgaben-Karte erstellen
     createTaskCard(task) {
         const isCompleted = task.status === 'completed';
+        const isSelected = this.selectedTasks.has(task.id);
 
         return `
-            <div class="task-card ${isCompleted ? 'completed' : ''}" data-task-id="${task.id}" draggable="true">
+            <div class="task-card ${isCompleted ? 'completed' : ''} ${isSelected ? 'selected' : ''}" data-task-id="${task.id}" draggable="true">
+                ${this.bulkMode ? `
+                    <div class="task-checkbox">
+                        <input type="checkbox" class="task-select-checkbox" ${isSelected ? 'checked' : ''}>
+                    </div>
+                ` : ''}
                 <div class="task-info">
                     <div class="task-header">
                         <span class="drag-handle">☰</span>
@@ -471,12 +491,152 @@ class GartenPlaner {
 
         return false;
     }
+
+    // Bulk-Aktionen
+    toggleBulkMode() {
+        this.bulkMode = !this.bulkMode;
+        const btn = document.getElementById('bulkModeBtn');
+        if (btn) {
+            btn.textContent = this.bulkMode ? '✗ Mehrfachauswahl beenden' : '✓ Mehrfachauswahl';
+            btn.classList.toggle('active');
+        }
+        
+        if (!this.bulkMode) {
+            this.selectedTasks.clear();
+        }
+        
+        this.renderTasks();
+    }
+
+    toggleTaskSelection(taskId) {
+        if (this.selectedTasks.has(taskId)) {
+            this.selectedTasks.delete(taskId);
+        } else {
+            this.selectedTasks.add(taskId);
+        }
+        this.renderTasks();
+    }
+
+    selectAllTasks() {
+        const filteredTasks = this.getFilteredTasks();
+        filteredTasks.forEach(task => this.selectedTasks.add(task.id));
+        this.renderTasks();
+    }
+
+    deselectAllTasks() {
+        this.selectedTasks.clear();
+        this.renderTasks();
+    }
+
+    bulkCompleteTasksAction() {
+        if (this.selectedTasks.size === 0) {
+            this.showNotification('⚠️ Keine Aufgaben ausgewählt');
+            return;
+        }
+
+        this.selectedTasks.forEach(taskId => {
+            const task = this.tasks.find(t => t.id === taskId);
+            if (task && task.status !== 'completed') {
+                task.status = 'completed';
+                task.completedAt = new Date().toISOString();
+            }
+        });
+
+        this.saveTasks();
+        this.selectedTasks.clear();
+        this.renderTasks();
+        this.updateStatistics();
+        this.showNotification('✅ Aufgaben als erledigt markiert!');
+    }
+
+    bulkUncompleteTasksAction() {
+        if (this.selectedTasks.size === 0) {
+            this.showNotification('⚠️ Keine Aufgaben ausgewählt');
+            return;
+        }
+
+        this.selectedTasks.forEach(taskId => {
+            const task = this.tasks.find(t => t.id === taskId);
+            if (task && task.status === 'completed') {
+                task.status = 'pending';
+                task.completedAt = null;
+            }
+        });
+
+        this.saveTasks();
+        this.selectedTasks.clear();
+        this.renderTasks();
+        this.updateStatistics();
+        this.showNotification('🔄 Aufgaben reaktiviert!');
+    }
+
+    bulkDeleteTasksAction() {
+        if (this.selectedTasks.size === 0) {
+            this.showNotification('⚠️ Keine Aufgaben ausgewählt');
+            return;
+        }
+
+        const count = this.selectedTasks.size;
+        if (confirm(`Möchten Sie wirklich ${count} Aufgabe(n) löschen?`)) {
+            this.tasks = this.tasks.filter(task => !this.selectedTasks.has(task.id));
+            this.selectedTasks.clear();
+            this.saveTasks();
+            this.renderTasks();
+            this.updateStatistics();
+            this.updateEmployeeFilter();
+            this.showNotification(`🗑️ ${count} Aufgabe(n) gelöscht`);
+        }
+    }
+
+    updateBulkToolbar() {
+        const toolbar = document.getElementById('bulkToolbar');
+        const countSpan = document.getElementById('bulkCount');
+        
+        if (toolbar && countSpan) {
+            toolbar.style.display = this.bulkMode ? 'flex' : 'none';
+            countSpan.textContent = this.selectedTasks.size;
+        }
+    }
+
+    setupBulkActionListeners() {
+        const bulkModeBtn = document.getElementById('bulkModeBtn');
+        if (bulkModeBtn) {
+            bulkModeBtn.addEventListener('click', () => this.toggleBulkMode());
+        }
+
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => this.selectAllTasks());
+        }
+
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', () => this.deselectAllTasks());
+        }
+
+        const bulkCompleteBtn = document.getElementById('bulkCompleteBtn');
+        if (bulkCompleteBtn) {
+            bulkCompleteBtn.addEventListener('click', () => this.bulkCompleteTasksAction());
+        }
+
+        const bulkUncompleteBtn = document.getElementById('bulkUncompleteBtn');
+        if (bulkUncompleteBtn) {
+            bulkUncompleteBtn.addEventListener('click', () => this.bulkUncompleteTasksAction());
+        }
+
+        const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', () => this.bulkDeleteTasksAction());
+        }
+    }
 }
 
 // App initialisieren
 document.addEventListener('DOMContentLoaded', () => {
     window.gartenPlaner = new GartenPlaner();
+    window.gartenPlaner.setupBulkActionListeners();
     console.log('🌱 Gartenplaner erfolgreich gestartet!');
     console.log('💾 Alle Änderungen werden automatisch im Browser gespeichert (LocalStorage)');
     console.log('🖱️ Drag & Drop aktiviert - Ziehe Aufgaben zum Sortieren!');
+    console.log('✓ Bulk-Aktionen aktiviert - Mehrere Aufgaben gleichzeitig bearbeiten!');
 });
