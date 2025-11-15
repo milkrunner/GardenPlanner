@@ -578,13 +578,56 @@ textarea {
 /* Empty State */
 .empty-state {
     text-align: center;
-    padding: 60px 20px;
-    color: #95a5a6;
+    padding: 80px 40px;
+    color: #7f8c8d;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 15px;
+    margin: 20px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-icon {
+    font-size: 5em;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+    display: inline-block;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
 }
 
 .empty-state h3 {
-    font-size: 1.5em;
-    margin-bottom: 10px;
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: var(--dark);
+}
+
+.empty-state p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    color: #7f8c8d;
+}
+
+.empty-state-btn {
+    display: inline-block;
+    margin-top: 10px;
+    text-decoration: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.empty-state-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
 }
 
 /* Dashboard CTA Section */
@@ -824,5 +867,21 @@ footer {
     
     .nav-link {
         text-align: center;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+    }
+
+    .empty-state-icon {
+        font-size: 4em;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5em;
+    }
+
+    .empty-state p {
+        font-size: 1em;
     }
 }

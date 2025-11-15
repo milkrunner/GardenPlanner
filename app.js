@@ -346,10 +346,26 @@ class GartenPlaner {
         }
 
         if (filteredTasks.length === 0) {
+            const emptyMessage = this.showArchive 
+                ? {
+                    icon: '📦',
+                    title: 'Archiv ist leer',
+                    message: 'Hier werden archivierte Aufgaben angezeigt.',
+                    action: ''
+                }
+                : {
+                    icon: '🌱',
+                    title: 'Noch keine Aufgaben vorhanden',
+                    message: 'Beginnen Sie mit Ihrer Gartenplanung!',
+                    action: '<a href="index.html" class="btn btn-primary empty-state-btn">➕ Erste Aufgabe erstellen</a>'
+                };
+
             tasksList.innerHTML = `
                 <div class="empty-state">
-                    <h3>🌿 Keine Aufgaben gefunden</h3>
-                    <p>Fügen Sie eine neue Aufgabe hinzu oder passen Sie die Filter an.</p>
+                    <div class="empty-state-icon">${emptyMessage.icon}</div>
+                    <h3>${emptyMessage.title}</h3>
+                    <p>${emptyMessage.message}</p>
+                    ${emptyMessage.action}
                 </div>
             `;
             return;
@@ -484,8 +500,9 @@ class GartenPlaner {
         
         calendarDiv.innerHTML = `
             <div class="empty-state">
-                <h3>📅 Kalenderansicht nicht verfügbar</h3>
-                <p>Die Kalenderansicht ist nicht verfügbar, da Aufgaben keine Datumsinformationen enthalten.</p>
+                <div class="empty-state-icon">📅</div>
+                <h3>Kalenderansicht nicht verfügbar</h3>
+                <p>Die Kalenderansicht ist deaktiviert, da Aufgaben keine Datumsinformationen enthalten.</p>
             </div>
         `;
     }
