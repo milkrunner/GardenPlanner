@@ -93,6 +93,7 @@
             <section class="data-management">
                 <h3>Datenverwaltung</h3>
                 <div class="btn-group">
+                    <button id="exportPdfBtn" class="btn btn-secondary">📄 Als PDF exportieren</button>
                     <button id="exportBtn" class="btn btn-secondary">💾 Daten exportieren (JSON)</button>
                     <button id="importBtn" class="btn btn-secondary">📥 Daten importieren</button>
                     <button id="clearBtn" class="btn btn-danger">🗑️ Alle Daten löschen</button>
@@ -138,6 +139,8 @@
         </div>
     </div>
 
+    <!-- jsPDF für PDF-Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
     <script>
         // Dashboard-spezifische Initialisierung
