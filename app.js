@@ -119,6 +119,81 @@ class GartenPlaner {
         }
     }
 
+    // Aufgabe bearbeiten - Modal öffnen
+    openEditModal(id) {
+        const task = this.tasks.find(t => t.id === id);
+        if (!task) return;
+
+        const modal = document.getElementById('editModal');
+        if (!modal) return;
+
+        // Formular mit aktuellen Werten füllen
+        document.getElementById('editTaskTitle').value = task.title;
+        document.getElementById('editTaskEmployee').value = task.employee;
+        document.getElementById('editTaskLocation').value = task.location || '';
+        document.getElementById('editTaskDescription').value = task.description || '';
+
+        // Speichere die ID der zu bearbeitenden Aufgabe
+        modal.dataset.taskId = id;
+
+        // Modal anzeigen
+        modal.style.display = 'flex';
+
+        // Event Listeners für Modal
+        const closeBtn = modal.querySelector('.modal-close');
+        const cancelBtn = document.getElementById('cancelEditBtn');
+        const editForm = document.getElementById('editTaskForm');
+
+        const closeModal = () => {
+            modal.style.display = 'none';
+            delete modal.dataset.taskId;
+        };
+
+        // Entferne alte Event Listener
+        closeBtn.replaceWith(closeBtn.cloneNode(true));
+        cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+        editForm.replaceWith(editForm.cloneNode(true));
+
+        // Füge neue Event Listener hinzu
+        const newCloseBtn = modal.querySelector('.modal-close');
+        const newCancelBtn = document.getElementById('cancelEditBtn');
+        const newEditForm = document.getElementById('editTaskForm');
+
+        newCloseBtn.addEventListener('click', closeModal);
+        newCancelBtn.addEventListener('click', closeModal);
+        
+        // Schließen bei Klick außerhalb des Modals
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Formular Submit
+        newEditForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveEditedTask(id);
+            closeModal();
+        });
+    }
+
+    // Bearbeitete Aufgabe speichern
+    saveEditedTask(id) {
+        const task = this.tasks.find(t => t.id === id);
+        if (!task) return;
+
+        task.title = document.getElementById('editTaskTitle').value;
+        task.employee = document.getElementById('editTaskEmployee').value;
+        task.location = document.getElementById('editTaskLocation').value;
+        task.description = document.getElementById('editTaskDescription').value;
+
+        this.saveTasks();
+        this.renderTasks();
+        this.updateStatistics();
+        this.updateEmployeeFilter();
+        this.showNotification('✅ Aufgabe erfolgreich aktualisiert!');
+    }
+
     // Aufgabe als erledigt markieren
     toggleTaskStatus(id) {
         const task = this.tasks.find(task => task.id === id);
@@ -185,6 +260,9 @@ class GartenPlaner {
                 }
 
                 // Button Event Listeners
+                card.querySelector('.edit-btn')?.addEventListener('click', () => {
+                    this.openEditModal(task.id);
+                });
                 card.querySelector('.complete-btn, .uncomplete-btn')?.addEventListener('click', () => {
                     this.toggleTaskStatus(task.id);
                 });
@@ -230,6 +308,7 @@ class GartenPlaner {
                     ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
                 </div>
                 <div class="task-actions">
+                    <button class="task-btn edit-btn">✏️ Bearbeiten</button>
                     ${isCompleted ? 
                         '<button class="task-btn uncomplete-btn">Reaktivieren</button>' :
                         '<button class="task-btn complete-btn">Erledigt</button>'
