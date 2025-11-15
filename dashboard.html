@@ -59,7 +59,24 @@
 
             <!-- Aufgabenliste -->
             <section class="tasks-section">
-                <h2>Alle Aufgaben</h2>
+                <div class="tasks-header">
+                    <h2>Alle Aufgaben</h2>
+                    <button id="bulkModeBtn" class="btn btn-secondary">✓ Mehrfachauswahl</button>
+                </div>
+
+                <!-- Bulk-Aktions-Toolbar -->
+                <div id="bulkToolbar" class="bulk-toolbar" style="display: none;">
+                    <div class="bulk-info">
+                        <span id="bulkCount">0</span> Aufgaben ausgewählt
+                    </div>
+                    <div class="bulk-actions">
+                        <button id="bulkCompleteBtn" class="btn btn-primary">✓ Als erledigt markieren</button>
+                        <button id="bulkUncompleteBtn" class="btn btn-secondary">↻ Reaktivieren</button>
+                        <button id="bulkDeleteBtn" class="btn btn-danger">🗑️ Löschen</button>
+                        <button id="selectAllBtn" class="btn btn-secondary">Alle auswählen</button>
+                        <button id="deselectAllBtn" class="btn btn-secondary">Keine auswählen</button>
+                    </div>
+                </div>
                 
                 <div id="tasksList" class="tasks-list">
                     <!-- Aufgaben werden hier dynamisch eingefügt -->
