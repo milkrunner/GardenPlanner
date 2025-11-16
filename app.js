@@ -557,6 +557,7 @@ class GartenPlaner {
             // Aktive Aufgaben-Statistiken
             const pending = this.tasks.filter(t => t.status === 'pending').length;
             const completed = this.tasks.filter(t => t.status === 'completed').length;
+            const total = this.tasks.length;
             const employees = new Set(this.tasks.map(t => t.employee)).size;
 
             const statPending = document.getElementById('statPending');
@@ -566,6 +567,196 @@ class GartenPlaner {
             if (statPending) statPending.textContent = pending;
             if (statCompleted) statCompleted.textContent = completed;
             if (statEmployees) statEmployees.textContent = employees;
+
+            // Fortschrittsbalken aktualisieren
+            this.updateProgressBars(pending, completed, total, employees);
+        }
+
+        // Diagramme aktualisieren (nur auf Statistiken-Seite)
+        if (window.location.pathname.includes('statistics.html')) {
+            this.updateCharts();
+        }
+    }
+
+    // Fortschrittsbalken aktualisieren
+    updateProgressBars(pending, completed, total, employees) {
+        const progressPending = document.getElementById('progressPending');
+        const progressCompleted = document.getElementById('progressCompleted');
+        const progressEmployees = document.getElementById('progressEmployees');
+        const totalTasks = document.getElementById('totalTasks');
+        const completionRate = document.getElementById('completionRate');
+        const avgTasksPerEmployee = document.getElementById('avgTasksPerEmployee');
+
+        if (progressPending && total > 0) {
+            const pendingPercent = (pending / total) * 100;
+            progressPending.style.width = `${pendingPercent}%`;
+        }
+
+        if (progressCompleted && total > 0) {
+            const completedPercent = (completed / total) * 100;
+            progressCompleted.style.width = `${completedPercent}%`;
+            if (completionRate) completionRate.textContent = Math.round(completedPercent);
+        }
+
+        if (progressEmployees && employees > 0) {
+            const employeePercent = Math.min((employees / 10) * 100, 100); // Max 10 als 100%
+            progressEmployees.style.width = `${employeePercent}%`;
+        }
+
+        if (totalTasks) totalTasks.textContent = total;
+        if (avgTasksPerEmployee && employees > 0) {
+            avgTasksPerEmployee.textContent = (total / employees).toFixed(1);
+        }
+    }
+
+    // Diagramme aktualisieren
+    updateCharts() {
+        this.updateEmployeeChart();
+        this.updateLocationChart();
+        this.updateActivityChart();
+    }
+
+    // Mitarbeiter-Diagramm
+    updateEmployeeChart() {
+        const employeeChart = document.getElementById('employeeChart');
+        if (!employeeChart) return;
+
+        const employeeCounts = {};
+        this.tasks.forEach(task => {
+            employeeCounts[task.employee] = (employeeCounts[task.employee] || 0) + 1;
+        });
+
+        const sortedEmployees = Object.entries(employeeCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10); // Top 10
+
+        if (sortedEmployees.length === 0) {
+            employeeChart.innerHTML = '<div class="chart-empty">Noch keine Daten verfügbar</div>';
+            return;
+        }
+
+        const maxCount = Math.max(...sortedEmployees.map(e => e[1]));
+        
+        employeeChart.innerHTML = sortedEmployees.map(([name, count]) => `
+            <div class="chart-bar-item">
+                <div class="chart-bar-label" title="${name}">${name}</div>
+                <div class="chart-bar-container">
+                    <div class="chart-bar-fill" style="width: ${(count / maxCount) * 100}%">
+                        <span class="chart-bar-value">${count}</span>
+                    </div>
+                </div>
+                <div class="chart-bar-count">${count}</div>
+            </div>
+        `).join('');
+    }
+
+    // Standort-Diagramm
+    updateLocationChart() {
+        const locationChart = document.getElementById('locationChart');
+        if (!locationChart) return;
+
+        const locationCounts = {};
+        this.tasks.forEach(task => {
+            if (task.location) {
+                locationCounts[task.location] = (locationCounts[task.location] || 0) + 1;
+            }
+        });
+
+        const sortedLocations = Object.entries(locationCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10); // Top 10
+
+        if (sortedLocations.length === 0) {
+            locationChart.innerHTML = '<div class="chart-empty">Noch keine Daten verfügbar</div>';
+            return;
+        }
+
+        const maxCount = Math.max(...sortedLocations.map(l => l[1]));
+        
+        locationChart.innerHTML = sortedLocations.map(([name, count]) => `
+            <div class="chart-bar-item">
+                <div class="chart-bar-label" title="${name}">${name}</div>
+                <div class="chart-bar-container">
+                    <div class="chart-bar-fill" style="width: ${(count / maxCount) * 100}%">
+                        <span class="chart-bar-value">${count}</span>
+                    </div>
+                </div>
+                <div class="chart-bar-count">${count}</div>
+            </div>
+        `).join('');
+    }
+
+    // Aktivitäts-Diagramm (letzte 7 Tage)
+    updateActivityChart() {
+        const activityChart = document.getElementById('activityChart');
+        if (!activityChart) return;
+
+        // Letzte 7 Tage
+        const days = [];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            days.push(date);
+        }
+
+        const dayCounts = days.map(day => {
+            const dayStr = day.toISOString().split('T')[0];
+            return {
+                date: day,
+                label: day.toLocaleDateString('de-DE', { weekday: 'short' }),
+                count: this.tasks.filter(task => {
+                    const taskDate = new Date(task.createdAt).toISOString().split('T')[0];
+                    return taskDate === dayStr;
+                }).length
+            };
+        });
+
+        const maxCount = Math.max(...dayCounts.map(d => d.count), 1);
+
+        activityChart.innerHTML = dayCounts.map(day => {
+            const height = (day.count / maxCount) * 100;
+            return `
+                <div class="timeline-bar" style="height: ${height}%" title="${day.count} Aufgaben">
+                    ${day.count > 0 ? `<div class="timeline-bar-value">${day.count}</div>` : ''}
+                    <div class="timeline-bar-label">${day.label}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Zusätzliche Statistiken aktualisieren
+    updateAdditionalStats() {
+        const statArchived = document.getElementById('statArchived');
+        const statLocations = document.getElementById('statLocations');
+        const statToday = document.getElementById('statToday');
+        const statThisWeek = document.getElementById('statThisWeek');
+
+        if (statArchived) {
+            statArchived.textContent = this.archivedTasks.length;
+        }
+
+        if (statLocations) {
+            const locations = new Set(this.tasks.filter(t => t.location).map(t => t.location));
+            statLocations.textContent = locations.size;
+        }
+
+        if (statToday) {
+            const today = new Date().toISOString().split('T')[0];
+            const todayTasks = this.tasks.filter(task => {
+                const taskDate = new Date(task.createdAt).toISOString().split('T')[0];
+                return taskDate === today;
+            });
+            statToday.textContent = todayTasks.length;
+        }
+
+        if (statThisWeek) {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            const weekTasks = this.tasks.filter(task => {
+                return new Date(task.createdAt) >= weekAgo;
+            });
+            statThisWeek.textContent = weekTasks.length;
         }
     }
 
