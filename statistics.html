@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiken - Gartenplaner</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Statistiken & Analysen</h1>
+            <p class="subtitle">Detaillierte Übersicht und Auswertungen</p>
+        </header>
+
+        <nav class="main-nav">
+            <a href="index.html" class="nav-link">➕ Neue Aufgabe</a>
+            <a href="dashboard.html" class="nav-link">📋 Dashboard</a>
+            <a href="statistics.html" class="nav-link active">📊 Statistiken</a>
+        </nav>
+
+        <main>
+            <!-- Statistiken mit Fortschrittsbalken -->
+            <section class="stats-section">
+                <div class="stat-card">
+                    <h3>Offene Aufgaben</h3>
+                    <p class="stat-number" id="statPending">0</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressPending" style="width: 0%"></div>
+                    </div>
+                    <p class="progress-label">von insgesamt <span id="totalTasks">0</span></p>
+                </div>
+                <div class="stat-card">
+                    <h3>Erledigte Aufgaben</h3>
+                    <p class="stat-number" id="statCompleted">0</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill completed" id="progressCompleted" style="width: 0%"></div>
+                    </div>
+                    <p class="progress-label"><span id="completionRate">0</span>% erledigt</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Aktive Mitarbeiter</h3>
+                    <p class="stat-number" id="statEmployees">0</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill employees" id="progressEmployees" style="width: 0%"></div>
+                    </div>
+                    <p class="progress-label">Durchschn. <span id="avgTasksPerEmployee">0</span> Aufgaben/MA</p>
+                </div>
+            </section>
+
+            <!-- Erweiterte Statistiken mit Diagrammen -->
+            <section class="charts-section">
+                <div class="chart-container">
+                    <h3>📊 Aufgabenverteilung nach Mitarbeiter</h3>
+                    <div id="employeeChart" class="chart-bars">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3>📍 Aufgabenverteilung nach Standort</h3>
+                    <div id="locationChart" class="chart-bars">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+                <div class="chart-container full-width">
+                    <h3>📈 Wöchentliche Aktivität</h3>
+                    <div id="activityChart" class="chart-timeline">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Zusätzliche Statistiken -->
+            <section class="additional-stats">
+                <h2>Weitere Kennzahlen</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-content">
+                            <h4>Archivierte Aufgaben</h4>
+                            <p class="stat-value" id="statArchived">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">📍</div>
+                        <div class="stat-content">
+                            <h4>Aktive Standorte</h4>
+                            <p class="stat-value" id="statLocations">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-content">
+                            <h4>Heute erstellt</h4>
+                            <p class="stat-value" id="statToday">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-content">
+                            <h4>Diese Woche</h4>
+                            <p class="stat-value" id="statThisWeek">0</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Schnellaktionen -->
+            <section class="quick-actions">
+                <h2>Schnellaktionen</h2>
+                <div class="btn-group">
+                    <a href="index.html" class="btn btn-primary">➕ Neue Aufgabe erstellen</a>
+                    <a href="dashboard.html" class="btn btn-secondary">📋 Zum Dashboard</a>
+                    <button id="refreshStatsBtn" class="btn btn-secondary">🔄 Statistiken aktualisieren</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 Gartenplaner | Alle Änderungen werden automatisch gespeichert</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Statistiken-Seite initialisieren
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.gartenPlaner) {
+                console.log('📊 Statistiken-Seite geladen');
+                
+                // Initial laden
+                window.gartenPlaner.updateStatistics();
+                window.gartenPlaner.updateCharts();
+                window.gartenPlaner.updateAdditionalStats();
+
+                // Refresh-Button
+                const refreshBtn = document.getElementById('refreshStatsBtn');
+                if (refreshBtn) {
+                    refreshBtn.addEventListener('click', () => {
+                        window.gartenPlaner.updateStatistics();
+                        window.gartenPlaner.updateCharts();
+                        window.gartenPlaner.updateAdditionalStats();
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
