@@ -166,6 +166,26 @@
                     <label for="editTaskDescription">Beschreibung</label>
                     <textarea id="editTaskDescription" rows="4"></textarea>
                 </div>
+                
+                <!-- Subtasks Section -->
+                <div class="form-group">
+                    <label>Teilaufgaben / Checkliste</label>
+                    <div class="subtask-manager">
+                        <div class="subtask-input-wrapper">
+                            <input type="text" id="newSubtaskInput" placeholder="Neue Teilaufgabe hinzufügen..." class="subtask-input">
+                            <button type="button" id="addSubtaskBtn" class="btn-add-subtask" title="Teilaufgabe hinzufügen">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="subtasksList" class="subtasks-list">
+                            <!-- Subtasks werden dynamisch hinzugefügt -->
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancelEditBtn">Abbrechen</button>
                     <button type="submit" class="btn">Speichern</button>

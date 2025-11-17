@@ -14,6 +14,7 @@ class GartenPlaner {
         this.draggedTaskId = null;
         this.selectedTasks = new Set();
         this.bulkMode = false;
+        this.tempSubtasks = []; // Temporäre Subtasks für neue Aufgabe
         this.init();
     }
 
@@ -21,6 +22,7 @@ class GartenPlaner {
     init() {
         this.checkRecurringTasks();
         this.setupEventListeners();
+        this.setupCreateSubtaskListeners(); // Für neue Aufgabe
         this.updateEmployeeFilter();
         this.updateLocationFilter();
         this.renderTasks();
@@ -137,7 +139,8 @@ class GartenPlaner {
             description: document.getElementById('taskDescription').value,
             status: 'pending',
             createdAt: new Date().toISOString(),
-            history: []
+            history: [],
+            subtasks: [...this.tempSubtasks] // Übernehme temporäre Subtasks
         };
 
         // Initiale History erstellen
@@ -154,6 +157,10 @@ class GartenPlaner {
         this.updateEmployeeFilter();
         this.updateLocationFilter();
         document.getElementById('taskForm').reset();
+        
+        // Reset tempSubtasks und Liste
+        this.tempSubtasks = [];
+        this.renderCreateSubtasksList();
         
         // Scroll zur neuen Aufgabe (falls auf Dashboard)
         setTimeout(() => {
@@ -204,12 +211,6 @@ class GartenPlaner {
         const modal = document.getElementById('editModal');
         if (!modal) return;
 
-        // Formular mit aktuellen Werten füllen
-        document.getElementById('editTaskTitle').value = task.title;
-        document.getElementById('editTaskEmployee').value = task.employee;
-        document.getElementById('editTaskLocation').value = task.location || '';
-        document.getElementById('editTaskDescription').value = task.description || '';
-
         // Speichere die ID der zu bearbeitenden Aufgabe
         modal.dataset.taskId = id;
 
@@ -235,6 +236,18 @@ class GartenPlaner {
         const newCloseBtn = modal.querySelector('.modal-close');
         const newCancelBtn = document.getElementById('cancelEditBtn');
         const newEditForm = document.getElementById('editTaskForm');
+
+        // Formular mit aktuellen Werten füllen (NACH dem replaceWith)
+        document.getElementById('editTaskTitle').value = task.title;
+        document.getElementById('editTaskEmployee').value = task.employee;
+        document.getElementById('editTaskLocation').value = task.location || '';
+        document.getElementById('editTaskDescription').value = task.description || '';
+
+        // Subtasks rendern
+        this.renderSubtasksInModal(task);
+
+        // Subtask Event Listeners (NACH dem replaceWith)
+        this.setupSubtaskListeners(task);
 
         newCloseBtn.addEventListener('click', closeModal);
         newCancelBtn.addEventListener('click', closeModal);
@@ -674,6 +687,7 @@ class GartenPlaner {
                         <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${task.location || 'Kein Standort'}</span>
                     </div>
                     ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                    ${this.renderSubtasksProgress(task)}
                 </div>
                 <div class="task-actions" role="group" aria-label="Aufgaben-Aktionen">
                     ${!isArchived ? `
@@ -1539,6 +1553,250 @@ class GartenPlaner {
         }
 
         return false;
+    }
+
+    // Subtask-Methoden für CREATE (neue Aufgabe)
+    setupCreateSubtaskListeners() {
+        const addBtn = document.getElementById('addSubtaskBtnCreate');
+        const input = document.getElementById('newSubtaskInputCreate');
+
+        if (addBtn && input) {
+            addBtn.addEventListener('click', () => this.addCreateSubtask());
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.addCreateSubtask();
+                }
+            });
+        }
+    }
+
+    addCreateSubtask() {
+        const input = document.getElementById('newSubtaskInputCreate');
+        if (!input || !input.value.trim()) return;
+
+        const subtask = {
+            id: Date.now(),
+            text: input.value.trim(),
+            completed: false
+        };
+
+        this.tempSubtasks.push(subtask);
+        input.value = '';
+        this.renderCreateSubtasksList();
+    }
+
+    deleteCreateSubtask(subtaskId) {
+        this.tempSubtasks = this.tempSubtasks.filter(st => st.id !== subtaskId);
+        this.renderCreateSubtasksList();
+    }
+
+    toggleCreateSubtask(subtaskId) {
+        const subtask = this.tempSubtasks.find(st => st.id === subtaskId);
+        if (subtask) {
+            subtask.completed = !subtask.completed;
+            this.renderCreateSubtasksList();
+        }
+    }
+
+    renderCreateSubtasksList() {
+        const subtasksList = document.getElementById('subtasksListCreate');
+        if (!subtasksList) return;
+
+        if (this.tempSubtasks.length === 0) {
+            subtasksList.innerHTML = '<p class="no-subtasks">Keine Teilaufgaben vorhanden</p>';
+            return;
+        }
+
+        subtasksList.innerHTML = this.tempSubtasks.map(subtask => `
+            <div class="subtask-item ${subtask.completed ? 'completed' : ''}">
+                <input 
+                    type="checkbox" 
+                    class="subtask-checkbox-create" 
+                    ${subtask.completed ? 'checked' : ''}
+                    data-subtask-id="${subtask.id}"
+                >
+                <span class="subtask-text">${subtask.text}</span>
+                <button 
+                    type="button" 
+                    class="btn-delete-subtask-create" 
+                    data-subtask-id="${subtask.id}"
+                    title="Teilaufgabe löschen"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        `).join('');
+
+        // Event Listeners
+        subtasksList.querySelectorAll('.subtask-checkbox-create').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const subtaskId = parseInt(e.target.dataset.subtaskId);
+                this.toggleCreateSubtask(subtaskId);
+            });
+        });
+
+        subtasksList.querySelectorAll('.btn-delete-subtask-create').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const subtaskId = parseInt(e.currentTarget.dataset.subtaskId);
+                this.deleteCreateSubtask(subtaskId);
+            });
+        });
+    }
+
+    // Subtask-Methoden für EDIT (bestehende Aufgabe)
+    setupSubtaskListeners(task) {
+        const addBtn = document.getElementById('addSubtaskBtn');
+        const input = document.getElementById('newSubtaskInput');
+
+        if (addBtn && input) {
+            // Entferne alte Listener
+            const newAddBtn = addBtn.cloneNode(true);
+            addBtn.replaceWith(newAddBtn);
+            
+            const newInput = input.cloneNode(true);
+            input.replaceWith(newInput);
+
+            // Neue Listener hinzufügen
+            newAddBtn.addEventListener('click', () => this.addSubtask(task));
+            newInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.addSubtask(task);
+                }
+            });
+        }
+    }
+
+    addSubtask(task) {
+        const input = document.getElementById('newSubtaskInput');
+        if (!input || !input.value.trim()) return;
+
+        if (!task.subtasks) {
+            task.subtasks = [];
+        }
+
+        const subtask = {
+            id: Date.now(),
+            text: input.value.trim(),
+            completed: false
+        };
+
+        task.subtasks.push(subtask);
+        input.value = '';
+        
+        this.renderSubtasksInModal(task);
+        this.saveTasks();
+    }
+
+    toggleSubtask(task, subtaskId) {
+        if (!task.subtasks) return;
+
+        const subtask = task.subtasks.find(st => st.id === subtaskId);
+        if (subtask) {
+            subtask.completed = !subtask.completed;
+            this.renderSubtasksInModal(task);
+            this.saveTasks();
+            this.renderTasks(); // Update main view to show progress
+        }
+    }
+
+    deleteSubtask(task, subtaskId) {
+        if (!task.subtasks) return;
+
+        task.subtasks = task.subtasks.filter(st => st.id !== subtaskId);
+        this.renderSubtasksInModal(task);
+        this.saveTasks();
+        this.renderTasks(); // Update main view to show progress
+    }
+
+    renderSubtasksInModal(task) {
+        const subtasksList = document.getElementById('subtasksList');
+        if (!subtasksList) return;
+
+        if (!task.subtasks || task.subtasks.length === 0) {
+            subtasksList.innerHTML = '<p class="no-subtasks">Keine Teilaufgaben vorhanden</p>';
+            return;
+        }
+
+        subtasksList.innerHTML = task.subtasks.map(subtask => `
+            <div class="subtask-item ${subtask.completed ? 'completed' : ''}">
+                <input 
+                    type="checkbox" 
+                    class="subtask-checkbox" 
+                    ${subtask.completed ? 'checked' : ''}
+                    data-subtask-id="${subtask.id}"
+                >
+                <span class="subtask-text">${subtask.text}</span>
+                <button 
+                    type="button" 
+                    class="btn-delete-subtask" 
+                    data-subtask-id="${subtask.id}"
+                    title="Teilaufgabe löschen"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+        `).join('');
+
+        // Event Listeners für Subtask-Checkboxen und Delete-Buttons
+        subtasksList.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const subtaskId = parseInt(e.target.dataset.subtaskId);
+                this.toggleSubtask(task, subtaskId);
+            });
+        });
+
+        subtasksList.querySelectorAll('.btn-delete-subtask').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const subtaskId = parseInt(e.currentTarget.dataset.subtaskId);
+                this.deleteSubtask(task, subtaskId);
+            });
+        });
+    }
+
+    getSubtaskProgress(task) {
+        if (!task.subtasks || task.subtasks.length === 0) {
+            return { completed: 0, total: 0, percentage: 0 };
+        }
+
+        const completed = task.subtasks.filter(st => st.completed).length;
+        const total = task.subtasks.length;
+        const percentage = Math.round((completed / total) * 100);
+
+        return { completed, total, percentage };
+    }
+
+    renderSubtasksProgress(task) {
+        if (!task.subtasks || task.subtasks.length === 0) {
+            return '';
+        }
+
+        const progress = this.getSubtaskProgress(task);
+        const allCompleted = progress.completed === progress.total;
+
+        return `
+            <div class="subtasks-progress">
+                <div class="subtasks-progress-header">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
+                        <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="subtasks-progress-text ${allCompleted ? 'completed' : ''}">
+                        ${progress.completed}/${progress.total} Teilaufgaben erledigt
+                    </span>
+                </div>
+                <div class="subtasks-progress-bar">
+                    <div class="subtasks-progress-fill" style="width: ${progress.percentage}%"></div>
+                </div>
+            </div>
+        `;
     }
 
     // Bulk-Aktionen
