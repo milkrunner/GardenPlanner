@@ -187,6 +187,116 @@ class ErrorBoundary {
         }
     }
 
+    // Storage-Überwachung - Prüfe verfügbaren Speicherplatz
+    getStorageUsage() {
+        try {
+            let totalSize = 0;
+            let itemCount = 0;
+            const details = {};
+
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    const value = localStorage.getItem(key);
+                    const size = new Blob([value]).size;
+                    totalSize += size;
+                    itemCount++;
+                    
+                    // Details für Gartenplaner-Keys sammeln
+                    if (key.startsWith('gartenplaner_')) {
+                        details[key] = {
+                            size: size,
+                            sizeKB: (size / 1024).toFixed(2),
+                            preview: value.substring(0, 50)
+                        };
+                    }
+                }
+            }
+
+            // Geschätzte Quota (normalerweise 5-10MB, wir nehmen konservativ 5MB an)
+            const estimatedQuota = 5 * 1024 * 1024; // 5MB in Bytes
+            const usagePercent = (totalSize / estimatedQuota * 100).toFixed(2);
+
+            return {
+                totalSize: totalSize,
+                totalSizeKB: (totalSize / 1024).toFixed(2),
+                totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+                itemCount: itemCount,
+                estimatedQuota: estimatedQuota,
+                estimatedQuotaMB: (estimatedQuota / (1024 * 1024)).toFixed(2),
+                usagePercent: usagePercent,
+                details: details,
+                isCritical: usagePercent > 90,
+                isWarning: usagePercent > 75
+            };
+        } catch (e) {
+            console.error('Fehler beim Ermitteln der Storage-Nutzung:', e);
+            return null;
+        }
+    }
+
+    // Prüfe Storage und zeige Warnung wenn nötig
+    checkStorageQuota() {
+        const usage = this.getStorageUsage();
+        if (!usage) return false;
+
+        // Kritischer Bereich (>90%)
+        if (usage.isCritical) {
+            this.showStorageWarning('critical', usage);
+            return false; // Blockiere weitere Speicheroperationen
+        }
+
+        // Warnbereich (>75%)
+        if (usage.isWarning) {
+            this.showStorageWarning('warning', usage);
+        }
+
+        return true; // Speicheroperationen erlaubt
+    }
+
+    // Zeige Storage-Warnung
+    showStorageWarning(level, usage) {
+        const messages = {
+            warning: {
+                title: '⚠️ Speicherplatz wird knapp',
+                text: `LocalStorage ist zu ${usage.usagePercent}% voll (${usage.totalSizeMB} MB von ~${usage.estimatedQuotaMB} MB). Bitte löschen Sie alte Aufgaben oder archivieren Sie diese.`,
+                duration: 10000
+            },
+            critical: {
+                title: '🚨 Speicherplatz kritisch!',
+                text: `LocalStorage ist zu ${usage.usagePercent}% voll! Neue Aufgaben können möglicherweise nicht gespeichert werden. Bitte löschen Sie dringend alte Daten.`,
+                duration: 0 // Bleibt sichtbar bis Benutzer schließt
+            }
+        };
+
+        const config = messages[level];
+        this.showErrorNotification(config.title, config.text, level, config.duration);
+
+        // Log für Debugging
+        console.warn(`📊 Storage ${level}:`, usage);
+    }
+
+    // Starte periodische Storage-Überwachung
+    startStorageMonitoring(intervalMinutes = 5) {
+        // Initiale Prüfung
+        this.checkStorageQuota();
+
+        // Periodische Prüfung
+        this.storageMonitorInterval = setInterval(() => {
+            this.checkStorageQuota();
+        }, intervalMinutes * 60 * 1000);
+
+        console.log(`📊 Storage-Monitoring gestartet (alle ${intervalMinutes} Minuten)`);
+    }
+
+    // Stoppe Storage-Überwachung
+    stopStorageMonitoring() {
+        if (this.storageMonitorInterval) {
+            clearInterval(this.storageMonitorInterval);
+            this.storageMonitorInterval = null;
+            console.log('📊 Storage-Monitoring gestoppt');
+        }
+    }
+
     // Callbacks für spezifische Fehlertypen registrieren
     onError(errorType, callback) {
         if (!this.errorCallbacks.has(errorType)) {
@@ -304,6 +414,16 @@ const SafeStorage = {
 
     setItem(key, value) {
         try {
+            // Prüfe Storage-Quota vor dem Speichern
+            if (window.errorBoundary && key.startsWith('gartenplaner_')) {
+                const canSave = window.errorBoundary.checkStorageQuota();
+                if (!canSave) {
+                    // Kritischer Speicherzustand - blockiere Speichern
+                    console.error('Storage quota exceeded - cannot save');
+                    return false;
+                }
+            }
+
             localStorage.setItem(key, JSON.stringify(value));
             return true;
         } catch (error) {
@@ -323,6 +443,11 @@ const SafeStorage = {
             if (error.name === 'QuotaExceededError') {
                 if (window.errorBoundary) {
                     window.errorBoundary.cleanupStorage();
+                    // Zeige kritische Warnung
+                    const usage = window.errorBoundary.getStorageUsage();
+                    if (usage) {
+                        window.errorBoundary.showStorageWarning('critical', usage);
+                    }
                 }
             }
             
@@ -425,6 +550,9 @@ window.SafeDOM = SafeDOM;
 
 // Auto-Initialisierung
 window.errorBoundary = new ErrorBoundary();
+
+// Starte Storage-Monitoring (alle 5 Minuten)
+window.errorBoundary.startStorageMonitoring(5);
 
 // Freeze Objects
 Object.freeze(SafeStorage);
