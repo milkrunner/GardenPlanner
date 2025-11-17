@@ -27,6 +27,7 @@ class GartenPlaner {
         this.updateLocationFilter();
         this.renderTasks();
         this.updateStatistics();
+        this.initWeather(); // Wetter-Widget initialisieren
     }
 
     // Event Listeners einrichten
@@ -2031,6 +2032,250 @@ class GartenPlaner {
             this.updateEmployeeFilter();
             this.updateLocationFilter();
             this.showNotification(`📦 ${count} Aufgabe(n) archiviert`);
+        }
+    }
+
+    // ===== WETTER-API INTEGRATION =====
+    initWeather() {
+        const weatherSection = document.querySelector('.weather-section');
+        if (!weatherSection) return;
+
+        const changeLocationBtn = document.getElementById('changeLocationBtn');
+        if (changeLocationBtn) {
+            changeLocationBtn.addEventListener('click', () => this.promptLocation());
+        }
+
+        this.loadWeather();
+    }
+
+    async loadWeather() {
+        try {
+            const location = this.getStoredLocation();
+            
+            if (!location) {
+                await this.promptLocation();
+                return;
+            }
+
+            // Prüfe Cache (1 Stunde)
+            const cached = this.getCachedWeather();
+            if (cached) {
+                this.renderWeather(cached);
+                return;
+            }
+
+            // Lade neue Daten
+            await this.fetchWeather(location);
+        } catch (error) {
+            console.error('Fehler beim Laden des Wetters:', error);
+            this.showWeatherError('Fehler beim Laden der Wetterdaten');
+        }
+    }
+
+    getStoredLocation() {
+        const stored = localStorage.getItem('weather_location');
+        return stored ? JSON.parse(stored) : null;
+    }
+
+    storeLocation(location) {
+        localStorage.setItem('weather_location', JSON.stringify(location));
+    }
+
+    getCachedWeather() {
+        const cached = localStorage.getItem('weather_cache');
+        if (!cached) return null;
+
+        const data = JSON.parse(cached);
+        const age = Date.now() - data.timestamp;
+        const maxAge = 60 * 60 * 1000; // 1 Stunde
+
+        if (age < maxAge) {
+            return data.weather;
+        }
+
+        return null;
+    }
+
+    cacheWeather(weather) {
+        const data = {
+            timestamp: Date.now(),
+            weather: weather
+        };
+        localStorage.setItem('weather_cache', JSON.stringify(data));
+    }
+
+    async promptLocation() {
+        const locationName = prompt('Bitte geben Sie Ihren Standort ein (z.B. "Berlin" oder "München"):', this.getStoredLocation()?.name || 'Berlin');
+        
+        if (!locationName || !locationName.trim()) return;
+
+        const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName.trim())}&count=1&language=de&format=json`;
+
+        try {
+            const response = await fetch(geocodeUrl);
+            const data = await response.json();
+
+            if (!data.results || data.results.length === 0) {
+                alert('Standort nicht gefunden. Bitte versuchen Sie es erneut.');
+                return;
+            }
+
+            const result = data.results[0];
+            const location = {
+                name: result.name,
+                country: result.country,
+                lat: result.latitude,
+                lon: result.longitude
+            };
+
+            this.storeLocation(location);
+            await this.fetchWeather(location);
+        } catch (error) {
+            console.error('Fehler beim Geocoding:', error);
+            alert('Fehler beim Suchen des Standorts.');
+        }
+    }
+
+    async fetchWeather(location) {
+        const weatherForecast = document.getElementById('weatherForecast');
+        if (weatherForecast) {
+            weatherForecast.innerHTML = '<div class="weather-loading">Lade Wetterdaten...</div>';
+        }
+
+        // Open-Meteo API (kostenlos, kein API-Key nötig)
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe/Berlin&forecast_days=7`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const weather = {
+                location: location,
+                daily: data.daily
+            };
+
+            this.cacheWeather(weather);
+            this.renderWeather(weather);
+        } catch (error) {
+            console.error('Fehler beim Abrufen der Wetterdaten:', error);
+            this.showWeatherError('Fehler beim Laden der Wetterdaten');
+        }
+    }
+
+    renderWeather(weather) {
+        const weatherLocationName = document.getElementById('weatherLocationName');
+        const weatherForecast = document.getElementById('weatherForecast');
+
+        if (!weatherForecast) return;
+
+        // Standortname aktualisieren
+        if (weatherLocationName) {
+            weatherLocationName.textContent = `${weather.location.name}, ${weather.location.country}`;
+        }
+
+        // 7-Tage Vorhersage rendern
+        const days = weather.daily.time.slice(0, 7);
+        
+        weatherForecast.innerHTML = days.map((date, index) => {
+            const weatherCode = weather.daily.weather_code[index];
+            const tempMax = Math.round(weather.daily.temperature_2m_max[index]);
+            const tempMin = Math.round(weather.daily.temperature_2m_min[index]);
+
+            const dayName = this.getDayName(date, index);
+            const weatherInfo = this.getWeatherInfo(weatherCode);
+            const todayClass = index === 0 ? 'today' : '';
+
+            return `
+                <div class="weather-day-card ${todayClass}">
+                    <div class="weather-icon-wrapper">
+                        <div class="weather-icon">${weatherInfo.icon}</div>
+                    </div>
+                    <div class="weather-content">
+                        <div class="weather-day-name">${dayName}</div>
+                        <div class="weather-day-date">${new Date(date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</div>
+                        <div class="weather-temp">${tempMax}°</div>
+                        <div class="weather-temp-range">${tempMin}° - ${tempMax}°</div>
+                        <div class="weather-description">${weatherInfo.description}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    getDayName(dateString, index) {
+        if (index === 0) return 'Heute';
+        if (index === 1) return 'Morgen';
+
+        const date = new Date(dateString);
+        const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        return days[date.getDay()];
+    }
+
+    getWeatherInfo(code) {
+        // WMO Weather interpretation codes
+        const weatherCodes = {
+            0: { icon: '☀️', description: 'Klar' },
+            1: { icon: '🌤️', description: 'Meist klar' },
+            2: { icon: '⛅', description: 'Teilweise bewölkt' },
+            3: { icon: '☁️', description: 'Bewölkt' },
+            45: { icon: '🌫️', description: 'Neblig' },
+            48: { icon: '🌫️', description: 'Neblig' },
+            51: { icon: '🌦️', description: 'Leichter Nieselregen' },
+            53: { icon: '🌦️', description: 'Nieselregen' },
+            55: { icon: '🌧️', description: 'Starker Nieselregen' },
+            61: { icon: '🌧️', description: 'Leichter Regen' },
+            63: { icon: '🌧️', description: 'Regen' },
+            65: { icon: '🌧️', description: 'Starker Regen' },
+            71: { icon: '🌨️', description: 'Leichter Schneefall' },
+            73: { icon: '🌨️', description: 'Schneefall' },
+            75: { icon: '🌨️', description: 'Starker Schneefall' },
+            77: { icon: '🌨️', description: 'Schnee­körner' },
+            80: { icon: '🌦️', description: 'Leichte Schauer' },
+            81: { icon: '🌧️', description: 'Schauer' },
+            82: { icon: '🌧️', description: 'Starke Schauer' },
+            85: { icon: '🌨️', description: 'Schnee­schauer' },
+            86: { icon: '🌨️', description: 'Starke Schnee­schauer' },
+            95: { icon: '⛈️', description: 'Gewitter' },
+            96: { icon: '⛈️', description: 'Gewitter mit Hagel' },
+            99: { icon: '⛈️', description: 'Starkes Gewitter' }
+        };
+
+        return weatherCodes[code] || { icon: '🌡️', description: 'Unbekannt' };
+    }
+
+    getGardenTip(weatherCode, tempMax, precipitation) {
+        let tip = '';
+
+        // Tipps basierend auf Wetter
+        if (weatherCode >= 61 && weatherCode <= 65 || weatherCode >= 80 && weatherCode <= 82) {
+            tip = '💧 Kein Gießen nötig';
+        } else if (tempMax > 25 && precipitation < 1) {
+            tip = '🚿 Gießen empfohlen';
+        } else if (weatherCode >= 71 && weatherCode <= 86) {
+            tip = '❄️ Frostschutz prüfen';
+        } else if (weatherCode >= 95) {
+            tip = '⚠️ Pflanzen schützen';
+        } else if (tempMax > 15 && tempMax < 25 && precipitation < 5) {
+            tip = '🌱 Ideal zum Pflanzen';
+        }
+
+        return tip ? `<div class="garden-tip">${tip}</div>` : '';
+    }
+
+    showWeatherError(message) {
+        const weatherForecast = document.getElementById('weatherForecast');
+        if (weatherForecast) {
+            weatherForecast.innerHTML = `
+                <div class="weather-error">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <p>${message}</p>
+                    <button class="btn btn-secondary" onclick="window.gartenPlaner.promptLocation()">Standort eingeben</button>
+                </div>
+            `;
         }
     }
 }
