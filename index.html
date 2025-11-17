@@ -40,6 +40,17 @@
                             <input type="text" id="taskLocation" required placeholder="z.B. Gewächshaus 1" aria-required="true">
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskRecurrence">Wiederholung:</label>
+                            <select id="taskRecurrence" aria-label="Aufgabe wiederholen">
+                                <option value="none">Keine Wiederholung</option>
+                                <option value="daily">Täglich</option>
+                                <option value="weekly">Wöchentlich</option>
+                                <option value="monthly">Monatlich</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label for="taskDescription">Beschreibung:</label>
                         <textarea id="taskDescription" rows="3" placeholder="Details zur Aufgabe..." aria-label="Beschreibung der Aufgabe"></textarea>

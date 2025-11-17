@@ -19,6 +19,7 @@ class GartenPlaner {
 
     // Initialisierung
     init() {
+        this.checkRecurringTasks();
         this.setupEventListeners();
         this.updateEmployeeFilter();
         this.updateLocationFilter();
@@ -127,6 +128,7 @@ class GartenPlaner {
 
     // Aufgabe hinzufügen
     async addTask() {
+        const recurrence = document.getElementById('taskRecurrence').value;
         const task = {
             id: Date.now(),
             title: document.getElementById('taskTitle').value,
@@ -463,6 +465,85 @@ class GartenPlaner {
         }
     }
 
+    // Nächstes Fälligkeitsdatum berechnen
+    calculateNextDue(recurrence, fromDate = new Date()) {
+        const nextDate = new Date(fromDate);
+        
+        switch(recurrence) {
+            case 'daily':
+                nextDate.setDate(nextDate.getDate() + 1);
+                break;
+            case 'weekly':
+                nextDate.setDate(nextDate.getDate() + 7);
+                break;
+            case 'monthly':
+                nextDate.setMonth(nextDate.getMonth() + 1);
+                break;
+            default:
+                return null;
+        }
+        
+        return nextDate.toISOString();
+    }
+
+    // Wiederholungs-Badge erstellen
+    getRecurrenceBadge(recurrence) {
+        const labels = {
+            'daily': 'Täglich',
+            'weekly': 'Wöchentlich',
+            'monthly': 'Monatlich'
+        };
+
+        const icons = {
+            'daily': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+            'weekly': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>',
+            'monthly': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+        };
+
+        return `<span class="recurrence-badge" title="Diese Aufgabe wiederholt sich ${labels[recurrence].toLowerCase()}">${icons[recurrence] || ''}${labels[recurrence] || recurrence}</span>`;
+    }
+
+    // Wiederholende Aufgaben überprüfen
+    checkRecurringTasks() {
+        const now = new Date();
+        let tasksCreated = false;
+
+        this.tasks.forEach(task => {
+            if (task.recurrence && task.recurrence !== 'none' && task.nextDue) {
+                const nextDueDate = new Date(task.nextDue);
+                
+                // Wenn das Fälligkeitsdatum erreicht oder überschritten ist
+                if (now >= nextDueDate) {
+                    // Neue Instanz der Aufgabe erstellen
+                    const newTask = {
+                        id: Date.now() + Math.random(), // Eindeutige ID
+                        title: task.title,
+                        employee: task.employee,
+                        location: task.location,
+                        description: task.description,
+                        status: 'pending',
+                        createdAt: new Date().toISOString(),
+                        recurrence: task.recurrence,
+                        lastRecurrence: new Date().toISOString(),
+                        nextDue: this.calculateNextDue(task.recurrence)
+                    };
+
+                    this.tasks.push(newTask);
+                    tasksCreated = true;
+
+                    // Original-Task aktualisieren
+                    task.lastRecurrence = new Date().toISOString();
+                    task.nextDue = this.calculateNextDue(task.recurrence);
+                }
+            }
+        });
+
+        if (tasksCreated) {
+            this.saveTasks();
+            this.showNotification('🔄 Wiederholende Aufgaben wurden erstellt');
+        }
+    }
+
     // Aufgaben anzeigen
     renderTasks() {
         const filteredTasks = this.getFilteredTasks();
@@ -585,6 +666,7 @@ class GartenPlaner {
                     <div class="task-header">
                         ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ''}
                         <span class="task-title">${task.title}</span>
+                        ${task.recurrence && task.recurrence !== 'none' ? this.getRecurrenceBadge(task.recurrence) : ''}
                         ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString('de-DE')}</span>` : ''}
                     </div>
                     <div class="task-meta">
