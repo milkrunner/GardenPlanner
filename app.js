@@ -20,6 +20,13 @@ class GartenPlaner {
 
     // Initialisierung
     init() {
+        if (window.logger) {
+            window.logger.info('GartenPlaner initialisiert', 'app', {
+                tasksCount: this.tasks.length,
+                archivedCount: this.archivedTasks.length
+            });
+        }
+        
         this.checkRecurringTasks();
         this.setupEventListeners();
         this.setupCreateSubtaskListeners(); // Für neue Aufgabe
@@ -132,11 +139,19 @@ class GartenPlaner {
     // Aufgabe hinzufügen
     async addTask() {
         try {
+            // Performance tracking
+            if (window.logger) {
+                window.logger.startPerformance('addTask', 'performance');
+            }
+            
             // Rate-Limiting prüfen
             if (window.rateLimiter) {
                 const limitResult = window.rateLimiter.checkLimit('taskCreate');
                 if (!limitResult.allowed) {
                     window.rateLimiter.showRateLimitWarning('taskCreate', limitResult.resetMs);
+                    if (window.logger) {
+                        window.logger.warn('Task creation rate limit exceeded', 'app', { resetMs: limitResult.resetMs });
+                    }
                     return;
                 }
             }
@@ -155,6 +170,10 @@ class GartenPlaner {
             if (!validation.valid) {
                 this.showNotification('❌ ' + validation.errors.join(', '), 'error');
                 Security.logSecurityEvent('warning', 'Invalid task data', validation.errors);
+                
+                if (window.logger) {
+                    window.logger.warn('Task validation failed', 'app', { errors: validation.errors });
+                }
                 
                 // Rollback Rate-Limiter bei ungültigen Daten
                 if (window.rateLimiter) {
@@ -204,10 +223,29 @@ class GartenPlaner {
             }, 100);
             
             this.showNotification('✅ Aufgabe erfolgreich hinzugefügt!');
+            
+            // Log erfolgreich
+            if (window.logger) {
+                window.logger.endPerformance('addTask');
+                window.logger.info('Task created successfully', 'app', {
+                    taskId: task.id,
+                    title: task.title,
+                    employee: task.employee,
+                    subtasksCount: task.subtasks.length
+                });
+            }
             this.announce(`Neue Aufgabe "${task.title}" wurde hinzugefügt`);
             
         } catch (error) {
             console.error('Fehler beim Hinzufügen der Aufgabe:', error);
+            
+            // Performance tracking beenden
+            if (window.logger) {
+                window.logger.endPerformance('addTask', false);
+                window.logger.error('Failed to add task', 'app', {
+                    error: error.message
+                }, error);
+            }
             
             // Rollback Rate-Limiter
             if (window.rateLimiter) {
