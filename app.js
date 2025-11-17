@@ -109,7 +109,7 @@ class GartenPlaner {
 
 
     // Aufgabe hinzufügen
-    addTask() {
+    async addTask() {
         const task = {
             id: Date.now(),
             title: document.getElementById('taskTitle').value,
@@ -128,7 +128,16 @@ class GartenPlaner {
         this.updateLocationFilter();
         document.getElementById('taskForm').reset();
         
+        // Scroll zur neuen Aufgabe (falls auf Dashboard)
+        setTimeout(() => {
+            const newTaskElement = document.querySelector(`[data-task-id="${task.id}"]`);
+            if (newTaskElement) {
+                newTaskElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 100);
+        
         this.showNotification('✅ Aufgabe erfolgreich hinzugefügt!');
+        this.announce(`Neue Aufgabe "${task.title}" wurde hinzugefügt`);
     }
 
     // Aufgabe löschen
@@ -143,6 +152,13 @@ class GartenPlaner {
         });
 
         if (confirmed) {
+            // Animation abspielen
+            const taskElement = document.querySelector(`[data-task-id="${id}"]`);
+            if (taskElement) {
+                taskElement.classList.add('task-removing');
+                await new Promise(resolve => setTimeout(resolve, 400));
+            }
+
             this.tasks = this.tasks.filter(task => task.id !== id);
             this.saveTasks();
             this.renderTasks();
@@ -312,9 +328,18 @@ class GartenPlaner {
     }
 
     // Aufgabe als erledigt markieren
-    toggleTaskStatus(id) {
+    async toggleTaskStatus(id) {
         const task = this.tasks.find(task => task.id === id);
         if (task) {
+            // Animation abspielen beim Erledigen
+            if (task.status === 'pending') {
+                const taskElement = document.querySelector(`[data-task-id="${id}"]`);
+                if (taskElement) {
+                    taskElement.classList.add('task-completing');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+
             task.status = task.status === 'pending' ? 'completed' : 'pending';
             task.completedAt = task.status === 'completed' ? new Date().toISOString() : null;
             this.saveTasks();
@@ -415,13 +440,19 @@ class GartenPlaner {
                     }
                 });
 
-                // Drag & Drop Event Listeners (nur für aktive Aufgaben)
-                card.addEventListener('dragstart', (e) => this.handleDragStart(e, task.id));
-                card.addEventListener('dragend', (e) => this.handleDragEnd(e));
-                card.addEventListener('dragover', (e) => this.handleDragOver(e));
-                card.addEventListener('drop', (e) => this.handleDrop(e, task.id));
-                card.addEventListener('dragenter', (e) => this.handleDragEnter(e));
-                card.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+                // Drag & Drop Event Listeners (nur für aktive Aufgaben und nicht auf mobilen Geräten)
+                const isMobile = window.innerWidth <= 768;
+                if (!isMobile) {
+                    card.addEventListener('dragstart', (e) => this.handleDragStart(e, task.id));
+                    card.addEventListener('dragend', (e) => this.handleDragEnd(e));
+                    card.addEventListener('dragover', (e) => this.handleDragOver(e));
+                    card.addEventListener('drop', (e) => this.handleDrop(e, task.id));
+                    card.addEventListener('dragenter', (e) => this.handleDragEnter(e));
+                    card.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+                } else {
+                    // Auf mobilen Geräten Drag & Drop deaktivieren
+                    card.setAttribute('draggable', 'false');
+                }
             }
         });
 
@@ -436,36 +467,41 @@ class GartenPlaner {
         const isArchived = this.showArchive;
 
         return `
-            <div class="task-card ${isCompleted ? 'completed' : ''} ${isSelected ? 'selected' : ''} ${isArchived ? 'archived' : ''}" data-task-id="${task.id}" draggable="${!isArchived}">
+            <div class="task-card ${isCompleted ? 'completed' : ''} ${isSelected ? 'selected' : ''} ${isArchived ? 'archived' : ''}" 
+                 data-task-id="${task.id}" 
+                 draggable="${!isArchived}"
+                 role="article"
+                 aria-label="Aufgabe: ${task.title}"
+                 tabindex="0">
                 ${this.bulkMode && !isArchived ? `
                     <div class="task-checkbox">
-                        <input type="checkbox" class="task-select-checkbox" ${isSelected ? 'checked' : ''}>
+                        <input type="checkbox" class="task-select-checkbox" ${isSelected ? 'checked' : ''} aria-label="Aufgabe auswählen: ${task.title}">
                     </div>
                 ` : ''}
                 <div class="task-info">
                     <div class="task-header">
-                        ${!isArchived ? '<span class="drag-handle">☰</span>' : ''}
+                        ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ''}
                         <span class="task-title">${task.title}</span>
-                        ${isArchived && task.archivedAt ? `<span class="archived-badge">📦 Archiviert am ${new Date(task.archivedAt).toLocaleDateString('de-DE')}</span>` : ''}
+                        ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString('de-DE')}</span>` : ''}
                     </div>
                     <div class="task-meta">
-                        <span>👤 ${task.employee}</span>
-                        <span>📍 ${task.location || 'Kein Standort'}</span>
+                        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${task.employee}</span>
+                        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${task.location || 'Kein Standort'}</span>
                     </div>
                     ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
                 </div>
-                <div class="task-actions">
+                <div class="task-actions" role="group" aria-label="Aufgaben-Aktionen">
                     ${!isArchived ? `
-                        <button class="task-btn edit-btn">✏️ Bearbeiten</button>
+                        <button class="task-btn task-btn-icon edit-btn" aria-label="Aufgabe bearbeiten" title="Bearbeiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                         ${isCompleted ? 
-                            '<button class="task-btn uncomplete-btn">Reaktivieren</button>' :
-                            '<button class="task-btn complete-btn">Erledigt</button>'
+                            '<button class="task-btn task-btn-icon uncomplete-btn" aria-label="Aufgabe reaktivieren" title="Reaktivieren"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4v4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' :
+                            '<button class="task-btn task-btn-icon complete-btn" aria-label="Als erledigt markieren" title="Erledigt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'
                         }
-                        <button class="task-btn archive-btn">📦 Archivieren</button>
-                        <button class="task-btn delete-btn">Löschen</button>
+                        <button class="task-btn task-btn-icon archive-btn" aria-label="Aufgabe archivieren" title="Archivieren"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                        <button class="task-btn task-btn-icon delete-btn" aria-label="Aufgabe löschen" title="Löschen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     ` : `
-                        <button class="task-btn unarchive-btn">↻ Wiederherstellen</button>
-                        <button class="task-btn delete-btn">Endgültig löschen</button>
+                        <button class="task-btn task-btn-icon unarchive-btn" aria-label="Aufgabe wiederherstellen" title="Wiederherstellen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4v4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                        <button class="task-btn task-btn-icon delete-btn" aria-label="Aufgabe endgültig löschen" title="Endgültig löschen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     `}
                 </div>
             </div>
@@ -1047,6 +1083,17 @@ class GartenPlaner {
         }, 3000);
     }
 
+    // Screen Reader Announcement
+    announce(message) {
+        const announcer = window.announcer;
+        if (announcer) {
+            announcer.textContent = '';
+            setTimeout(() => {
+                announcer.textContent = message;
+            }, 100);
+        }
+    }
+
     // Schöner Confirm-Dialog
     showConfirm(options) {
         return new Promise((resolve) => {
@@ -1391,12 +1438,120 @@ class GartenPlaner {
     }
 }
 
+// Dark Mode Toggle
+class ThemeManager {
+    constructor() {
+        this.theme = localStorage.getItem('theme') || 'light';
+        this.init();
+    }
+
+    init() {
+        // Theme anwenden
+        this.applyTheme(this.theme);
+
+        // Toggle-Button Event Listener
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+    }
+
+    applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        this.updateIcon(theme);
+        localStorage.setItem('theme', theme);
+        this.theme = theme;
+    }
+
+    toggleTheme() {
+        const newTheme = this.theme === 'light' ? 'dark' : 'light';
+        this.applyTheme(newTheme);
+        
+        // Update ARIA attributes
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.setAttribute('aria-pressed', newTheme === 'dark' ? 'true' : 'false');
+            themeToggle.setAttribute('aria-label', newTheme === 'dark' ? 'Light Mode aktivieren' : 'Dark Mode aktivieren');
+        }
+    }
+
+    updateIcon(theme) {
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+            if (theme === 'light') {
+                // Moon icon for light theme
+                icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+            } else {
+                // Sun icon for dark theme
+                icon.innerHTML = '<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none"/><line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+            }
+        }
+    }
+}
+
 // App initialisieren
 document.addEventListener('DOMContentLoaded', () => {
+    // Theme Manager initialisieren
+    window.themeManager = new ThemeManager();
+    
+    // Gartenplaner initialisieren
     window.gartenPlaner = new GartenPlaner();
     window.gartenPlaner.setupBulkActionListeners();
+    
+    // Print-Datum setzen für Footer
+    const container = document.querySelector('.container');
+    if (container) {
+        const printDate = new Date().toLocaleDateString('de-DE', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        container.setAttribute('data-print-date', printDate);
+    }
+
+    // Print-Event Listener für Optimierungen
+    window.addEventListener('beforeprint', () => {
+        // Dark Mode temporär deaktivieren für Druck
+        document.documentElement.setAttribute('data-print-mode', 'true');
+    });
+
+    window.addEventListener('afterprint', () => {
+        document.documentElement.removeAttribute('data-print-mode');
+    });
+
+    // Keyboard Navigation für Task-Karten
+    document.addEventListener('keydown', (e) => {
+        const activeElement = document.activeElement;
+        
+        // Escape schließt Modals
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('editModal');
+            if (modal && modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        }
+        
+        // Enter/Space auf Buttons
+        if ((e.key === 'Enter' || e.key === ' ') && activeElement.classList.contains('task-btn')) {
+            e.preventDefault();
+            activeElement.click();
+        }
+    });
+
+    // Announce live region updates for screen readers
+    const announcer = document.createElement('div');
+    announcer.setAttribute('role', 'status');
+    announcer.setAttribute('aria-live', 'polite');
+    announcer.setAttribute('aria-atomic', 'true');
+    announcer.className = 'sr-only';
+    document.body.appendChild(announcer);
+    window.announcer = announcer;
+    
     console.log('🌱 Gartenplaner erfolgreich gestartet!');
     console.log('💾 Alle Änderungen werden automatisch im Browser gespeichert (LocalStorage)');
     console.log('🖱️ Drag & Drop aktiviert - Ziehe Aufgaben zum Sortieren!');
     console.log('✓ Bulk-Aktionen aktiviert - Mehrere Aufgaben gleichzeitig bearbeiten!');
+    console.log('🌙 Dark Mode verfügbar - Klick auf den Button unten rechts!');
+    console.log('🖨️ Print-Stylesheet aktiviert - Optimierte Druckansicht verfügbar!');
+    console.log('♿ Accessibility verbessert - ARIA-Labels und Keyboard-Navigation!');
 });

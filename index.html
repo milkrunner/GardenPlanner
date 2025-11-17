@@ -4,69 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gartenplaner - Dashboard</title>
+    <meta name="description" content="Gartenplaner - Verwaltung von Gartenaufgaben und Mitarbeitern">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
+        <header role="banner">
             <h1>🌱 Gartenplaner</h1>
             <p class="subtitle">Neue Aufgabe erstellen und verwalten</p>
         </header>
 
-        <nav class="main-nav">
-            <a href="index.html" class="nav-link active">➕ Neue Aufgabe</a>
-            <a href="dashboard.html" class="nav-link">� Dashboard</a>
+        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+            <a href="index.html" class="nav-link active" aria-current="page">➕ Neue Aufgabe</a>
+            <a href="dashboard.html" class="nav-link">📋 Dashboard</a>
             <a href="statistics.html" class="nav-link">📊 Statistiken</a>
         </nav>
 
-        <main>
+        <main role="main">
             <!-- Aufgabe hinzufügen -->
-            <section class="add-task-section">
-                <h2>Neue Aufgabe erstellen</h2>
-                <form id="taskForm">
+            <section class="add-task-section" aria-labelledby="add-task-heading">
+                <h2 id="add-task-heading">Neue Aufgabe erstellen</h2>
+                <form id="taskForm" aria-label="Formular für neue Aufgabe">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="taskTitle">Aufgabe:</label>
-                            <input type="text" id="taskTitle" required placeholder="z.B. Tomaten pflanzen">
+                            <input type="text" id="taskTitle" required placeholder="z.B. Tomaten pflanzen" aria-required="true" aria-describedby="taskTitleHelp">
                         </div>
                         <div class="form-group">
                             <label for="taskEmployee">Mitarbeiter:</label>
-                            <input type="text" id="taskEmployee" required placeholder="Name des Mitarbeiters">
+                            <input type="text" id="taskEmployee" required placeholder="Name des Mitarbeiters" aria-required="true">
                         </div>
                         <div class="form-group">
                             <label for="taskLocation">Standort:</label>
-                            <input type="text" id="taskLocation" required placeholder="z.B. Gewächshaus 1">
+                            <input type="text" id="taskLocation" required placeholder="z.B. Gewächshaus 1" aria-required="true">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="taskDescription">Beschreibung:</label>
-                        <textarea id="taskDescription" rows="3" placeholder="Details zur Aufgabe..."></textarea>
+                        <textarea id="taskDescription" rows="3" placeholder="Details zur Aufgabe..." aria-label="Beschreibung der Aufgabe"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary">Aufgabe hinzufügen</button>
+                    <button type="submit" class="btn btn-primary" aria-label="Neue Aufgabe hinzufügen">Aufgabe hinzufügen</button>
                 </form>
             </section>
 
             <!-- Schnellübersicht -->
-            <section class="stats-section">
-                <div class="stat-card">
+            <section class="stats-section" aria-labelledby="stats-heading">
+                <h2 id="stats-heading" class="sr-only">Statistiken</h2>
+                <div class="stat-card" role="region" aria-label="Offene Aufgaben">
                     <h3>Offene Aufgaben</h3>
-                    <p class="stat-number" id="statPending">0</p>
+                    <p class="stat-number" id="statPending" aria-live="polite">0</p>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" role="region" aria-label="Erledigte Aufgaben">
                     <h3>Erledigte Aufgaben</h3>
-                    <p class="stat-number" id="statCompleted">0</p>
+                    <p class="stat-number" id="statCompleted" aria-live="polite">0</p>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" role="region" aria-label="Aktive Mitarbeiter">
                     <h3>Aktive Mitarbeiter</h3>
-                    <p class="stat-number" id="statEmployees">0</p>
+                    <p class="stat-number" id="statEmployees" aria-live="polite">0</p>
                 </div>
             </section>
         </main>
 
-        <footer>
+        <footer role="contentinfo">
             <p>© 2025 Gartenplaner | Alle Änderungen werden automatisch gespeichert</p>
         </footer>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle" role="complementary">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Dark Mode umschalten" aria-pressed="false" title="Dark Mode umschalten">
+            <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
     </div>
 
     <script src="app.js"></script>

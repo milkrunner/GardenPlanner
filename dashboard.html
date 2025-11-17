@@ -4,23 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Gartenplaner</title>
+    <meta name="description" content="Dashboard mit Aufgabenübersicht und Filteroptionen">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
+        <header role="banner">
             <h1>📊 Dashboard - Aufgabenübersicht</h1>
             <p class="subtitle">Alle Aufgaben und Statistiken im Überblick</p>
         </header>
 
-        <nav class="main-nav">
+        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
             <a href="index.html" class="nav-link">➕ Neue Aufgabe</a>
-            <a href="dashboard.html" class="nav-link active">📋 Dashboard</a>
+            <a href="dashboard.html" class="nav-link active" aria-current="page">📋 Dashboard</a>
             <a href="statistics.html" class="nav-link">📊 Statistiken</a>
         </nav>
 
-        <main>
+        <main role="main">
             <!-- Statistiken Schnellübersicht -->
             <section class="stats-section">
                 <div class="stat-card">
@@ -38,12 +39,12 @@
             </section>
 
             <!-- Filter und Ansicht -->
-            <section class="filter-section">
-                <h2>Aufgaben filtern</h2>
-                <div class="filters">
+            <section class="filter-section" aria-labelledby="filter-heading">
+                <h2 id="filter-heading">Aufgaben filtern</h2>
+                <div class="filters" role="search" aria-label="Aufgaben filtern">
                     <div class="filter-group">
                         <label for="filterEmployee">Nach Mitarbeiter:</label>
-                        <select id="filterEmployee">
+                        <select id="filterEmployee" aria-label="Nach Mitarbeiter filtern">
                             <option value="">Alle Mitarbeiter</option>
                         </select>
                     </div>
@@ -159,6 +160,15 @@
                 <button type="button" class="btn" id="confirmOkBtn">Bestätigen</button>
             </div>
         </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Theme umschalten" title="Dark Mode umschalten">
+            <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
     </div>
 
     <!-- jsPDF für PDF-Export -->
