@@ -1179,6 +1179,30 @@ textarea {
     margin-left: 10px;
 }
 
+/* Recurrence Badge */
+.recurrence-badge {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 0.8em;
+    margin-left: 10px;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+    transition: all 0.3s ease;
+}
+
+.recurrence-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+}
+
+.recurrence-badge svg {
+    flex-shrink: 0;
+}
+
 /* Task Checkbox */
 .task-checkbox {
     display: flex;
@@ -1218,6 +1242,15 @@ textarea {
 
 [data-theme="dark"] .task-card.drag-over {
     background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(46, 204, 113, 0.05));
+}
+
+[data-theme="dark"] .recurrence-badge {
+    background: linear-gradient(135deg, #2980b9, #1f6391);
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.5);
+}
+
+[data-theme="dark"] .recurrence-badge:hover {
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.6);
 }
 
 .task-info {
