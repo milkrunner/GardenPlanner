@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryption Test - Gartenplaner</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c5f2d; }
+        h2 { color: #4a7c59; }
+        .status-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .status-card.error {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-label {
+            font-weight: bold;
+            color: #2c5f2d;
+        }
+        .status-value {
+            color: #666;
+        }
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .control-btn {
+            background: #2c5f2d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .control-btn:hover { 
+            background: #1e4620; 
+        }
+        .control-btn.danger {
+            background: #dc2626;
+        }
+        .control-btn.danger:hover {
+            background: #b91c1c;
+        }
+        .control-btn.warning {
+            background: #ff9800;
+        }
+        .control-btn.warning:hover {
+            background: #f57c00;
+        }
+        .test-result {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .input-group {
+            margin: 1rem 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #2c5f2d;
+        }
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .input-group textarea {
+            min-height: 100px;
+            font-family: monospace;
+        }
+        #testResults {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .info-box strong {
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Encryption Test Suite - Gartenplaner</h1>
+    <p>Diese Seite testet die AES-GCM Verschlüsselung mit Web Crypto API.</p>
+
+    <div class="test-section">
+        <h2>📊 Encryption Status</h2>
+        <div id="encryptionStatus" class="status-card">
+            <div class="status-item">
+                <span class="status-label">Browser-Unterstützung:</span>
+                <span class="status-value" id="statusSupported">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Key generiert:</span>
+                <span class="status-value" id="statusKeyGenerated">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Algorithmus:</span>
+                <span class="status-value" id="statusAlgorithm">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Key-Länge:</span>
+                <span class="status-value" id="statusKeyLength">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Bereit:</span>
+                <span class="status-value" id="statusReady">-</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> Die Verschlüsselung verwendet AES-GCM mit 256-bit Keys. 
+            Keys werden sicher im LocalStorage gespeichert und automatisch geladen.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Automatische Tests</h2>
+        <div class="control-panel">
+            <button class="control-btn" onclick="runAllTests()">▶️ Alle Tests ausführen</button>
+            <button class="control-btn" onclick="clearResults()">🗑️ Ergebnisse löschen</button>
+        </div>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Manuelle Tests</h2>
+        
+        <div class="input-group">
+            <label for="testData">Test-Daten (Text oder JSON):</label>
+            <textarea id="testData" placeholder='{"name": "Test", "value": 123}'>Geheime Nachricht 🔒</textarea>
+        </div>
+
+        <div class="control-panel">
+            <button class="control-btn" onclick="testEncrypt()">🔒 Verschlüsseln</button>
+            <button class="control-btn" onclick="testDecrypt()">🔓 Entschlüsseln</button>
+            <button class="control-btn" onclick="testRoundtrip()">🔄 Roundtrip-Test</button>
+        </div>
+
+        <div class="input-group">
+            <label for="encryptedOutput">Verschlüsselte Daten:</label>
+            <textarea id="encryptedOutput" readonly placeholder="Verschlüsselte Daten erscheinen hier..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="decryptedOutput">Entschlüsselte Daten:</label>
+            <textarea id="decryptedOutput" readonly placeholder="Entschlüsselte Daten erscheinen hier..."></textarea>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔑 Key-Management</h2>
+        
+        <div class="control-panel">
+            <button class="control-btn warning" onclick="rotateKey()">🔄 Key rotieren</button>
+            <button class="control-btn" onclick="exportKey()">💾 Key exportieren</button>
+            <button class="control-btn" onclick="importKey()">📥 Key importieren</button>
+            <button class="control-btn danger" onclick="clearKeys()">🗑️ Keys löschen</button>
+        </div>
+
+        <div class="input-group">
+            <label for="keyBackup">Key-Backup (für Export/Import):</label>
+            <textarea id="keyBackup" placeholder="Key-Daten erscheinen hier..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="keyPassword">Passwort (optional, für verschlüsselten Export):</label>
+            <input type="password" id="keyPassword" placeholder="Leer lassen für unverschlüsselten Export">
+        </div>
+    </div>
+
+    <script src="security.js"></script>
+    <script src="encryption.js"></script>
+    <script src="error-handler.js"></script>
+    <script>
+        // Aktualisiere Status
+        function updateStatus() {
+            const status = window.dataEncryption.getStatus();
+            
+            document.getElementById('statusSupported').textContent = status.supported ? '✅ Ja' : '❌ Nein';
+            document.getElementById('statusKeyGenerated').textContent = status.keyGenerated ? '✅ Ja' : '❌ Nein';
+            document.getElementById('statusAlgorithm').textContent = status.algorithm;
+            document.getElementById('statusKeyLength').textContent = status.keyLength + ' bit';
+            document.getElementById('statusReady').textContent = status.ready ? '✅ Bereit' : '❌ Nicht bereit';
+
+            const statusCard = document.getElementById('encryptionStatus');
+            if (!status.ready) {
+                statusCard.classList.add('error');
+            } else {
+                statusCard.classList.remove('error');
+            }
+        }
+
+        // Automatische Tests
+        async function runAllTests() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<h3>Test-Ergebnisse:</h3>';
+
+            const tests = [
+                {
+                    name: 'Text verschlüsseln und entschlüsseln',
+                    fn: async () => {
+                        const original = 'Hallo Welt 🌍';
+                        const encrypted = await window.dataEncryption.encrypt(original);
+                        const decrypted = await window.dataEncryption.decrypt(encrypted);
+                        return original === decrypted;
+                    }
+                },
+                {
+                    name: 'JSON-Objekt verschlüsseln und entschlüsseln',
+                    fn: async () => {
+                        const original = { name: 'Test', value: 123, nested: { key: 'value' } };
+                        const encrypted = await window.dataEncryption.encrypt(original);
+                        const decrypted = await window.dataEncryption.decrypt(encrypted);
+                        return JSON.stringify(original) === JSON.stringify(decrypted);
+                    }
+                },
+                {
+                    name: 'Array verschlüsseln und entschlüsseln',
+                    fn: async () => {
+                        const original = [1, 2, 3, 'test', { id: 5 }];
+                        const encrypted = await window.dataEncryption.encrypt(original);
+                        const decrypted = await window.dataEncryption.decrypt(encrypted);
+                        return JSON.stringify(original) === JSON.stringify(decrypted);
+                    }
+                },
+                {
+                    name: 'Leerer String verschlüsseln',
+                    fn: async () => {
+                        const original = '';
+                        const encrypted = await window.dataEncryption.encrypt(original);
+                        const decrypted = await window.dataEncryption.decrypt(encrypted);
+                        return original === decrypted;
+                    }
+                },
+                {
+                    name: 'Sonderzeichen verschlüsseln',
+                    fn: async () => {
+                        const original = `🔒 äöü ß €@# <script>alert("XSS")</script>`;
+                        const encrypted = await window.dataEncryption.encrypt(original);
+                        const decrypted = await window.dataEncryption.decrypt(encrypted);
+                        return original === decrypted;
+                    }
+                },
+                {
+                    name: 'Großes Objekt verschlüsseln (1000 Einträge)',
+                    fn: async () => {
+                        const original = { items: Array(1000).fill(0).map((_, i) => ({ id: i, name: `Item ${i}` })) };
+                        const encrypted = await window.dataEncryption.encrypt(original);
+                        const decrypted = await window.dataEncryption.decrypt(encrypted);
+                        return JSON.stringify(original) === JSON.stringify(decrypted);
+                    }
+                },
+                {
+                    name: 'Verschlüsseltes Format prüfen',
+                    fn: async () => {
+                        const encrypted = await window.dataEncryption.encrypt('test');
+                        return encrypted.encrypted === true && 
+                               typeof encrypted.data === 'string' &&
+                               encrypted.algorithm === 'AES-GCM';
+                    }
+                },
+                {
+                    name: 'Unverschlüsselte Daten entschlüsseln (Fallback)',
+                    fn: async () => {
+                        const plain = { encrypted: false, data: 'test' };
+                        const result = await window.dataEncryption.decrypt(plain);
+                        return result === 'test';
+                    }
+                }
+            ];
+
+            for (const test of tests) {
+                try {
+                    const start = performance.now();
+                    const success = await test.fn();
+                    const duration = (performance.now() - start).toFixed(2);
+                    
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = `test-result ${success ? 'success' : 'error'}`;
+                    resultDiv.textContent = `${success ? '✅' : '❌'} ${test.name} (${duration}ms)`;
+                    resultsDiv.appendChild(resultDiv);
+                } catch (error) {
+                    const resultDiv = document.createElement('div');
+                    resultDiv.className = 'test-result error';
+                    resultDiv.textContent = `❌ ${test.name}\nFehler: ${error.message}`;
+                    resultsDiv.appendChild(resultDiv);
+                }
+            }
+        }
+
+        // Manueller Verschlüsselungstest
+        async function testEncrypt() {
+            const input = document.getElementById('testData').value;
+            const output = document.getElementById('encryptedOutput');
+            
+            try {
+                let data = input;
+                try {
+                    data = JSON.parse(input);
+                } catch {
+                    // Ist kein JSON, verwende als String
+                }
+
+                const encrypted = await window.dataEncryption.encrypt(data);
+                output.value = JSON.stringify(encrypted, null, 2);
+                
+                showResult('success', 'Verschlüsselung erfolgreich!');
+            } catch (error) {
+                showResult('error', `Verschlüsselungsfehler: ${error.message}`);
+            }
+        }
+
+        // Manueller Entschlüsselungstest
+        async function testDecrypt() {
+            const input = document.getElementById('encryptedOutput').value;
+            const output = document.getElementById('decryptedOutput');
+            
+            try {
+                const encrypted = JSON.parse(input);
+                const decrypted = await window.dataEncryption.decrypt(encrypted);
+                
+                output.value = typeof decrypted === 'object' 
+                    ? JSON.stringify(decrypted, null, 2)
+                    : decrypted;
+                
+                showResult('success', 'Entschlüsselung erfolgreich!');
+            } catch (error) {
+                showResult('error', `Entschlüsselungsfehler: ${error.message}`);
+            }
+        }
+
+        // Roundtrip-Test
+        async function testRoundtrip() {
+            const input = document.getElementById('testData').value;
+            
+            try {
+                let data = input;
+                try {
+                    data = JSON.parse(input);
+                } catch {
+                    // Ist kein JSON
+                }
+
+                const encrypted = await window.dataEncryption.encrypt(data);
+                const decrypted = await window.dataEncryption.decrypt(encrypted);
+                
+                const original = typeof data === 'object' ? JSON.stringify(data) : data;
+                const result = typeof decrypted === 'object' ? JSON.stringify(decrypted) : decrypted;
+                
+                if (original === result) {
+                    showResult('success', `✅ Roundtrip erfolgreich!\nOriginal = Entschlüsselt`);
+                } else {
+                    showResult('error', `❌ Roundtrip fehlgeschlagen!\nOriginal: ${original}\nErgebnis: ${result}`);
+                }
+            } catch (error) {
+                showResult('error', `Roundtrip-Fehler: ${error.message}`);
+            }
+        }
+
+        // Key rotieren
+        async function rotateKey() {
+            if (!confirm('Möchten Sie wirklich den Verschlüsselungskey rotieren? Alle Daten werden neu verschlüsselt.')) {
+                return;
+            }
+
+            try {
+                const success = await window.dataEncryption.rotateKey();
+                if (success) {
+                    showResult('success', '✅ Key-Rotation erfolgreich!');
+                    updateStatus();
+                } else {
+                    showResult('error', '❌ Key-Rotation fehlgeschlagen');
+                }
+            } catch (error) {
+                showResult('error', `Key-Rotation Fehler: ${error.message}`);
+            }
+        }
+
+        // Key exportieren
+        async function exportKey() {
+            const password = document.getElementById('keyPassword').value;
+            const output = document.getElementById('keyBackup');
+            
+            try {
+                const exported = await window.dataEncryption.exportKey(password || null);
+                output.value = exported;
+                showResult('success', password ? '✅ Key verschlüsselt exportiert' : '✅ Key unverschlüsselt exportiert');
+            } catch (error) {
+                showResult('error', `Export-Fehler: ${error.message}`);
+            }
+        }
+
+        // Key importieren
+        async function importKey() {
+            const keyData = document.getElementById('keyBackup').value;
+            const password = document.getElementById('keyPassword').value;
+            
+            if (!keyData) {
+                showResult('error', 'Bitte geben Sie Key-Daten ein');
+                return;
+            }
+
+            if (!confirm('Möchten Sie wirklich einen Key importieren? Der aktuelle Key wird überschrieben!')) {
+                return;
+            }
+
+            try {
+                await window.dataEncryption.importKeyFromBackup(keyData, password || null);
+                showResult('success', '✅ Key erfolgreich importiert');
+                updateStatus();
+            } catch (error) {
+                showResult('error', `Import-Fehler: ${error.message}`);
+            }
+        }
+
+        // Keys löschen
+        function clearKeys() {
+            if (!confirm('Möchten Sie wirklich alle Verschlüsselungskeys löschen? Verschlüsselte Daten können dann nicht mehr entschlüsselt werden!')) {
+                return;
+            }
+
+            try {
+                window.dataEncryption.clearKeys();
+                showResult('success', '🗑️ Alle Keys gelöscht');
+                updateStatus();
+            } catch (error) {
+                showResult('error', `Fehler beim Löschen: ${error.message}`);
+            }
+        }
+
+        // Ergebnisse löschen
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+
+        // Zeige Ergebnis
+        function showResult(type, message) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.insertBefore(resultDiv, resultsDiv.firstChild);
+        }
+
+        // Auto-Load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🔐 Encryption Test Suite geladen');
+            
+            // Warte auf Encryption-Init
+            setTimeout(() => {
+                updateStatus();
+            }, 100);
+        });
+
+        // Update Status alle 2 Sekunden
+        setInterval(updateStatus, 2000);
+    </script>
+</body>
+</html>

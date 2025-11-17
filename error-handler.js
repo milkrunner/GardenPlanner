@@ -391,12 +391,30 @@ function safeAsync(fn, fallback = null) {
     };
 }
 
-// Safe LocalStorage Operations
+// Safe LocalStorage Operations mit Verschlüsselung
 const SafeStorage = {
-    getItem(key, defaultValue = null) {
+    // Prüfe ob Key verschlüsselt werden soll
+    shouldEncrypt(key) {
+        // Verschlüssele alle gartenplaner_ Keys außer interne Keys
+        return key.startsWith('gartenplaner_') && 
+               !key.startsWith('_gartenplaner_');
+    },
+
+    async getItem(key, defaultValue = null) {
         try {
             const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : defaultValue;
+            if (!item) return defaultValue;
+
+            const parsed = JSON.parse(item);
+            
+            // Wenn Daten verschlüsselt sind und Encryption verfügbar ist
+            if (parsed && parsed.encrypted && window.dataEncryption) {
+                const decrypted = await window.dataEncryption.decrypt(parsed);
+                return decrypted !== null ? decrypted : defaultValue;
+            }
+            
+            // Unverschlüsselte Daten
+            return parsed;
         } catch (error) {
             console.error(`Error reading from localStorage [${key}]:`, error);
             if (window.errorBoundary) {
@@ -412,7 +430,7 @@ const SafeStorage = {
         }
     },
 
-    setItem(key, value) {
+    async setItem(key, value) {
         try {
             // Prüfe Storage-Quota vor dem Speichern
             if (window.errorBoundary && key.startsWith('gartenplaner_')) {
@@ -424,7 +442,14 @@ const SafeStorage = {
                 }
             }
 
-            localStorage.setItem(key, JSON.stringify(value));
+            let dataToStore = value;
+
+            // Verschlüssele Daten wenn möglich und nötig
+            if (this.shouldEncrypt(key) && window.dataEncryption && window.dataEncryption.isSupported) {
+                dataToStore = await window.dataEncryption.encrypt(value);
+            }
+
+            localStorage.setItem(key, JSON.stringify(dataToStore));
             return true;
         } catch (error) {
             console.error(`Error writing to localStorage [${key}]:`, error);
