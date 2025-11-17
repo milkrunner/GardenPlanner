@@ -9,6 +9,7 @@ class GartenPlaner {
             location: '',
             status: ''
         };
+        this.searchQuery = '';
         this.currentView = 'list';
         this.draggedTaskId = null;
         this.selectedTasks = new Set();
@@ -58,6 +59,22 @@ class GartenPlaner {
             filterStatus.addEventListener('change', (e) => {
                 this.currentFilter.status = e.target.value;
                 this.renderTasks();
+            });
+        }
+
+        // Suchfunktion
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value.trim();
+                this.performSearch();
+            });
+        }
+
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                this.clearSearch();
             });
         }
 
@@ -356,8 +373,54 @@ class GartenPlaner {
             const employeeMatch = !this.currentFilter.employee || task.employee === this.currentFilter.employee;
             const locationMatch = !this.currentFilter.location || task.location === this.currentFilter.location;
             const statusMatch = !this.currentFilter.status || task.status === this.currentFilter.status;
-            return employeeMatch && locationMatch && statusMatch;
+            
+            // Suchfilter anwenden
+            let searchMatch = true;
+            if (this.searchQuery) {
+                const query = this.searchQuery.toLowerCase();
+                searchMatch = 
+                    task.title.toLowerCase().includes(query) ||
+                    task.employee.toLowerCase().includes(query) ||
+                    (task.location && task.location.toLowerCase().includes(query)) ||
+                    (task.description && task.description.toLowerCase().includes(query));
+            }
+            
+            return employeeMatch && locationMatch && statusMatch && searchMatch;
         });
+    }
+
+    // Suchfunktion durchführen
+    performSearch() {
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const searchResults = document.getElementById('searchResults');
+        const searchResultCount = document.getElementById('searchResultCount');
+        
+        // Clear-Button anzeigen/verstecken
+        if (clearBtn) {
+            clearBtn.style.display = this.searchQuery ? 'flex' : 'none';
+        }
+        
+        // Tasks neu rendern mit Suchfilter
+        this.renderTasks();
+        
+        // Suchergebnisse anzeigen
+        if (searchResults && searchResultCount && this.searchQuery) {
+            const filteredTasks = this.getFilteredTasks();
+            searchResultCount.textContent = filteredTasks.length;
+            searchResults.style.display = 'flex';
+        } else if (searchResults) {
+            searchResults.style.display = 'none';
+        }
+    }
+
+    // Suche zurücksetzen
+    clearSearch() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.value = '';
+            this.searchQuery = '';
+            this.performSearch();
+        }
     }
 
     // Aufgaben anzeigen
