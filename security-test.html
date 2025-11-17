@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Test - Gartenplaner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        h1 { color: #2c5f2d; }
+        h2 { color: #4a7c59; }
+        button {
+            background: #2c5f2d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1e4620; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔒 Security Test Suite - Gartenplaner</h1>
+    <p>Diese Seite testet die XSS-Schutz und Input-Validierung Funktionen.</p>
+
+    <div class="test-section">
+        <h2>Automatische Tests</h2>
+        <button onclick="runAllTests()">Alle Tests ausführen</button>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Manuelle XSS-Tests</h2>
+        <p>Versuchen Sie, XSS-Payloads einzugeben:</p>
+        <input type="text" id="xssInput" placeholder="z.B. <script>alert('XSS')</script>" style="width: 100%; padding: 8px; margin: 10px 0;">
+        <button onclick="testXSSProtection()">Test XSS-Schutz</button>
+        <div id="xssResult"></div>
+    </div>
+
+    <script src="security.js"></script>
+    <script>
+        function runAllTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Testergebnisse:</h3>';
+            
+            const tests = [
+                // HTML Escaping Tests
+                {
+                    name: 'HTML-Escaping: Script-Tag',
+                    input: '<script>alert("XSS")</script>',
+                    expected: '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#x2F;script&gt;',
+                    test: (input) => Security.escapeHtml(input)
+                },
+                {
+                    name: 'HTML-Escaping: Image mit onerror',
+                    input: '<img src=x onerror="alert(1)">',
+                    expected: '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
+                    test: (input) => Security.escapeHtml(input)
+                },
+                {
+                    name: 'HTML-Escaping: Anführungszeichen',
+                    input: 'Test "quoted" text',
+                    expected: 'Test &quot;quoted&quot; text',
+                    test: (input) => Security.escapeHtml(input)
+                },
+                
+                // Input Validation Tests
+                {
+                    name: 'Text-Validierung: Gültiger Text',
+                    input: 'Normale Aufgabe',
+                    expected: true,
+                    test: (input) => Security.validateInput.text(input, 1, 200)
+                },
+                {
+                    name: 'Text-Validierung: Zu kurz',
+                    input: '',
+                    expected: false,
+                    test: (input) => Security.validateInput.text(input, 1, 200)
+                },
+                {
+                    name: 'Text-Validierung: Zu lang',
+                    input: 'x'.repeat(201),
+                    expected: false,
+                    test: (input) => Security.validateInput.text(input, 1, 200)
+                },
+                
+                // Task Validation Tests
+                {
+                    name: 'Aufgaben-Validierung: Gültige Aufgabe',
+                    input: {
+                        title: 'Tomaten gießen',
+                        employee: 'Max Mustermann',
+                        location: 'Gewächshaus 1',
+                        description: 'Alle Pflanzen wässern',
+                        status: 'pending'
+                    },
+                    expected: true,
+                    test: (input) => Security.validateTask(input).valid
+                },
+                {
+                    name: 'Aufgaben-Validierung: Fehlender Titel',
+                    input: {
+                        title: '',
+                        employee: 'Max Mustermann',
+                        location: 'Gewächshaus 1',
+                        status: 'pending'
+                    },
+                    expected: false,
+                    test: (input) => Security.validateTask(input).valid
+                },
+                {
+                    name: 'Aufgaben-Validierung: Ungültiger Status',
+                    input: {
+                        title: 'Test',
+                        employee: 'Max',
+                        location: 'Ort',
+                        status: 'invalid_status'
+                    },
+                    expected: false,
+                    test: (input) => Security.validateTask(input).valid
+                },
+                
+                // URL Sanitization Tests
+                {
+                    name: 'URL-Sanitization: Gefährliches javascript:',
+                    input: 'javascript:alert(1)',
+                    expected: 'about:blank',
+                    test: (input) => Security.sanitizeUrl(input)
+                },
+                {
+                    name: 'URL-Sanitization: Sichere HTTPS-URL',
+                    input: 'https://example.com',
+                    expected: 'https://example.com',
+                    test: (input) => Security.sanitizeUrl(input)
+                },
+                
+                // Text Sanitization
+                {
+                    name: 'Text-Sanitization: Whitespace entfernen',
+                    input: '   Text mit Leerzeichen   ',
+                    expected: 'Text mit Leerzeichen',
+                    test: (input) => Security.sanitizeText(input)
+                },
+                {
+                    name: 'Text-Sanitization: null/undefined',
+                    input: null,
+                    expected: '',
+                    test: (input) => Security.sanitizeText(input)
+                }
+            ];
+            
+            let passed = 0;
+            let failed = 0;
+            
+            tests.forEach(test => {
+                const result = test.test(test.input);
+                const success = JSON.stringify(result) === JSON.stringify(test.expected);
+                
+                if (success) passed++;
+                else failed++;
+                
+                results.innerHTML += `
+                    <div class="test-result ${success ? 'pass' : 'fail'}">
+                        <strong>${success ? '✅' : '❌'} ${test.name}</strong><br>
+                        Input: <code>${JSON.stringify(test.input).substring(0, 100)}</code><br>
+                        Erwartet: <code>${JSON.stringify(test.expected)}</code><br>
+                        Erhalten: <code>${JSON.stringify(result)}</code>
+                    </div>
+                `;
+            });
+            
+            results.innerHTML += `
+                <div class="test-result ${failed === 0 ? 'pass' : 'fail'}" style="margin-top: 20px; font-weight: bold;">
+                    Zusammenfassung: ${passed} von ${tests.length} Tests erfolgreich
+                    ${failed > 0 ? ` (${failed} fehlgeschlagen)` : ''}
+                </div>
+            `;
+        }
+        
+        function testXSSProtection() {
+            const input = document.getElementById('xssInput').value;
+            const result = document.getElementById('xssResult');
+            
+            const escaped = Security.escapeHtml(input);
+            const isValid = Security.validateInput.text(input, 1, 200);
+            
+            result.innerHTML = `
+                <div class="test-result ${escaped !== input ? 'pass' : 'fail'}">
+                    <strong>Original Input:</strong><br>
+                    <code>${input}</code><br><br>
+                    <strong>Nach Escaping:</strong><br>
+                    <code>${escaped}</code><br><br>
+                    <strong>Validierung:</strong> ${isValid ? '✅ Gültig' : '❌ Ungültig'}<br><br>
+                    ${escaped !== input ? 
+                        '✅ <strong>XSS-Schutz funktioniert!</strong> Gefährliche Zeichen wurden escaped.' : 
+                        '⚠️ Input enthält keine gefährlichen Zeichen.'}
+                </div>
+            `;
+        }
+        
+        // Auto-run tests on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🔒 Security Test Suite geladen');
+            console.log('Security-Modul verfügbar:', typeof Security !== 'undefined');
+        });
+    </script>
+</body>
+</html>

@@ -131,14 +131,26 @@ class GartenPlaner {
 
     // Aufgabe hinzufügen
     async addTask() {
-        const recurrence = document.getElementById('taskRecurrence').value;
+        // Input-Werte sanitizen
+        const taskData = {
+            title: Security.sanitizeText(document.getElementById('taskTitle').value),
+            employee: Security.sanitizeText(document.getElementById('taskEmployee').value),
+            location: Security.sanitizeText(document.getElementById('taskLocation').value),
+            description: Security.sanitizeText(document.getElementById('taskDescription').value),
+            status: 'pending'
+        };
+
+        // Validierung
+        const validation = Security.validateTask(taskData);
+        if (!validation.valid) {
+            this.showNotification('❌ ' + validation.errors.join(', '), 'error');
+            Security.logSecurityEvent('warning', 'Invalid task data', validation.errors);
+            return;
+        }
+
         const task = {
             id: Date.now(),
-            title: document.getElementById('taskTitle').value,
-            employee: document.getElementById('taskEmployee').value,
-            location: document.getElementById('taskLocation').value,
-            description: document.getElementById('taskDescription').value,
-            status: 'pending',
+            ...taskData,
             createdAt: new Date().toISOString(),
             history: [],
             subtasks: [...this.tempSubtasks] // Übernehme temporäre Subtasks
@@ -278,10 +290,27 @@ class GartenPlaner {
         const oldLocation = task.location;
         const oldDescription = task.description;
 
-        task.title = document.getElementById('editTaskTitle').value;
-        task.employee = document.getElementById('editTaskEmployee').value;
-        task.location = document.getElementById('editTaskLocation').value;
-        task.description = document.getElementById('editTaskDescription').value;
+        // Input-Werte sanitizen und validieren
+        const taskData = {
+            title: Security.sanitizeText(document.getElementById('editTaskTitle').value),
+            employee: Security.sanitizeText(document.getElementById('editTaskEmployee').value),
+            location: Security.sanitizeText(document.getElementById('editTaskLocation').value),
+            description: Security.sanitizeText(document.getElementById('editTaskDescription').value),
+            status: task.status
+        };
+
+        // Validierung
+        const validation = Security.validateTask(taskData);
+        if (!validation.valid) {
+            this.showNotification('❌ ' + validation.errors.join(', '), 'error');
+            Security.logSecurityEvent('warning', 'Invalid task data on edit', validation.errors);
+            return;
+        }
+
+        task.title = taskData.title;
+        task.employee = taskData.employee;
+        task.location = taskData.location;
+        task.description = taskData.description;
 
         // History-Eintrag für Änderungen
         const changes = [];
@@ -664,30 +693,36 @@ class GartenPlaner {
         const isSelected = this.selectedTasks.has(task.id);
         const isArchived = this.showArchive;
 
+        // Sanitize all user inputs for XSS protection
+        const safeTitle = Security.escapeHtml(task.title);
+        const safeEmployee = Security.escapeHtml(task.employee);
+        const safeLocation = Security.escapeHtml(task.location || 'Kein Standort');
+        const safeDescription = task.description ? Security.escapeHtml(task.description) : '';
+
         return `
             <div class="task-card ${isCompleted ? 'completed' : ''} ${isSelected ? 'selected' : ''} ${isArchived ? 'archived' : ''}" 
                  data-task-id="${task.id}" 
                  draggable="${!isArchived}"
                  role="article"
-                 aria-label="Aufgabe: ${task.title}"
+                 aria-label="Aufgabe: ${safeTitle}"
                  tabindex="0">
                 ${this.bulkMode && !isArchived ? `
                     <div class="task-checkbox">
-                        <input type="checkbox" class="task-select-checkbox" ${isSelected ? 'checked' : ''} aria-label="Aufgabe auswählen: ${task.title}">
+                        <input type="checkbox" class="task-select-checkbox" ${isSelected ? 'checked' : ''} aria-label="Aufgabe auswählen: ${safeTitle}">
                     </div>
                 ` : ''}
                 <div class="task-info">
                     <div class="task-header">
                         ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ''}
-                        <span class="task-title">${task.title}</span>
+                        <span class="task-title">${safeTitle}</span>
                         ${task.recurrence && task.recurrence !== 'none' ? this.getRecurrenceBadge(task.recurrence) : ''}
                         ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString('de-DE')}</span>` : ''}
                     </div>
                     <div class="task-meta">
-                        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${task.employee}</span>
-                        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${task.location || 'Kein Standort'}</span>
+                        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeEmployee}</span>
+                        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeLocation}</span>
                     </div>
-                    ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                    ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ''}
                     ${this.renderSubtasksProgress(task)}
                 </div>
                 <div class="task-actions" role="group" aria-label="Aufgaben-Aktionen">
@@ -753,8 +788,12 @@ class GartenPlaner {
         const employees = [...new Set(this.tasks.map(task => task.employee))].sort();
         const currentValue = filterSelect.value;
 
+        // XSS-sicher: Escape alle Mitarbeiternamen
         filterSelect.innerHTML = '<option value="">Alle Mitarbeiter</option>' +
-            employees.map(emp => `<option value="${emp}">${emp}</option>`).join('');
+            employees.map(emp => {
+                const safe = Security.escapeHtml(emp);
+                return `<option value="${safe}">${safe}</option>`;
+            }).join('');
         
         filterSelect.value = currentValue;
     }
@@ -768,8 +807,12 @@ class GartenPlaner {
         const locations = [...new Set(this.tasks.map(task => task.location).filter(loc => loc))].sort();
         const currentValue = filterSelect.value;
 
+        // XSS-sicher: Escape alle Standorte
         filterSelect.innerHTML = '<option value="">Alle Standorte</option>' +
-            locations.map(loc => `<option value="${loc}">${loc}</option>`).join('');
+            locations.map(loc => {
+                const safe = Security.escapeHtml(loc);
+                return `<option value="${safe}">${safe}</option>`;
+            }).join('');
         
         filterSelect.value = currentValue;
     }
@@ -873,9 +916,12 @@ class GartenPlaner {
 
         const maxCount = Math.max(...sortedEmployees.map(e => e[1]));
         
-        employeeChart.innerHTML = sortedEmployees.map(([name, count]) => `
+        // XSS-sicher: Escape Mitarbeiternamen
+        employeeChart.innerHTML = sortedEmployees.map(([name, count]) => {
+            const safeName = Security.escapeHtml(name);
+            return `
             <div class="chart-bar-item">
-                <div class="chart-bar-label" title="${name}">${name}</div>
+                <div class="chart-bar-label" title="${safeName}">${safeName}</div>
                 <div class="chart-bar-container">
                     <div class="chart-bar-fill" style="width: ${(count / maxCount) * 100}%">
                         <span class="chart-bar-value">${count}</span>
@@ -883,7 +929,8 @@ class GartenPlaner {
                 </div>
                 <div class="chart-bar-count">${count}</div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     // Standort-Diagramm
@@ -909,9 +956,12 @@ class GartenPlaner {
 
         const maxCount = Math.max(...sortedLocations.map(l => l[1]));
         
-        locationChart.innerHTML = sortedLocations.map(([name, count]) => `
+        // XSS-sicher: Escape Standortnamen
+        locationChart.innerHTML = sortedLocations.map(([name, count]) => {
+            const safeName = Security.escapeHtml(name);
+            return `
             <div class="chart-bar-item">
-                <div class="chart-bar-label" title="${name}">${name}</div>
+                <div class="chart-bar-label" title="${safeName}">${safeName}</div>
                 <div class="chart-bar-container">
                     <div class="chart-bar-fill" style="width: ${(count / maxCount) * 100}%">
                         <span class="chart-bar-value">${count}</span>
@@ -919,7 +969,8 @@ class GartenPlaner {
                 </div>
                 <div class="chart-bar-count">${count}</div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     // Aktivitäts-Diagramm (letzte 7 Tage)
@@ -1020,6 +1071,7 @@ class GartenPlaner {
         // Limit auf 50 neueste Einträge
         const recentHistory = allHistory.slice(0, 50);
 
+        // XSS-sicher: Escape alle User-Inputs in History
         historyTimeline.innerHTML = recentHistory.map(entry => {
             const date = new Date(entry.timestamp);
             const timeAgo = this.getTimeAgo(date);
@@ -1034,6 +1086,9 @@ class GartenPlaner {
             const actionInfo = this.getActionInfo(entry.action);
             const detailsHTML = this.getHistoryDetailsHTML(entry);
 
+            const safeTitle = Security.escapeHtml(entry.taskTitle);
+            const safeEmployee = Security.escapeHtml(entry.taskEmployee);
+
             return `
                 <div class="history-item">
                     <div class="history-icon" style="background: ${actionInfo.color};">
@@ -1042,10 +1097,10 @@ class GartenPlaner {
                     <div class="history-content">
                         <div class="history-header">
                             <strong>${actionInfo.label}</strong>
-                            <span class="history-task-title">"${entry.taskTitle}"</span>
+                            <span class="history-task-title">"${safeTitle}"</span>
                         </div>
                         <div class="history-meta">
-                            <span class="history-employee">${entry.taskEmployee}</span>
+                            <span class="history-employee">${safeEmployee}</span>
                             <span class="history-time" title="${formattedDate}">${timeAgo}</span>
                         </div>
                         ${detailsHTML ? `<div class="history-details">${detailsHTML}</div>` : ''}
@@ -1576,9 +1631,16 @@ class GartenPlaner {
         const input = document.getElementById('newSubtaskInputCreate');
         if (!input || !input.value.trim()) return;
 
+        // Input sanitizen und validieren
+        const text = Security.sanitizeText(input.value);
+        if (!Security.validateInput.text(text, 1, 200)) {
+            this.showNotification('❌ Teilaufgabe muss zwischen 1 und 200 Zeichen lang sein', 'error');
+            return;
+        }
+
         const subtask = {
             id: Date.now(),
-            text: input.value.trim(),
+            text: text,
             completed: false
         };
 
@@ -1609,7 +1671,10 @@ class GartenPlaner {
             return;
         }
 
-        subtasksList.innerHTML = this.tempSubtasks.map(subtask => `
+        // XSS-sicher: Escape Subtask-Text
+        subtasksList.innerHTML = this.tempSubtasks.map(subtask => {
+            const safeText = Security.escapeHtml(subtask.text);
+            return `
             <div class="subtask-item ${subtask.completed ? 'completed' : ''}">
                 <input 
                     type="checkbox" 
@@ -1617,7 +1682,7 @@ class GartenPlaner {
                     ${subtask.completed ? 'checked' : ''}
                     data-subtask-id="${subtask.id}"
                 >
-                <span class="subtask-text">${subtask.text}</span>
+                <span class="subtask-text">${safeText}</span>
                 <button 
                     type="button" 
                     class="btn-delete-subtask-create" 
@@ -1630,7 +1695,8 @@ class GartenPlaner {
                     </svg>
                 </button>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         // Event Listeners
         subtasksList.querySelectorAll('.subtask-checkbox-create').forEach(checkbox => {
@@ -1676,13 +1742,20 @@ class GartenPlaner {
         const input = document.getElementById('newSubtaskInput');
         if (!input || !input.value.trim()) return;
 
+        // Input sanitizen und validieren
+        const text = Security.sanitizeText(input.value);
+        if (!Security.validateInput.text(text, 1, 200)) {
+            this.showNotification('❌ Teilaufgabe muss zwischen 1 und 200 Zeichen lang sein', 'error');
+            return;
+        }
+
         if (!task.subtasks) {
             task.subtasks = [];
         }
 
         const subtask = {
             id: Date.now(),
-            text: input.value.trim(),
+            text: text,
             completed: false
         };
 
@@ -1723,7 +1796,10 @@ class GartenPlaner {
             return;
         }
 
-        subtasksList.innerHTML = task.subtasks.map(subtask => `
+        // XSS-sicher: Escape Subtask-Text
+        subtasksList.innerHTML = task.subtasks.map(subtask => {
+            const safeText = Security.escapeHtml(subtask.text);
+            return `
             <div class="subtask-item ${subtask.completed ? 'completed' : ''}">
                 <input 
                     type="checkbox" 
@@ -1731,7 +1807,7 @@ class GartenPlaner {
                     ${subtask.completed ? 'checked' : ''}
                     data-subtask-id="${subtask.id}"
                 >
-                <span class="subtask-text">${subtask.text}</span>
+                <span class="subtask-text">${safeText}</span>
                 <button 
                     type="button" 
                     class="btn-delete-subtask" 
@@ -1744,7 +1820,8 @@ class GartenPlaner {
                     </svg>
                 </button>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         // Event Listeners für Subtask-Checkboxen und Delete-Buttons
         subtasksList.querySelectorAll('.subtask-checkbox').forEach(checkbox => {
