@@ -89,6 +89,11 @@ class DataEncryption {
     // Importiere Key aus gespeicherten Daten
     async importKey(keyData) {
         try {
+            // Validierung der Eingabe
+            if (!keyData || typeof keyData !== 'string') {
+                throw new Error('Invalid key data format');
+            }
+            
             const keyObject = JSON.parse(keyData);
             this.encryptionKey = await window.crypto.subtle.importKey(
                 'jwk',
@@ -102,6 +107,19 @@ class DataEncryption {
             );
         } catch (error) {
             console.error('Fehler beim Key-Import:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Failed to import encryption key: ' + error.message,
+                    error: error,
+                    function: 'importKey',
+                    context: {},
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             throw error;
         }
     }
@@ -111,6 +129,19 @@ class DataEncryption {
         if (!this.isSupported || !this.keyGenerated) {
             // Fallback: Keine Verschlüsselung
             console.warn('Verschlüsselung nicht verfügbar - Daten werden unverschlüsselt gespeichert');
+            
+            // Error Boundary benachrichtigen (warning level)
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Encryption not available - storing unencrypted data',
+                    error: new Error('Encryption key not generated'),
+                    function: 'encrypt',
+                    context: { isSupported: this.isSupported, keyGenerated: this.keyGenerated },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             return {
                 encrypted: false,
                 data: data
@@ -118,6 +149,11 @@ class DataEncryption {
         }
 
         try {
+            // Validierung der Eingabe
+            if (data === undefined || data === null) {
+                throw new Error('Cannot encrypt undefined or null data');
+            }
+            
             // Konvertiere Daten zu String falls nötig
             const plaintext = typeof data === 'string' ? data : JSON.stringify(data);
             
@@ -151,6 +187,19 @@ class DataEncryption {
             };
         } catch (error) {
             console.error('Verschlüsselungsfehler:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Encryption failed: ' + error.message,
+                    error: error,
+                    function: 'encrypt',
+                    context: { dataType: typeof data },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             // Fallback bei Fehler
             return {
                 encrypted: false,
@@ -173,12 +222,35 @@ class DataEncryption {
 
         if (!this.isSupported || !this.keyGenerated) {
             console.error('Kann verschlüsselte Daten nicht entschlüsseln - Key nicht verfügbar');
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Cannot decrypt - encryption key not available',
+                    error: new Error('Encryption key not available'),
+                    function: 'decrypt',
+                    context: { isSupported: this.isSupported, keyGenerated: this.keyGenerated },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             return null;
         }
 
         try {
+            // Validierung der verschlüsselten Daten
+            if (!encryptedData.data || typeof encryptedData.data !== 'string') {
+                throw new Error('Invalid encrypted data format');
+            }
+            
             // Konvertiere Base64 zurück zu Uint8Array
             const combined = this.base64ToArrayBuffer(encryptedData.data);
+            
+            // Validiere Länge
+            if (combined.length < this.ivLength) {
+                throw new Error('Encrypted data too short');
+            }
             
             // Trenne IV und Ciphertext
             const iv = combined.slice(0, this.ivLength);
@@ -205,6 +277,19 @@ class DataEncryption {
             }
         } catch (error) {
             console.error('Entschlüsselungsfehler:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Decryption failed: ' + error.message,
+                    error: error,
+                    function: 'decrypt',
+                    context: { algorithm: encryptedData.algorithm, version: encryptedData.version },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             return null;
         }
     }
@@ -236,11 +321,14 @@ class DataEncryption {
             return false;
         }
 
+        // Backup des alten Keys
+        const oldKey = this.encryptionKey;
+        const encryptedItems = [];
+
         try {
             console.log('🔄 Starte Key-Rotation...');
 
             // Sammle alle verschlüsselten Daten
-            const encryptedItems = [];
             for (let key in localStorage) {
                 if (key.startsWith('gartenplaner_') && !key.startsWith('_gartenplaner_')) {
                     try {
@@ -249,7 +337,9 @@ class DataEncryption {
                         if (parsed && parsed.encrypted) {
                             // Entschlüssele mit altem Key
                             const decrypted = await this.decrypt(parsed);
-                            encryptedItems.push({ key, data: decrypted });
+                            if (decrypted !== null) {
+                                encryptedItems.push({ key, data: decrypted, originalValue: value });
+                            }
                         }
                     } catch (e) {
                         console.warn(`Überspringe ${key} bei Key-Rotation:`, e);
@@ -270,6 +360,34 @@ class DataEncryption {
             return true;
         } catch (error) {
             console.error('Fehler bei Key-Rotation:', error);
+            
+            // Rollback: Stelle alten Key wieder her
+            this.encryptionKey = oldKey;
+            this.keyGenerated = (oldKey !== null);
+            
+            // Versuche original Werte wiederherzustellen
+            for (const item of encryptedItems) {
+                if (item.originalValue) {
+                    try {
+                        localStorage.setItem(item.key, item.originalValue);
+                    } catch (e) {
+                        console.error(`Konnte ${item.key} nicht wiederherstellen:`, e);
+                    }
+                }
+            }
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Key rotation failed: ' + error.message,
+                    error: error,
+                    function: 'rotateKey',
+                    context: { itemsProcessed: encryptedItems.length },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             return false;
         }
     }
@@ -277,10 +395,29 @@ class DataEncryption {
     // Key exportieren (für Backup)
     async exportKey(password) {
         if (!this.keyGenerated || !this.encryptionKey) {
-            throw new Error('Kein Key verfügbar zum Exportieren');
+            const error = new Error('Kein Key verfügbar zum Exportieren');
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Cannot export key - no key available',
+                    error: error,
+                    function: 'exportKey',
+                    context: { keyGenerated: this.keyGenerated },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            throw error;
         }
 
         try {
+            // Validierung
+            if (password && (typeof password !== 'string' || password.length < 8)) {
+                throw new Error('Password must be at least 8 characters');
+            }
+            
             // Exportiere Key
             const exported = await window.crypto.subtle.exportKey('jwk', this.encryptionKey);
             
@@ -294,16 +431,43 @@ class DataEncryption {
             return JSON.stringify(exported);
         } catch (error) {
             console.error('Fehler beim Key-Export:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Key export failed: ' + error.message,
+                    error: error,
+                    function: 'exportKey',
+                    context: { passwordProtected: !!password },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             throw error;
         }
     }
 
     // Key importieren (von Backup)
     async importKeyFromBackup(keyData, password) {
+        // Backup des aktuellen Keys für Rollback
+        const oldKey = this.encryptionKey;
+        const oldKeyGenerated = this.keyGenerated;
+        
         try {
+            // Validierung
+            if (!keyData || typeof keyData !== 'string') {
+                throw new Error('Invalid key data format');
+            }
+            
             let keyObject;
             
             if (password) {
+                // Validiere Passwort
+                if (typeof password !== 'string' || password.length < 8) {
+                    throw new Error('Password must be at least 8 characters');
+                }
+                
                 // Entschlüssele Key mit Passwort
                 const passwordKey = await this.deriveKeyFromPassword(password);
                 const decrypted = await this.decryptWithKey(keyData, passwordKey);
@@ -332,6 +496,23 @@ class DataEncryption {
             return true;
         } catch (error) {
             console.error('Fehler beim Key-Import:', error);
+            
+            // Rollback
+            this.encryptionKey = oldKey;
+            this.keyGenerated = oldKeyGenerated;
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'security',
+                    message: 'Failed to import key from backup: ' + error.message,
+                    error: error,
+                    function: 'importKeyFromBackup',
+                    context: { passwordProtected: !!password },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             throw error;
         }
     }

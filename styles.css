@@ -4298,6 +4298,157 @@ footer {
     border-color: #8bc34a;
 }
 
+/* Rate Limit Toasts - spezielle Styles */
+.error-toast.rate-limit {
+    background: linear-gradient(135deg, #fff8dc 0%, #ffeaa7 100%);
+    border-color: #ff9800;
+}
+
+.error-toast.rate-limit .error-toast-text strong {
+    color: #f57c00;
+}
+
+.error-toast.rate-limit .error-toast-text p {
+    color: #e65100;
+}
+
+.error-toast.rate-limit .error-toast-close {
+    color: #f57c00;
+}
+
+.error-toast.rate-limit .error-toast-icon {
+    animation: rateLimitPulse 1.5s infinite;
+}
+
+@keyframes rateLimitPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.8;
+    }
+}
+
+[data-theme="dark"] .error-toast.rate-limit {
+    background: linear-gradient(135deg, #3e2500 0%, #4e3000 100%);
+    border-color: #ff9800;
+}
+
+[data-theme="dark"] .error-toast.rate-limit .error-toast-text strong {
+    color: #ffb74d;
+}
+
+[data-theme="dark"] .error-toast.rate-limit .error-toast-text p {
+    color: #ffcc80;
+}
+
+/* Rate Limit Badge/Indicator */
+.rate-limit-badge {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: badgeSlideIn 0.3s ease-out;
+}
+
+.rate-limit-badge-icon {
+    font-size: 1.2rem;
+    animation: rateLimitPulse 1.5s infinite;
+}
+
+.rate-limit-badge-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.rate-limit-badge-title {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.rate-limit-badge-time {
+    font-size: 1rem;
+}
+
+@keyframes badgeSlideIn {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+[data-theme="dark"] .rate-limit-badge {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+}
+
+/* Rate Limit Progress Bar (inline in buttons) */
+.rate-limit-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 152, 0, 0.3);
+    transition: width 0.3s ease;
+}
+
+.rate-limit-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9800 0%, #f57c00 100%);
+    transition: width 0.1s linear;
+}
+
+/* Button mit Rate-Limit Indicator */
+.btn-rate-limited {
+    position: relative;
+    overflow: hidden;
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+.btn-rate-limited::after {
+    content: '⏱️';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    opacity: 0.5;
+}
+
+/* Mobile Anpassungen */
+@media (max-width: 768px) {
+    .rate-limit-badge {
+        bottom: 60px;
+        right: 10px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+
+    .rate-limit-badge-icon {
+        font-size: 1rem;
+    }
+
+    .rate-limit-badge-time {
+        font-size: 0.85rem;
+    }
+}
+
 /* Error Boundary Fallback UI */
 .error-boundary-fallback {
     display: flex;

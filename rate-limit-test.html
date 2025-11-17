@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Limit Test - Gartenplaner</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c5f2d; }
+        h2 { color: #4a7c59; }
+        .limiter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .limiter-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 2px solid #4caf50;
+        }
+        .limiter-card.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #ff9800;
+        }
+        .limiter-card.blocked {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-color: #dc2626;
+        }
+        .limiter-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2c5f2d;
+            margin-bottom: 0.5rem;
+        }
+        .limiter-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            font-size: 0.85rem;
+        }
+        .limiter-stat-label {
+            color: #666;
+        }
+        .limiter-stat-value {
+            font-weight: bold;
+            color: #2c5f2d;
+        }
+        .limiter-progress {
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .limiter-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+            transition: width 0.3s, background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .limiter-progress-bar.warning {
+            background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+        }
+        .limiter-progress-bar.blocked {
+            background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
+        }
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .control-btn {
+            background: #2c5f2d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+            position: relative;
+        }
+        .control-btn:hover { 
+            background: #1e4620; 
+        }
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .control-btn.danger {
+            background: #dc2626;
+        }
+        .control-btn.danger:hover {
+            background: #b91c1c;
+        }
+        .control-btn.warning {
+            background: #ff9800;
+        }
+        .control-btn.warning:hover {
+            background: #f57c00;
+        }
+        .test-log {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+        .log-entry {
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-time {
+            color: #999;
+            margin-right: 0.5rem;
+        }
+        .log-success {
+            color: #4caf50;
+        }
+        .log-warning {
+            color: #ff9800;
+        }
+        .log-error {
+            color: #dc2626;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c5f2d;
+        }
+        .stat-label {
+            color: #4a7c59;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>⏱️ Rate Limit Test Suite - Gartenplaner</h1>
+    <p>Diese Seite testet das Rate-Limiting System zum Schutz vor zu vielen Operationen.</p>
+
+    <div class="test-section">
+        <h2>📊 Globale Statistiken</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalLimiters">0</div>
+                <div class="stat-label">Limiters</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalRequests">0</div>
+                <div class="stat-label">Gesamt Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="blockedLimiters">0</div>
+                <div class="stat-label">Blockiert</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> Rate-Limiting schützt die Anwendung vor zu vielen Operationen.
+            Die Limits werden automatisch zurückgesetzt nach Ablauf des Zeitfensters.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Rate-Limiter Status</h2>
+        <div class="control-panel" style="grid-template-columns: repeat(3, 1fr);">
+            <button class="control-btn" onclick="refreshStatus()">🔄 Status aktualisieren</button>
+            <button class="control-btn warning" onclick="resetAll()">🔄 Alle zurücksetzen</button>
+            <button class="control-btn" onclick="clearLog()">🗑️ Log leeren</button>
+        </div>
+        <div id="limiterGrid" class="limiter-grid"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test-Szenarien</h2>
+        
+        <h3>Storage Tests</h3>
+        <div class="control-panel">
+            <button class="control-btn" onclick="testStorage(10)">💾 10x Speichern</button>
+            <button class="control-btn" onclick="testStorage(50)">💾 50x Speichern</button>
+            <button class="control-btn warning" onclick="testStorage(100)">💾 100x Speichern (Burst)</button>
+        </div>
+
+        <h3>Task Operation Tests</h3>
+        <div class="control-panel">
+            <button class="control-btn" onclick="testTaskCreate(5)">➕ 5x Aufgabe erstellen</button>
+            <button class="control-btn" onclick="testTaskCreate(15)">➕ 15x Aufgabe erstellen</button>
+            <button class="control-btn" onclick="testTaskEdit(20)">✏️ 20x Bearbeiten</button>
+            <button class="control-btn" onclick="testTaskEdit(40)">✏️ 40x Bearbeiten</button>
+            <button class="control-btn" onclick="testTaskDelete(15)">🗑️ 15x Löschen</button>
+            <button class="control-btn warning" onclick="testTaskDelete(30)">🗑️ 30x Löschen</button>
+        </div>
+
+        <h3>Export Tests</h3>
+        <div class="control-panel">
+            <button class="control-btn" onclick="testExport(3)">📄 3x Export</button>
+            <button class="control-btn warning" onclick="testExport(7)">📄 7x Export (über Limit)</button>
+        </div>
+
+        <h3>Kombinierte Tests</h3>
+        <div class="control-panel">
+            <button class="control-btn warning" onclick="testMixed()">🔥 Mixed Operations</button>
+            <button class="control-btn danger" onclick="testStress()">💥 Stress Test (alle Limits)</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Log</h2>
+        <div id="testLog" class="test-log"></div>
+    </div>
+
+    <script src="security.js"></script>
+    <script src="encryption.js"></script>
+    <script src="rate-limiter.js"></script>
+    <script src="error-handler.js"></script>
+    <script>
+        let logEntries = [];
+
+        // Log-Funktion
+        function log(message, type = 'info') {
+            const now = new Date();
+            const time = now.toLocaleTimeString('de-DE');
+            logEntries.unshift({ time, message, type });
+            
+            if (logEntries.length > 100) {
+                logEntries = logEntries.slice(0, 100);
+            }
+            
+            updateLog();
+        }
+
+        // Update Log-Anzeige
+        function updateLog() {
+            const logDiv = document.getElementById('testLog');
+            logDiv.innerHTML = logEntries.map(entry => `
+                <div class="log-entry">
+                    <span class="log-time">[${entry.time}]</span>
+                    <span class="log-${entry.type}">${entry.message}</span>
+                </div>
+            `).join('');
+        }
+
+        // Clear Log
+        function clearLog() {
+            logEntries = [];
+            updateLog();
+        }
+
+        // Refresh Status
+        function refreshStatus() {
+            const allStatus = window.rateLimiter.getAllStatus();
+            const stats = window.rateLimiter.getStatistics();
+            
+            // Update Statistiken
+            document.getElementById('totalLimiters').textContent = stats.totalLimiters;
+            document.getElementById('totalRequests').textContent = stats.totalRequests;
+            document.getElementById('blockedLimiters').textContent = stats.blockedLimiters;
+
+            // Update Limiter-Karten
+            const grid = document.getElementById('limiterGrid');
+            grid.innerHTML = '';
+
+            for (const [name, status] of Object.entries(allStatus)) {
+                if (!status) continue;
+
+                const percentage = status.percentage || 0;
+                const cardClass = status.blocked ? 'blocked' : percentage > 75 ? 'warning' : '';
+                const barClass = status.blocked ? 'blocked' : percentage > 75 ? 'warning' : '';
+                
+                const resetMinutes = Math.floor(status.resetMs / 60000);
+                const resetSeconds = Math.floor((status.resetMs % 60000) / 1000);
+                const resetText = resetMinutes > 0 
+                    ? `${resetMinutes}m ${resetSeconds}s` 
+                    : `${resetSeconds}s`;
+
+                const card = document.createElement('div');
+                card.className = `limiter-card ${cardClass}`;
+                card.innerHTML = `
+                    <div class="limiter-name">${name}</div>
+                    <div class="limiter-stat">
+                        <span class="limiter-stat-label">Requests:</span>
+                        <span class="limiter-stat-value">${status.currentRequests} / ${status.maxRequests}</span>
+                    </div>
+                    <div class="limiter-stat">
+                        <span class="limiter-stat-label">Verbleibend:</span>
+                        <span class="limiter-stat-value">${status.remaining}</span>
+                    </div>
+                    <div class="limiter-stat">
+                        <span class="limiter-stat-label">Reset in:</span>
+                        <span class="limiter-stat-value">${resetText}</span>
+                    </div>
+                    <div class="limiter-stat">
+                        <span class="limiter-stat-label">Status:</span>
+                        <span class="limiter-stat-value">${status.blocked ? '🚫 Blockiert' : '✅ Aktiv'}</span>
+                    </div>
+                    <div class="limiter-progress">
+                        <div class="limiter-progress-bar ${barClass}" style="width: ${percentage}%">
+                            ${percentage}%
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+
+            log('Status aktualisiert', 'success');
+        }
+
+        // Reset alle Limiter
+        function resetAll() {
+            window.rateLimiter.resetAll();
+            refreshStatus();
+            log('Alle Limiter zurückgesetzt', 'success');
+        }
+
+        // Test: Storage
+        async function testStorage(count) {
+            log(`Starte Storage-Test: ${count} Operationen`, 'info');
+            let success = 0;
+            let failed = 0;
+
+            for (let i = 0; i < count; i++) {
+                const result = window.rateLimiter.checkLimit('storage', `test_${i}`);
+                if (result.allowed) {
+                    success++;
+                } else {
+                    failed++;
+                    log(`Storage-Request #${i+1} blockiert (${Math.ceil(result.resetMs/1000)}s Cooldown)`, 'error');
+                }
+                
+                // Kleine Verzögerung für realistische Simulation
+                if (i % 10 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                    refreshStatus();
+                }
+            }
+
+            log(`Storage-Test beendet: ${success} erfolgreich, ${failed} blockiert`, success === count ? 'success' : 'warning');
+            refreshStatus();
+        }
+
+        // Test: Task Create
+        async function testTaskCreate(count) {
+            log(`Starte Task-Create-Test: ${count} Operationen`, 'info');
+            let success = 0;
+            let failed = 0;
+
+            for (let i = 0; i < count; i++) {
+                const result = window.rateLimiter.checkLimit('taskCreate');
+                if (result.allowed) {
+                    success++;
+                } else {
+                    failed++;
+                    log(`Task-Create #${i+1} blockiert`, 'error');
+                }
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            log(`Task-Create-Test beendet: ${success} erfolgreich, ${failed} blockiert`, success === count ? 'success' : 'warning');
+            refreshStatus();
+        }
+
+        // Test: Task Edit
+        async function testTaskEdit(count) {
+            log(`Starte Task-Edit-Test: ${count} Operationen`, 'info');
+            let success = 0;
+            let failed = 0;
+
+            for (let i = 0; i < count; i++) {
+                const result = window.rateLimiter.checkLimit('taskEdit', `task_${i % 5}`);
+                if (result.allowed) {
+                    success++;
+                } else {
+                    failed++;
+                    log(`Task-Edit #${i+1} blockiert`, 'error');
+                }
+                await new Promise(resolve => setTimeout(resolve, 30));
+            }
+
+            log(`Task-Edit-Test beendet: ${success} erfolgreich, ${failed} blockiert`, success === count ? 'success' : 'warning');
+            refreshStatus();
+        }
+
+        // Test: Task Delete
+        async function testTaskDelete(count) {
+            log(`Starte Task-Delete-Test: ${count} Operationen`, 'info');
+            let success = 0;
+            let failed = 0;
+
+            for (let i = 0; i < count; i++) {
+                const result = window.rateLimiter.checkLimit('taskDelete');
+                if (result.allowed) {
+                    success++;
+                } else {
+                    failed++;
+                    log(`Task-Delete #${i+1} blockiert`, 'error');
+                }
+                await new Promise(resolve => setTimeout(resolve, 40));
+            }
+
+            log(`Task-Delete-Test beendet: ${success} erfolgreich, ${failed} blockiert`, success === count ? 'success' : 'warning');
+            refreshStatus();
+        }
+
+        // Test: Export
+        async function testExport(count) {
+            log(`Starte Export-Test: ${count} Operationen`, 'info');
+            let success = 0;
+            let failed = 0;
+
+            for (let i = 0; i < count; i++) {
+                const result = window.rateLimiter.checkLimit('export');
+                if (result.allowed) {
+                    success++;
+                } else {
+                    failed++;
+                    log(`Export #${i+1} blockiert (Reset in ${Math.ceil(result.resetMs/1000)}s)`, 'error');
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            log(`Export-Test beendet: ${success} erfolgreich, ${failed} blockiert`, success === count ? 'success' : 'warning');
+            refreshStatus();
+        }
+
+        // Test: Mixed Operations
+        async function testMixed() {
+            log('Starte Mixed Operations Test', 'info');
+            
+            const operations = [
+                { name: 'storage', count: 30 },
+                { name: 'taskCreate', count: 8 },
+                { name: 'taskEdit', count: 15 },
+                { name: 'taskDelete', count: 10 },
+                { name: 'search', count: 50 }
+            ];
+
+            for (const op of operations) {
+                for (let i = 0; i < op.count; i++) {
+                    window.rateLimiter.checkLimit(op.name);
+                    if (i % 5 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+            }
+
+            log('Mixed Operations Test beendet', 'success');
+            refreshStatus();
+        }
+
+        // Test: Stress Test
+        async function testStress() {
+            log('🔥 Starte STRESS TEST - Alle Limits werden getestet!', 'warning');
+            
+            const limiters = ['storage', 'taskCreate', 'taskEdit', 'taskDelete', 'search', 'filter', 'export', 'api'];
+            
+            for (const limiter of limiters) {
+                const config = window.rateLimiter.limiters.get(limiter);
+                if (!config) continue;
+
+                const overload = Math.ceil(config.maxRequests * 1.5);
+                log(`Teste ${limiter}: ${overload} Requests (Limit: ${config.maxRequests})`, 'info');
+
+                for (let i = 0; i < overload; i++) {
+                    window.rateLimiter.checkLimit(limiter);
+                    if (i % 10 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 5));
+                    }
+                }
+            }
+
+            log('💥 STRESS TEST abgeschlossen - Prüfen Sie die blockierten Limiter!', 'error');
+            refreshStatus();
+        }
+
+        // Auto-Load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('⏱️ Rate Limit Test Suite geladen');
+            refreshStatus();
+            log('Test Suite initialisiert', 'success');
+        });
+
+        // Auto-Refresh alle 2 Sekunden
+        setInterval(refreshStatus, 2000);
+
+        // Callback für Rate-Limit Events
+        window.rateLimiter.on('limit_exceeded', (data) => {
+            log(`⚠️ Rate-Limit überschritten: ${data.limiter} (Reset in ${Math.ceil(data.resetMs/1000)}s)`, 'warning');
+        });
+    </script>
+</body>
+</html>

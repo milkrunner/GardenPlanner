@@ -131,74 +131,133 @@ class GartenPlaner {
 
     // Aufgabe hinzufügen
     async addTask() {
-        // Input-Werte sanitizen
-        const taskData = {
-            title: Security.sanitizeText(document.getElementById('taskTitle').value),
-            employee: Security.sanitizeText(document.getElementById('taskEmployee').value),
-            location: Security.sanitizeText(document.getElementById('taskLocation').value),
-            description: Security.sanitizeText(document.getElementById('taskDescription').value),
-            status: 'pending'
-        };
-
-        // Validierung
-        const validation = Security.validateTask(taskData);
-        if (!validation.valid) {
-            this.showNotification('❌ ' + validation.errors.join(', '), 'error');
-            Security.logSecurityEvent('warning', 'Invalid task data', validation.errors);
-            return;
-        }
-
-        const task = {
-            id: Date.now(),
-            ...taskData,
-            createdAt: new Date().toISOString(),
-            history: [],
-            subtasks: [...this.tempSubtasks] // Übernehme temporäre Subtasks
-        };
-
-        // Initiale History erstellen
-        this.addHistoryEntry(task, 'created', {
-            title: task.title,
-            employee: task.employee,
-            location: task.location
-        });
-
-        this.tasks.push(task);
-        this.saveTasks();
-        this.renderTasks();
-        this.updateStatistics();
-        this.updateEmployeeFilter();
-        this.updateLocationFilter();
-        document.getElementById('taskForm').reset();
-        
-        // Reset tempSubtasks und Liste
-        this.tempSubtasks = [];
-        this.renderCreateSubtasksList();
-        
-        // Scroll zur neuen Aufgabe (falls auf Dashboard)
-        setTimeout(() => {
-            const newTaskElement = document.querySelector(`[data-task-id="${task.id}"]`);
-            if (newTaskElement) {
-                newTaskElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        try {
+            // Rate-Limiting prüfen
+            if (window.rateLimiter) {
+                const limitResult = window.rateLimiter.checkLimit('taskCreate');
+                if (!limitResult.allowed) {
+                    window.rateLimiter.showRateLimitWarning('taskCreate', limitResult.resetMs);
+                    return;
+                }
             }
-        }, 100);
-        
-        this.showNotification('✅ Aufgabe erfolgreich hinzugefügt!');
-        this.announce(`Neue Aufgabe "${task.title}" wurde hinzugefügt`);
+
+            // Input-Werte sanitizen
+            const taskData = {
+                title: Security.sanitizeText(document.getElementById('taskTitle').value),
+                employee: Security.sanitizeText(document.getElementById('taskEmployee').value),
+                location: Security.sanitizeText(document.getElementById('taskLocation').value),
+                description: Security.sanitizeText(document.getElementById('taskDescription').value),
+                status: 'pending'
+            };
+
+            // Validierung
+            const validation = Security.validateTask(taskData);
+            if (!validation.valid) {
+                this.showNotification('❌ ' + validation.errors.join(', '), 'error');
+                Security.logSecurityEvent('warning', 'Invalid task data', validation.errors);
+                
+                // Rollback Rate-Limiter bei ungültigen Daten
+                if (window.rateLimiter) {
+                    window.rateLimiter.rollbackRequest('taskCreate');
+                }
+                return;
+            }
+
+            const task = {
+                id: Date.now(),
+                ...taskData,
+                createdAt: new Date().toISOString(),
+                history: [],
+                subtasks: [...this.tempSubtasks] // Übernehme temporäre Subtasks
+            };
+
+            // Initiale History erstellen
+            this.addHistoryEntry(task, 'created', {
+                title: task.title,
+                employee: task.employee,
+                location: task.location
+            });
+
+            this.tasks.push(task);
+            await this.saveTasks();
+            this.renderTasks();
+            this.updateStatistics();
+            this.updateEmployeeFilter();
+            this.updateLocationFilter();
+            
+            // Form reset
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.reset();
+            }
+            
+            // Reset tempSubtasks und Liste
+            this.tempSubtasks = [];
+            this.renderCreateSubtasksList();
+            
+            // Scroll zur neuen Aufgabe (falls auf Dashboard)
+            setTimeout(() => {
+                const newTaskElement = document.querySelector(`[data-task-id="${task.id}"]`);
+                if (newTaskElement) {
+                    newTaskElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+            
+            this.showNotification('✅ Aufgabe erfolgreich hinzugefügt!');
+            this.announce(`Neue Aufgabe "${task.title}" wurde hinzugefügt`);
+            
+        } catch (error) {
+            console.error('Fehler beim Hinzufügen der Aufgabe:', error);
+            
+            // Rollback Rate-Limiter
+            if (window.rateLimiter) {
+                window.rateLimiter.rollbackRequest('taskCreate');
+            }
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to add task: ' + error.message,
+                    error: error,
+                    function: 'addTask',
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Hinzufügen der Aufgabe. Bitte versuchen Sie es erneut.', 'error');
+        }
     }
 
     // Aufgabe löschen
     async deleteTask(id) {
-        const confirmed = await this.showConfirm({
-            title: 'Aufgabe löschen',
-            icon: '🗑️',
-            message: 'Möchten Sie diese Aufgabe wirklich löschen?',
-            confirmText: 'Löschen',
-            cancelText: 'Abbrechen',
-            danger: true
-        });
+        try {
+            // Rate-Limiting prüfen
+            if (window.rateLimiter) {
+                const limitResult = window.rateLimiter.checkLimit('taskDelete');
+                if (!limitResult.allowed) {
+                    window.rateLimiter.showRateLimitWarning('taskDelete', limitResult.resetMs);
+                    return;
+                }
+            }
 
-        if (confirmed) {
+            const confirmed = await this.showConfirm({
+                title: 'Aufgabe löschen',
+                icon: '🗑️',
+                message: 'Möchten Sie diese Aufgabe wirklich löschen?',
+                confirmText: 'Löschen',
+                cancelText: 'Abbrechen',
+                danger: true
+            });
+
+            if (!confirmed) {
+                // Benutzer hat abgebrochen - Rollback Rate-Limiter
+                if (window.rateLimiter) {
+                    window.rateLimiter.rollbackRequest('taskDelete');
+                }
+                return;
+            }
+
             // Animation abspielen
             const taskElement = document.querySelector(`[data-task-id="${id}"]`);
             if (taskElement) {
@@ -206,13 +265,38 @@ class GartenPlaner {
                 await new Promise(resolve => setTimeout(resolve, 400));
             }
 
+            // Backup der Aufgabe für möglichen Rollback
+            const deletedTask = this.tasks.find(task => task.id === id);
+            
             this.tasks = this.tasks.filter(task => task.id !== id);
-            this.saveTasks();
+            await this.saveTasks();
             this.renderTasks();
             this.updateStatistics();
             this.updateEmployeeFilter();
             this.updateLocationFilter();
             this.showNotification('🗑️ Aufgabe gelöscht');
+            
+        } catch (error) {
+            console.error('Fehler beim Löschen der Aufgabe:', error);
+            
+            // Rollback Rate-Limiter
+            if (window.rateLimiter) {
+                window.rateLimiter.rollbackRequest('taskDelete');
+            }
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to delete task: ' + error.message,
+                    error: error,
+                    function: 'deleteTask',
+                    taskId: id,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Löschen der Aufgabe. Bitte versuchen Sie es erneut.', 'error');
         }
     }
 
@@ -281,56 +365,95 @@ class GartenPlaner {
     }
 
     // Bearbeitete Aufgabe speichern
-    saveEditedTask(id) {
-        const task = this.tasks.find(t => t.id === id);
-        if (!task) return;
+    async saveEditedTask(id) {
+        try {
+            // Rate-Limiting prüfen
+            if (window.rateLimiter) {
+                const limitResult = window.rateLimiter.checkLimit('taskEdit', `task_${id}`);
+                if (!limitResult.allowed) {
+                    window.rateLimiter.showRateLimitWarning('taskEdit', limitResult.resetMs);
+                    return;
+                }
+            }
 
-        const oldTitle = task.title;
-        const oldEmployee = task.employee;
-        const oldLocation = task.location;
-        const oldDescription = task.description;
+            const task = this.tasks.find(t => t.id === id);
+            if (!task) {
+                throw new Error(`Task with id ${id} not found`);
+            }
 
-        // Input-Werte sanitizen und validieren
-        const taskData = {
-            title: Security.sanitizeText(document.getElementById('editTaskTitle').value),
-            employee: Security.sanitizeText(document.getElementById('editTaskEmployee').value),
-            location: Security.sanitizeText(document.getElementById('editTaskLocation').value),
-            description: Security.sanitizeText(document.getElementById('editTaskDescription').value),
-            status: task.status
-        };
+            const oldTitle = task.title;
+            const oldEmployee = task.employee;
+            const oldLocation = task.location;
+            const oldDescription = task.description;
 
-        // Validierung
-        const validation = Security.validateTask(taskData);
-        if (!validation.valid) {
-            this.showNotification('❌ ' + validation.errors.join(', '), 'error');
-            Security.logSecurityEvent('warning', 'Invalid task data on edit', validation.errors);
-            return;
+            // Input-Werte sanitizen und validieren
+            const taskData = {
+                title: Security.sanitizeText(document.getElementById('editTaskTitle').value),
+                employee: Security.sanitizeText(document.getElementById('editTaskEmployee').value),
+                location: Security.sanitizeText(document.getElementById('editTaskLocation').value),
+                description: Security.sanitizeText(document.getElementById('editTaskDescription').value),
+                status: task.status
+            };
+
+            // Validierung
+            const validation = Security.validateTask(taskData);
+            if (!validation.valid) {
+                this.showNotification('❌ ' + validation.errors.join(', '), 'error');
+                Security.logSecurityEvent('warning', 'Invalid task data on edit', validation.errors);
+                
+                // Rollback Rate-Limiter bei ungültigen Daten
+                if (window.rateLimiter) {
+                    window.rateLimiter.rollbackRequest('taskEdit', `task_${id}`);
+                }
+                return;
+            }
+
+            task.title = taskData.title;
+            task.employee = taskData.employee;
+            task.location = taskData.location;
+            task.description = taskData.description;
+
+            // History-Eintrag für Änderungen
+            const changes = [];
+            if (oldTitle !== task.title) changes.push(`Titel: "${oldTitle}" → "${task.title}"`);
+            if (oldEmployee !== task.employee) changes.push(`Mitarbeiter: "${oldEmployee}" → "${task.employee}"`);
+            if (oldLocation !== task.location) changes.push(`Standort: "${oldLocation}" → "${task.location}"`);
+            if (oldDescription !== task.description) changes.push('Beschreibung geändert');
+
+            if (changes.length > 0) {
+                this.addHistoryEntry(task, 'edited', {
+                    changes: changes
+                });
+            }
+
+            await this.saveTasks();
+            this.renderTasks();
+            this.updateStatistics();
+            this.updateEmployeeFilter();
+            this.updateLocationFilter();
+            this.showNotification('✅ Aufgabe erfolgreich aktualisiert!');
+        } catch (error) {
+            console.error('Fehler in saveEditedTask:', error);
+            
+            // Rollback Rate-Limiter
+            if (window.rateLimiter) {
+                window.rateLimiter.rollbackRequest('taskEdit', `task_${id}`);
+            }
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to save edited task: ' + error.message,
+                    error: error,
+                    function: 'saveEditedTask',
+                    context: { taskId: id },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Speichern der Aufgabe. Bitte versuchen Sie es erneut.', 'error');
         }
-
-        task.title = taskData.title;
-        task.employee = taskData.employee;
-        task.location = taskData.location;
-        task.description = taskData.description;
-
-        // History-Eintrag für Änderungen
-        const changes = [];
-        if (oldTitle !== task.title) changes.push(`Titel: "${oldTitle}" → "${task.title}"`);
-        if (oldEmployee !== task.employee) changes.push(`Mitarbeiter: "${oldEmployee}" → "${task.employee}"`);
-        if (oldLocation !== task.location) changes.push(`Standort: "${oldLocation}" → "${task.location}"`);
-        if (oldDescription !== task.description) changes.push('Beschreibung geändert');
-
-        if (changes.length > 0) {
-            this.addHistoryEntry(task, 'edited', {
-                changes: changes
-            });
-        }
-
-        this.saveTasks();
-        this.renderTasks();
-        this.updateStatistics();
-        this.updateEmployeeFilter();
-        this.updateLocationFilter();
-        this.showNotification('✅ Aufgabe erfolgreich aktualisiert!');
     }
 
     // Archiv-Ansicht umschalten
@@ -360,71 +483,151 @@ class GartenPlaner {
     }
 
     // Aufgabe archivieren
-    archiveTask(id) {
-        const task = this.tasks.find(t => t.id === id);
-        if (!task) return;
+    async archiveTask(id) {
+        try {
+            const task = this.tasks.find(t => t.id === id);
+            if (!task) {
+                throw new Error(`Task with id ${id} not found`);
+            }
 
-        if (confirm('Möchten Sie diese Aufgabe wirklich archivieren?')) {
-            // Füge Archivierungsdatum hinzu
-            task.archivedAt = new Date().toISOString();
-            
-            // History-Eintrag
-            this.addHistoryEntry(task, 'archived', {});
-            
-            // Verschiebe in Archiv
-            this.archivedTasks.push(task);
-            this.tasks = this.tasks.filter(t => t.id !== id);
+            if (confirm('Möchten Sie diese Aufgabe wirklich archivieren?')) {
+                // Backup der Aufgabe für mögliches Rollback
+                const taskBackup = JSON.parse(JSON.stringify(task));
+                
+                // Füge Archivierungsdatum hinzu
+                task.archivedAt = new Date().toISOString();
+                
+                // History-Eintrag
+                this.addHistoryEntry(task, 'archived', {});
+                
+                // Verschiebe in Archiv
+                this.archivedTasks.push(task);
+                this.tasks = this.tasks.filter(t => t.id !== id);
 
-            this.saveTasks();
-            this.saveArchivedTasks();
-            this.renderTasks();
-            this.updateStatistics();
-            this.updateEmployeeFilter();
-            this.updateLocationFilter();
-            this.showNotification('📦 Aufgabe archiviert');
+                await this.saveTasks();
+                await this.saveArchivedTasks();
+                this.renderTasks();
+                this.updateStatistics();
+                this.updateEmployeeFilter();
+                this.updateLocationFilter();
+                this.showNotification('📦 Aufgabe archiviert');
+            }
+        } catch (error) {
+            console.error('Fehler in archiveTask:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to archive task: ' + error.message,
+                    error: error,
+                    function: 'archiveTask',
+                    context: { taskId: id },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Archivieren der Aufgabe. Bitte versuchen Sie es erneut.', 'error');
         }
     }
 
     // Aufgabe aus Archiv wiederherstellen
-    unarchiveTask(id) {
-        const task = this.archivedTasks.find(t => t.id === id);
-        if (!task) return;
+    async unarchiveTask(id) {
+        try {
+            const task = this.archivedTasks.find(t => t.id === id);
+            if (!task) {
+                throw new Error(`Archived task with id ${id} not found`);
+            }
 
-        if (confirm('Möchten Sie diese Aufgabe wiederherstellen?')) {
-            // Entferne Archivierungsdatum
-            delete task.archivedAt;
-            
-            // History-Eintrag
-            this.addHistoryEntry(task, 'unarchived', {});
-            
-            // Verschiebe zurück zu aktiven Aufgaben
-            this.tasks.push(task);
-            this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+            if (confirm('Möchten Sie diese Aufgabe wiederherstellen?')) {
+                // Backup für mögliches Rollback
+                const taskBackup = JSON.parse(JSON.stringify(task));
+                
+                // Entferne Archivierungsdatum
+                delete task.archivedAt;
+                
+                // History-Eintrag
+                this.addHistoryEntry(task, 'unarchived', {});
+                
+                // Verschiebe zurück zu aktiven Aufgaben
+                this.tasks.push(task);
+                this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
 
-            this.saveTasks();
-            this.saveArchivedTasks();
-            this.renderTasks();
-            this.updateStatistics();
-            this.updateEmployeeFilter();
-            this.updateLocationFilter();
-            this.showNotification('↻ Aufgabe wiederhergestellt');
+                await this.saveTasks();
+                await this.saveArchivedTasks();
+                this.renderTasks();
+                this.updateStatistics();
+                this.updateEmployeeFilter();
+                this.updateLocationFilter();
+                this.showNotification('↻ Aufgabe wiederhergestellt');
+            }
+        } catch (error) {
+            console.error('Fehler in unarchiveTask:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to unarchive task: ' + error.message,
+                    error: error,
+                    function: 'unarchiveTask',
+                    context: { taskId: id },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Wiederherstellen der Aufgabe. Bitte versuchen Sie es erneut.', 'error');
         }
     }
 
     // Archivierte Aufgabe endgültig löschen
-    deleteArchivedTask(id) {
-        if (confirm('Möchten Sie diese archivierte Aufgabe endgültig löschen?')) {
-            this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
-            this.saveArchivedTasks();
-            this.renderTasks();
-            this.showNotification('🗑️ Archivierte Aufgabe gelöscht');
+    async deleteArchivedTask(id) {
+        try {
+            const task = this.archivedTasks.find(t => t.id === id);
+            if (!task) {
+                throw new Error(`Archived task with id ${id} not found`);
+            }
+            
+            if (confirm('Möchten Sie diese archivierte Aufgabe endgültig löschen?')) {
+                // Backup für mögliches Rollback
+                const taskBackup = JSON.parse(JSON.stringify(task));
+                
+                this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+                await this.saveArchivedTasks();
+                this.renderTasks();
+                this.showNotification('🗑️ Archivierte Aufgabe gelöscht');
+            }
+        } catch (error) {
+            console.error('Fehler in deleteArchivedTask:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to delete archived task: ' + error.message,
+                    error: error,
+                    function: 'deleteArchivedTask',
+                    context: { taskId: id },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Löschen der archivierten Aufgabe. Bitte versuchen Sie es erneut.', 'error');
         }
     }
 
     // Aufgabe als erledigt markieren
     async toggleTaskStatus(id) {
-        const task = this.tasks.find(task => task.id === id);
-        if (task) {
+        try {
+            const task = this.tasks.find(task => task.id === id);
+            if (!task) {
+                throw new Error(`Task with id ${id} not found`);
+            }
+            
+            // Backup für mögliches Rollback
+            const oldStatus = task.status;
+            const oldCompletedAt = task.completedAt;
+            
             // Animation abspielen beim Erledigen
             if (task.status === 'pending') {
                 const taskElement = document.querySelector(`[data-task-id="${id}"]`);
@@ -434,7 +637,6 @@ class GartenPlaner {
                 }
             }
 
-            const oldStatus = task.status;
             task.status = task.status === 'pending' ? 'completed' : 'pending';
             task.completedAt = task.status === 'completed' ? new Date().toISOString() : null;
             
@@ -444,10 +646,26 @@ class GartenPlaner {
                 to: task.status
             });
             
-            this.saveTasks();
+            await this.saveTasks();
             this.renderTasks();
             this.updateStatistics();
             this.showNotification(task.status === 'completed' ? '✅ Aufgabe erledigt!' : '🔄 Aufgabe reaktiviert');
+        } catch (error) {
+            console.error('Fehler in toggleTaskStatus:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to toggle task status: ' + error.message,
+                    error: error,
+                    function: 'toggleTaskStatus',
+                    context: { taskId: id },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Ändern des Aufgabenstatus. Bitte versuchen Sie es erneut.', 'error');
         }
     }
 
@@ -1153,65 +1371,159 @@ class GartenPlaner {
     }
 
     // Daten speichern (LocalStorage)
-    saveTasks() {
-        // Verwende SafeStorage für fehlertolerantes Speichern
-        const success = SafeStorage.setItem('gartenplaner_tasks', this.tasks);
-        if (!success) {
+    async saveTasks() {
+        try {
+            // Verwende SafeStorage für fehlertolerantes Speichern
+            const success = SafeStorage.setItem('gartenplaner_tasks', this.tasks);
+            if (!success) {
+                throw new Error('Failed to save tasks to storage');
+            }
+        } catch (error) {
+            console.error('Fehler in saveTasks:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'storage',
+                    message: 'Failed to save tasks: ' + error.message,
+                    error: error,
+                    function: 'saveTasks',
+                    context: { taskCount: this.tasks.length },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             this.showNotification('⚠️ Speichern fehlgeschlagen. Speicherplatz voll?', 'error');
+            throw error; // Re-throw für Aufrufer
         }
     }
 
     // Daten laden (LocalStorage)
     loadTasks() {
-        // Verwende SafeStorage für fehlertolerantes Laden
-        return SafeStorage.getItem('gartenplaner_tasks', []);
+        try {
+            // Verwende SafeStorage für fehlertolerantes Laden
+            return SafeStorage.getItem('gartenplaner_tasks', []);
+        } catch (error) {
+            console.error('Fehler in loadTasks:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'storage',
+                    message: 'Failed to load tasks: ' + error.message,
+                    error: error,
+                    function: 'loadTasks',
+                    context: {},
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('⚠️ Laden der Aufgaben fehlgeschlagen. Leere Liste wird verwendet.', 'error');
+            return []; // Fallback zu leerer Liste
+        }
     }
 
     // Archivierte Aufgaben laden
     loadArchivedTasks() {
-        // Verwende SafeStorage für fehlertolerantes Laden
-        return SafeStorage.getItem('gartenplaner_archived_tasks', []);
+        try {
+            // Verwende SafeStorage für fehlertolerantes Laden
+            return SafeStorage.getItem('gartenplaner_archived_tasks', []);
+        } catch (error) {
+            console.error('Fehler in loadArchivedTasks:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'storage',
+                    message: 'Failed to load archived tasks: ' + error.message,
+                    error: error,
+                    function: 'loadArchivedTasks',
+                    context: {},
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            return []; // Fallback zu leerer Liste
+        }
     }
 
     // Archivierte Aufgaben speichern
-    saveArchivedTasks() {
-        // Verwende SafeStorage für fehlertolerantes Speichern
-        const success = SafeStorage.setItem('gartenplaner_archived_tasks', this.archivedTasks);
-        if (!success) {
+    async saveArchivedTasks() {
+        try {
+            // Verwende SafeStorage für fehlertolerantes Speichern
+            const success = SafeStorage.setItem('gartenplaner_archived_tasks', this.archivedTasks);
+            if (!success) {
+                throw new Error('Failed to save archived tasks to storage');
+            }
+        } catch (error) {
+            console.error('Fehler in saveArchivedTasks:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'storage',
+                    message: 'Failed to save archived tasks: ' + error.message,
+                    error: error,
+                    function: 'saveArchivedTasks',
+                    context: { archivedTaskCount: this.archivedTasks.length },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
             this.showNotification('⚠️ Archiv-Speichern fehlgeschlagen', 'error');
+            throw error; // Re-throw für Aufrufer
         }
     }
 
     // Daten exportieren
     exportData() {
-        const dataStr = JSON.stringify(this.tasks, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `gartenplaner_backup_${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        this.showNotification('💾 Daten exportiert!');
+        try {
+            const dataStr = JSON.stringify(this.tasks, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gartenplaner_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            this.showNotification('💾 Daten exportiert!');
+        } catch (error) {
+            console.error('Fehler in exportData:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to export data: ' + error.message,
+                    error: error,
+                    function: 'exportData',
+                    context: { taskCount: this.tasks.length },
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Exportieren der Daten. Bitte versuchen Sie es erneut.', 'error');
+        }
     }
 
     // PDF exportieren
     async exportPDF() {
-        // Prüfe ob jsPDF verfügbar ist
-        if (typeof window.jspdf === 'undefined') {
-            await this.showConfirm({
-                title: 'Fehler',
-                icon: '❌',
-                message: 'PDF-Export ist nicht verfügbar. Bitte laden Sie die Seite neu.',
-                confirmText: 'OK',
-                cancelText: '',
-                danger: false
-            });
-            return;
-        }
+        try {
+            // Prüfe ob jsPDF verfügbar ist
+            if (typeof window.jspdf === 'undefined') {
+                await this.showConfirm({
+                    title: 'Fehler',
+                    icon: '❌',
+                    message: 'PDF-Export ist nicht verfügbar. Bitte laden Sie die Seite neu.',
+                    confirmText: 'OK',
+                    cancelText: '',
+                    danger: false
+                });
+                return;
+            }
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
         // Filtere Aufgaben basierend auf aktuellen Filtern
         const tasksToExport = this.getFilteredTasks();
@@ -1325,84 +1637,157 @@ class GartenPlaner {
             doc.text(`Seite ${i} von ${pageCount}`, 196, 290, { align: 'right' });
         }
 
-        // PDF speichern
-        const filename = `gartenplaner_aufgaben_${new Date().toISOString().split('T')[0]}.pdf`;
-        doc.save(filename);
-        this.showNotification('📄 PDF erfolgreich exportiert!');
+            // PDF speichern
+            const filename = `gartenplaner_aufgaben_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(filename);
+            this.showNotification('📄 PDF erfolgreich exportiert!');
+        } catch (error) {
+            console.error('Fehler in exportPDF:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to export PDF: ' + error.message,
+                    error: error,
+                    function: 'exportPDF',
+                    context: {},
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim PDF-Export. Bitte versuchen Sie es erneut.', 'error');
+        }
     }
 
     // Daten importieren
     async importData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+        try {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const imported = JSON.parse(e.target.result);
-                const confirmed = await this.showConfirm({
-                    title: 'Daten importieren',
-                    icon: '📥',
-                    message: `${imported.length} Aufgaben gefunden. Möchten Sie diese importieren?\n\nAchtung: Aktuelle Daten werden überschrieben!`,
-                    confirmText: 'Importieren',
-                    cancelText: 'Abbrechen',
-                    danger: false
-                });
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    const confirmed = await this.showConfirm({
+                        title: 'Daten importieren',
+                        icon: '📥',
+                        message: `${imported.length} Aufgaben gefunden. Möchten Sie diese importieren?\n\nAchtung: Aktuelle Daten werden überschrieben!`,
+                        confirmText: 'Importieren',
+                        cancelText: 'Abbrechen',
+                        danger: false
+                    });
 
-                if (confirmed) {
-                    this.tasks = imported;
-                    this.saveTasks();
-                    this.renderTasks();
-                    this.updateStatistics();
-                    this.updateEmployeeFilter();
-                    this.updateLocationFilter();
-                    this.showNotification('📥 Daten erfolgreich importiert!');
+                    if (confirmed) {
+                        // Backup aktuelle Daten
+                        const backup = JSON.parse(JSON.stringify(this.tasks));
+                        
+                        this.tasks = imported;
+                        await this.saveTasks();
+                        this.renderTasks();
+                        this.updateStatistics();
+                        this.updateEmployeeFilter();
+                        this.updateLocationFilter();
+                        this.showNotification('📥 Daten erfolgreich importiert!');
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Parsen der Import-Datei:', error);
+                    
+                    // Error Boundary benachrichtigen
+                    if (window.errorBoundary) {
+                        window.errorBoundary.handleError({
+                            type: 'runtime',
+                            message: 'Failed to parse import file: ' + error.message,
+                            error: error,
+                            function: 'importData',
+                            context: { fileName: file.name },
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                    
+                    await this.showConfirm({
+                        title: 'Fehler',
+                        icon: '❌',
+                        message: 'Fehler beim Importieren: Ungültige Datei',
+                        confirmText: 'OK',
+                        cancelText: '',
+                        danger: true
+                    });
                 }
-            } catch (error) {
-                await this.showConfirm({
-                    title: 'Fehler',
-                    icon: '❌',
-                    message: 'Fehler beim Importieren: Ungültige Datei',
-                    confirmText: 'OK',
-                    cancelText: '',
-                    danger: true
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        } catch (error) {
+            console.error('Fehler in importData:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to import data: ' + error.message,
+                    error: error,
+                    function: 'importData',
+                    context: {},
+                    timestamp: new Date().toISOString()
                 });
             }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
+            
+            this.showNotification('❌ Fehler beim Importieren der Daten. Bitte versuchen Sie es erneut.', 'error');
+        }
     }
 
     // Alle Daten löschen
     async clearAllData() {
-        const confirmed1 = await this.showConfirm({
-            title: '⚠️ WARNUNG',
-            icon: '⚠️',
-            message: 'Möchten Sie wirklich ALLE Daten löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!',
-            confirmText: 'Weiter',
-            cancelText: 'Abbrechen',
-            danger: true
-        });
-
-        if (confirmed1) {
-            const confirmed2 = await this.showConfirm({
-                title: '⚠️ LETZTE WARNUNG',
-                icon: '🚨',
-                message: 'Sind Sie sich absolut sicher?\n\nAlle Aufgaben werden unwiderruflich gelöscht!',
-                confirmText: 'Ja, alles löschen',
+        try {
+            const confirmed1 = await this.showConfirm({
+                title: '⚠️ WARNUNG',
+                icon: '⚠️',
+                message: 'Möchten Sie wirklich ALLE Daten löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!',
+                confirmText: 'Weiter',
                 cancelText: 'Abbrechen',
                 danger: true
             });
 
-            if (confirmed2) {
-                this.tasks = [];
-                this.saveTasks();
-                this.renderTasks();
-                this.updateStatistics();
-                this.updateEmployeeFilter();
-                this.updateLocationFilter();
-                this.showNotification('🗑️ Alle Daten gelöscht');
+            if (confirmed1) {
+                const confirmed2 = await this.showConfirm({
+                    title: '⚠️ LETZTE WARNUNG',
+                    icon: '🚨',
+                    message: 'Sind Sie sich absolut sicher?\n\nAlle Aufgaben werden unwiderruflich gelöscht!',
+                    confirmText: 'Ja, alles löschen',
+                    cancelText: 'Abbrechen',
+                    danger: true
+                });
+
+                if (confirmed2) {
+                    // Backup für mögliche Wiederherstellung
+                    const backup = JSON.parse(JSON.stringify(this.tasks));
+                    
+                    this.tasks = [];
+                    await this.saveTasks();
+                    this.renderTasks();
+                    this.updateStatistics();
+                    this.updateEmployeeFilter();
+                    this.updateLocationFilter();
+                    this.showNotification('🗑️ Alle Daten gelöscht');
+                }
             }
+        } catch (error) {
+            console.error('Fehler in clearAllData:', error);
+            
+            // Error Boundary benachrichtigen
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'runtime',
+                    message: 'Failed to clear all data: ' + error.message,
+                    error: error,
+                    function: 'clearAllData',
+                    context: {},
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            this.showNotification('❌ Fehler beim Löschen der Daten. Bitte versuchen Sie es erneut.', 'error');
         }
     }
 

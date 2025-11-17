@@ -432,6 +432,16 @@ const SafeStorage = {
 
     async setItem(key, value) {
         try {
+            // Rate-Limiting für Storage-Operationen
+            if (window.rateLimiter && key.startsWith('gartenplaner_')) {
+                const limitResult = window.rateLimiter.checkLimit('storage', key);
+                if (!limitResult.allowed) {
+                    console.warn('Storage rate limit exceeded');
+                    window.rateLimiter.showRateLimitWarning('storage', limitResult.resetMs);
+                    return false;
+                }
+            }
+
             // Prüfe Storage-Quota vor dem Speichern
             if (window.errorBoundary && key.startsWith('gartenplaner_')) {
                 const canSave = window.errorBoundary.checkStorageQuota();
@@ -453,6 +463,11 @@ const SafeStorage = {
             return true;
         } catch (error) {
             console.error(`Error writing to localStorage [${key}]:`, error);
+            
+            // Rollback Rate-Limiter bei Fehler
+            if (window.rateLimiter && key.startsWith('gartenplaner_')) {
+                window.rateLimiter.rollbackRequest('storage', key);
+            }
             
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
