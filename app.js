@@ -137,10 +137,15 @@ class GartenPlaner {
             description: document.getElementById('taskDescription').value,
             status: 'pending',
             createdAt: new Date().toISOString(),
-            recurrence: recurrence || 'none',
-            lastRecurrence: recurrence !== 'none' ? new Date().toISOString() : null,
-            nextDue: recurrence !== 'none' ? this.calculateNextDue(recurrence) : null
+            history: []
         };
+
+        // Initiale History erstellen
+        this.addHistoryEntry(task, 'created', {
+            title: task.title,
+            employee: task.employee,
+            location: task.location
+        });
 
         this.tasks.push(task);
         this.saveTasks();
@@ -254,10 +259,28 @@ class GartenPlaner {
         const task = this.tasks.find(t => t.id === id);
         if (!task) return;
 
+        const oldTitle = task.title;
+        const oldEmployee = task.employee;
+        const oldLocation = task.location;
+        const oldDescription = task.description;
+
         task.title = document.getElementById('editTaskTitle').value;
         task.employee = document.getElementById('editTaskEmployee').value;
         task.location = document.getElementById('editTaskLocation').value;
         task.description = document.getElementById('editTaskDescription').value;
+
+        // History-Eintrag für Änderungen
+        const changes = [];
+        if (oldTitle !== task.title) changes.push(`Titel: "${oldTitle}" → "${task.title}"`);
+        if (oldEmployee !== task.employee) changes.push(`Mitarbeiter: "${oldEmployee}" → "${task.employee}"`);
+        if (oldLocation !== task.location) changes.push(`Standort: "${oldLocation}" → "${task.location}"`);
+        if (oldDescription !== task.description) changes.push('Beschreibung geändert');
+
+        if (changes.length > 0) {
+            this.addHistoryEntry(task, 'edited', {
+                changes: changes
+            });
+        }
 
         this.saveTasks();
         this.renderTasks();
@@ -302,6 +325,9 @@ class GartenPlaner {
             // Füge Archivierungsdatum hinzu
             task.archivedAt = new Date().toISOString();
             
+            // History-Eintrag
+            this.addHistoryEntry(task, 'archived', {});
+            
             // Verschiebe in Archiv
             this.archivedTasks.push(task);
             this.tasks = this.tasks.filter(t => t.id !== id);
@@ -324,6 +350,9 @@ class GartenPlaner {
         if (confirm('Möchten Sie diese Aufgabe wiederherstellen?')) {
             // Entferne Archivierungsdatum
             delete task.archivedAt;
+            
+            // History-Eintrag
+            this.addHistoryEntry(task, 'unarchived', {});
             
             // Verschiebe zurück zu aktiven Aufgaben
             this.tasks.push(task);
@@ -362,8 +391,16 @@ class GartenPlaner {
                 }
             }
 
+            const oldStatus = task.status;
             task.status = task.status === 'pending' ? 'completed' : 'pending';
             task.completedAt = task.status === 'completed' ? new Date().toISOString() : null;
+            
+            // History-Eintrag
+            this.addHistoryEntry(task, task.status === 'completed' ? 'completed' : 'reopened', {
+                from: oldStatus,
+                to: task.status
+            });
+            
             this.saveTasks();
             this.renderTasks();
             this.updateStatistics();
@@ -942,6 +979,107 @@ class GartenPlaner {
             });
             statThisWeek.textContent = weekTasks.length;
         }
+
+        // History-Timeline rendern
+        this.renderHistory();
+    }
+
+    // History-Timeline rendern
+    renderHistory() {
+        const historyTimeline = document.getElementById('historyTimeline');
+        if (!historyTimeline) return;
+
+        const allHistory = this.getAllHistory();
+
+        if (allHistory.length === 0) {
+            historyTimeline.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📜</div>
+                    <h3>Noch keine Historie vorhanden</h3>
+                    <p>Änderungen an Aufgaben werden hier angezeigt.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Limit auf 50 neueste Einträge
+        const recentHistory = allHistory.slice(0, 50);
+
+        historyTimeline.innerHTML = recentHistory.map(entry => {
+            const date = new Date(entry.timestamp);
+            const timeAgo = this.getTimeAgo(date);
+            const formattedDate = date.toLocaleString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const actionInfo = this.getActionInfo(entry.action);
+            const detailsHTML = this.getHistoryDetailsHTML(entry);
+
+            return `
+                <div class="history-item">
+                    <div class="history-icon" style="background: ${actionInfo.color};">
+                        ${actionInfo.icon}
+                    </div>
+                    <div class="history-content">
+                        <div class="history-header">
+                            <strong>${actionInfo.label}</strong>
+                            <span class="history-task-title">"${entry.taskTitle}"</span>
+                        </div>
+                        <div class="history-meta">
+                            <span class="history-employee">${entry.taskEmployee}</span>
+                            <span class="history-time" title="${formattedDate}">${timeAgo}</span>
+                        </div>
+                        ${detailsHTML ? `<div class="history-details">${detailsHTML}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Action Info (Icon, Label, Farbe)
+    getActionInfo(action) {
+        const actions = {
+            'created': { icon: '➕', label: 'Erstellt', color: '#27ae60' },
+            'edited': { icon: '✏️', label: 'Bearbeitet', color: '#3498db' },
+            'completed': { icon: '✅', label: 'Erledigt', color: '#2ecc71' },
+            'reopened': { icon: '🔄', label: 'Wiedereröffnet', color: '#f39c12' },
+            'archived': { icon: '📦', label: 'Archiviert', color: '#95a5a6' },
+            'unarchived': { icon: '↻', label: 'Wiederhergestellt', color: '#9b59b6' },
+            'deleted': { icon: '🗑️', label: 'Gelöscht', color: '#e74c3c' }
+        };
+
+        return actions[action] || { icon: '📝', label: action, color: '#7f8c8d' };
+    }
+
+    // History Details HTML erstellen
+    getHistoryDetailsHTML(entry) {
+        if (!entry.details) return '';
+
+        if (entry.action === 'created') {
+            return `Mitarbeiter: ${entry.details.employee}, Standort: ${entry.details.location}`;
+        }
+
+        if (entry.action === 'edited' && entry.details.changes) {
+            return entry.details.changes.join('<br>');
+        }
+
+        return '';
+    }
+
+    // Zeit seit... berechnen
+    getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        
+        if (seconds < 60) return 'Gerade eben';
+        if (seconds < 3600) return `vor ${Math.floor(seconds / 60)} Min.`;
+        if (seconds < 86400) return `vor ${Math.floor(seconds / 3600)} Std.`;
+        if (seconds < 604800) return `vor ${Math.floor(seconds / 86400)} Tag(en)`;
+        
+        return date.toLocaleDateString('de-DE');
     }
 
     // Daten speichern (LocalStorage)
@@ -1517,6 +1655,59 @@ class GartenPlaner {
             toolbar.style.display = this.bulkMode ? 'flex' : 'none';
             countSpan.textContent = this.selectedTasks.size;
         }
+    }
+
+    // History-Eintrag hinzufügen
+    addHistoryEntry(task, action, details = {}) {
+        if (!task.history) {
+            task.history = [];
+        }
+
+        const entry = {
+            timestamp: new Date().toISOString(),
+            action: action,
+            details: details
+        };
+
+        task.history.push(entry);
+    }
+
+    // Alle History-Einträge sammeln (für Statistik-Seite)
+    getAllHistory() {
+        const allHistory = [];
+
+        // History aus aktiven Tasks
+        this.tasks.forEach(task => {
+            if (task.history && task.history.length > 0) {
+                task.history.forEach(entry => {
+                    allHistory.push({
+                        ...entry,
+                        taskId: task.id,
+                        taskTitle: task.title,
+                        taskEmployee: task.employee
+                    });
+                });
+            }
+        });
+
+        // History aus archivierten Tasks
+        this.archivedTasks.forEach(task => {
+            if (task.history && task.history.length > 0) {
+                task.history.forEach(entry => {
+                    allHistory.push({
+                        ...entry,
+                        taskId: task.id,
+                        taskTitle: task.title,
+                        taskEmployee: task.employee
+                    });
+                });
+            }
+        });
+
+        // Nach Timestamp sortieren (neueste zuerst)
+        allHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        return allHistory;
     }
 
     setupBulkActionListeners() {
