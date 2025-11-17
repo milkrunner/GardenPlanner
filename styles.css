@@ -405,6 +405,122 @@ textarea {
     flex-wrap: wrap;
 }
 
+/* Search Section */
+.search-section {
+    padding: 2rem 3rem 1rem;
+}
+
+.search-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--text-light);
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.search-input {
+    width: 100%;
+    padding: 14px 48px 14px 48px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 1rem;
+    background: var(--bg-secondary);
+    color: var(--text);
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(27, 94, 63, 0.1), 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus + .search-icon {
+    color: var(--primary);
+}
+
+.search-input::placeholder {
+    color: var(--text-light);
+    opacity: 0.6;
+}
+
+[data-theme="dark"] .search-input {
+    background: #252525;
+    border-color: #404040;
+    color: #e5e5e5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.15), 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .search-input::placeholder {
+    color: #888;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--danger);
+}
+
+[data-theme="dark"] .clear-search-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.search-results {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+}
+
+[data-theme="dark"] .search-results {
+    background: #1a1a1a;
+    border-color: #2a2a2a;
+}
+
+#searchResultCount {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 1rem;
+}
+
 /* Filters */
 .filters {
     display: flex;
