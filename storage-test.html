@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Test - Gartenplaner</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2c5f2d; }
+        h2 { color: #4a7c59; }
+        .control-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .control-btn {
+            background: #2c5f2d;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .control-btn:hover { 
+            background: #1e4620; 
+        }
+        .control-btn.warning {
+            background: #ff9800;
+        }
+        .control-btn.warning:hover {
+            background: #f57c00;
+        }
+        .control-btn.danger {
+            background: #dc2626;
+        }
+        .control-btn.danger:hover {
+            background: #b91c1c;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c5f2d;
+        }
+        .stat-label {
+            color: #4a7c59;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .progress-bar {
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+            transition: width 0.3s, background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+        }
+        .progress-fill.critical {
+            background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
+        }
+        #storageDetails {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        .info-box strong {
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <h1>📊 Storage Test Suite - Gartenplaner</h1>
+    <p>Diese Seite testet die LocalStorage-Überwachung und Warnsystem.</p>
+
+    <div class="test-section">
+        <h2>📈 Storage Statistiken</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSize">0 KB</div>
+                <div class="stat-label">Gesamtgröße</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="itemCount">0</div>
+                <div class="stat-label">Einträge</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="usagePercent">0%</div>
+                <div class="stat-label">Auslastung</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="quotaEstimate">~5 MB</div>
+                <div class="stat-label">Geschätzte Quota</div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+        </div>
+
+        <div class="info-box">
+            <strong>ℹ️ Info:</strong> LocalStorage-Quota variiert je nach Browser (typischerweise 5-10MB). 
+            Warnungen erscheinen ab 75%, kritisch ab 90%.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Test-Steuerung</h2>
+        <div class="control-panel">
+            <button class="control-btn" onclick="refreshStats()">🔄 Aktualisieren</button>
+            <button class="control-btn" onclick="fillStorage(1)">➕ 1 MB hinzufügen</button>
+            <button class="control-btn" onclick="fillStorage(0.5)">➕ 500 KB hinzufügen</button>
+            <button class="control-btn" onclick="fillStorage(0.1)">➕ 100 KB hinzufügen</button>
+            <button class="control-btn warning" onclick="triggerWarning()">⚠️ Warnung testen</button>
+            <button class="control-btn danger" onclick="triggerCritical()">🚨 Kritisch testen</button>
+            <button class="control-btn" onclick="testQuotaCheck()">✅ Quota-Check testen</button>
+            <button class="control-btn danger" onclick="clearTestData()">🗑️ Testdaten löschen</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Storage Details</h2>
+        <div id="storageDetails">Klicken Sie auf "Aktualisieren" um Details anzuzeigen...</div>
+    </div>
+
+    <script src="security.js"></script>
+    <script src="error-handler.js"></script>
+    <script>
+        // Aktualisiere Statistiken
+        function refreshStats() {
+            const usage = window.errorBoundary.getStorageUsage();
+            if (!usage) {
+                console.error('Konnte Storage-Nutzung nicht ermitteln');
+                return;
+            }
+
+            // Update Stats Cards
+            document.getElementById('totalSize').textContent = usage.totalSizeKB + ' KB';
+            document.getElementById('itemCount').textContent = usage.itemCount;
+            document.getElementById('usagePercent').textContent = usage.usagePercent + '%';
+            document.getElementById('quotaEstimate').textContent = '~' + usage.estimatedQuotaMB + ' MB';
+
+            // Update Progress Bar
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = usage.usagePercent + '%';
+            progressBar.textContent = usage.usagePercent + '%';
+            
+            // Color based on usage
+            progressBar.className = 'progress-fill';
+            if (usage.isCritical) {
+                progressBar.classList.add('critical');
+            } else if (usage.isWarning) {
+                progressBar.classList.add('warning');
+            }
+
+            // Update Details
+            const detailsDiv = document.getElementById('storageDetails');
+            let detailsText = `=== LocalStorage Übersicht ===\n\n`;
+            detailsText += `Gesamtgröße: ${usage.totalSizeMB} MB (${usage.totalSizeKB} KB)\n`;
+            detailsText += `Einträge: ${usage.itemCount}\n`;
+            detailsText += `Auslastung: ${usage.usagePercent}%\n`;
+            detailsText += `Geschätzte Quota: ${usage.estimatedQuotaMB} MB\n`;
+            detailsText += `Status: ${usage.isCritical ? '🚨 KRITISCH' : usage.isWarning ? '⚠️ WARNUNG' : '✅ OK'}\n\n`;
+            
+            detailsText += `=== Gartenplaner Einträge ===\n\n`;
+            for (const [key, detail] of Object.entries(usage.details)) {
+                detailsText += `${key}:\n`;
+                detailsText += `  Größe: ${detail.sizeKB} KB\n`;
+                detailsText += `  Vorschau: ${detail.preview}...\n\n`;
+            }
+
+            detailsDiv.textContent = detailsText;
+
+            console.log('📊 Stats aktualisiert:', usage);
+        }
+
+        // Füge Testdaten hinzu
+        function fillStorage(sizeMB) {
+            const sizeBytes = sizeMB * 1024 * 1024;
+            const chunkSize = 10000; // 10KB chunks
+            const numChunks = Math.ceil(sizeBytes / chunkSize);
+            
+            try {
+                for (let i = 0; i < numChunks; i++) {
+                    const key = `test_data_${Date.now()}_${i}`;
+                    const value = 'x'.repeat(chunkSize);
+                    localStorage.setItem(key, value);
+                }
+                console.log(`✅ ${sizeMB} MB Testdaten hinzugefügt`);
+                refreshStats();
+            } catch (error) {
+                console.error('❌ Fehler beim Hinzufügen von Daten:', error);
+                refreshStats();
+            }
+        }
+
+        // Lösche Testdaten
+        function clearTestData() {
+            let count = 0;
+            const keysToDelete = [];
+            
+            for (let key in localStorage) {
+                if (key.startsWith('test_data_')) {
+                    keysToDelete.push(key);
+                }
+            }
+            
+            keysToDelete.forEach(key => {
+                localStorage.removeItem(key);
+                count++;
+            });
+            
+            console.log(`🗑️ ${count} Testeinträge gelöscht`);
+            refreshStats();
+        }
+
+        // Teste Warnung
+        function triggerWarning() {
+            const usage = window.errorBoundary.getStorageUsage();
+            if (!usage) return;
+            
+            // Simuliere Warnschwelle
+            const mockUsage = {
+                ...usage,
+                usagePercent: '76.5',
+                isWarning: true,
+                isCritical: false
+            };
+            
+            window.errorBoundary.showStorageWarning('warning', mockUsage);
+            console.log('⚠️ Warnung ausgelöst');
+        }
+
+        // Teste kritische Warnung
+        function triggerCritical() {
+            const usage = window.errorBoundary.getStorageUsage();
+            if (!usage) return;
+            
+            // Simuliere kritische Schwelle
+            const mockUsage = {
+                ...usage,
+                usagePercent: '92.3',
+                isWarning: true,
+                isCritical: true
+            };
+            
+            window.errorBoundary.showStorageWarning('critical', mockUsage);
+            console.log('🚨 Kritische Warnung ausgelöst');
+        }
+
+        // Teste Quota-Check
+        function testQuotaCheck() {
+            const canSave = window.errorBoundary.checkStorageQuota();
+            console.log('✅ Quota-Check Ergebnis:', canSave ? 'Speichern erlaubt' : 'Speichern blockiert');
+            
+            if (canSave) {
+                alert('✅ Quota-Check erfolgreich: Speichern ist erlaubt');
+            } else {
+                alert('🚨 Quota-Check fehlgeschlagen: Speichern ist blockiert (>90% Auslastung)');
+            }
+            
+            refreshStats();
+        }
+
+        // Test: Automatisches Monitoring
+        function testAutoMonitoring() {
+            console.log('📊 Storage-Monitoring läuft automatisch alle 5 Minuten');
+            console.log('Aktueller Status:', window.errorBoundary.storageMonitorInterval ? 'AKTIV' : 'INAKTIV');
+        }
+
+        // Auto-Load Stats
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('📊 Storage Test Suite geladen');
+            refreshStats();
+            testAutoMonitoring();
+        });
+
+        // Aktualisiere alle 10 Sekunden
+        setInterval(refreshStats, 10000);
+    </script>
+</body>
+</html>

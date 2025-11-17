@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handler Test - Gartenplaner</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            margin: 5px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #2c5f2d;
+            color: white;
+        }
+        .test-button:hover {
+            background: #1e4620;
+        }
+        .test-button.danger {
+            background: #dc2626;
+        }
+        .test-button.danger:hover {
+            background: #991b1b;
+        }
+        .stats {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .stats pre {
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        [data-theme="dark"] .test-section {
+            background: #1e1e1e;
+        }
+        [data-theme="dark"] .stats {
+            background: #2a2a2a;
+        }
+        [data-theme="dark"] .stats pre {
+            background: #1a1a1a;
+            color: #e5e7eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <header>
+            <h1>🛡️ Error Handler Test Suite</h1>
+            <p>Teste die Error Boundary und Fehlerbehandlungs-Features</p>
+        </header>
+
+        <div class="test-section">
+            <h2>Runtime Errors</h2>
+            <p>Teste verschiedene Arten von Runtime-Fehlern:</p>
+            <button class="test-button danger" onclick="testRuntimeError()">Undefined Property Error</button>
+            <button class="test-button danger" onclick="testNullReference()">Null Reference Error</button>
+            <button class="test-button danger" onclick="testTypeError()">Type Error</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Storage Errors</h2>
+            <p>Teste LocalStorage-bezogene Fehler:</p>
+            <button class="test-button danger" onclick="testStorageQuota()">Storage Quota Error</button>
+            <button class="test-button" onclick="testSafeStorage()">Safe Storage (sollte funktionieren)</button>
+            <button class="test-button" onclick="testStorageCleanup()">Storage Cleanup</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Async Errors</h2>
+            <p>Teste asynchrone Fehler:</p>
+            <button class="test-button danger" onclick="testAsyncError()">Async Function Error</button>
+            <button class="test-button danger" onclick="testPromiseRejection()">Unhandled Promise Rejection</button>
+            <button class="test-button" onclick="testSafeAsync()">Safe Async (sollte funktionieren)</button>
+        </div>
+
+        <div class="test-section">
+            <h2>DOM Errors</h2>
+            <p>Teste DOM-bezogene Fehler:</p>
+            <button class="test-button danger" onclick="testDOMError()">Invalid Selector</button>
+            <button class="test-button" onclick="testSafeDOM()">Safe DOM (sollte funktionieren)</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Error Recovery</h2>
+            <p>Teste automatische Fehler-Recovery:</p>
+            <button class="test-button" onclick="testErrorRecovery()">Trigger Recovery</button>
+            <button class="test-button" onclick="showErrorStats()">Zeige Error-Statistiken</button>
+            <button class="test-button" onclick="clearErrorLog()">Error-Log löschen</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Error Callbacks</h2>
+            <p>Teste Error-Callbacks:</p>
+            <button class="test-button" onclick="registerCallbacks()">Register Callbacks</button>
+            <button class="test-button danger" onclick="triggerCallbackTest()">Trigger Callback Test</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Error Stats</h2>
+            <div id="errorStats" class="stats">
+                <p>Klicke auf "Zeige Error-Statistiken" um Fehler anzuzeigen</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Dark Mode umschalten">
+            <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    </div>
+
+    <script src="security.js"></script>
+    <script src="error-handler.js"></script>
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const html = document.documentElement;
+
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', currentTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+
+        // Test Functions
+        function testRuntimeError() {
+            const obj = null;
+            console.log(obj.property); // Will throw TypeError
+        }
+
+        function testNullReference() {
+            const element = null;
+            element.addEventListener('click', () => {}); // Will throw TypeError
+        }
+
+        function testTypeError() {
+            const num = 42;
+            num.toUpperCase(); // Will throw TypeError
+        }
+
+        function testStorageQuota() {
+            try {
+                // Versuche sehr große Daten zu speichern
+                const hugeData = 'x'.repeat(10 * 1024 * 1024); // 10MB
+                localStorage.setItem('huge_test', hugeData);
+            } catch (e) {
+                errorBoundary.handleError({
+                    type: 'storage',
+                    message: e.message,
+                    error: e,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        function testSafeStorage() {
+            SafeStorage.setItem('test_key', { data: 'test data', timestamp: Date.now() });
+            const data = SafeStorage.getItem('test_key');
+            console.log('✅ Safe Storage funktioniert:', data);
+            alert('✅ Safe Storage Test erfolgreich! Siehe Console.');
+        }
+
+        function testStorageCleanup() {
+            errorBoundary.cleanupStorage();
+            alert('✅ Storage Cleanup durchgeführt!');
+        }
+
+        async function testAsyncError() {
+            await Promise.resolve().then(() => {
+                throw new Error('Async Test Error');
+            });
+        }
+
+        function testPromiseRejection() {
+            Promise.reject(new Error('Unhandled Promise Rejection Test'));
+        }
+
+        const testSafeAsync = safeAsync(async function() {
+            console.log('✅ Safe Async funktioniert');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            alert('✅ Safe Async Test erfolgreich!');
+        });
+
+        function testDOMError() {
+            document.querySelector('###invalid###selector###');
+        }
+
+        function testSafeDOM() {
+            const element = SafeDOM.querySelector('#nonexistent');
+            console.log('✅ Safe DOM funktioniert:', element);
+            alert('✅ Safe DOM Test erfolgreich! Element ist ' + (element ? 'gefunden' : 'null (erwartet)'));
+        }
+
+        function testErrorRecovery() {
+            errorBoundary.handleError({
+                type: 'runtime',
+                message: 'cannot read property of undefined',
+                timestamp: new Date().toISOString()
+            });
+            alert('🔄 Error Recovery wurde getriggert!');
+        }
+
+        function showErrorStats() {
+            const stats = errorBoundary.getErrorStats();
+            const statsDiv = document.getElementById('errorStats');
+            
+            statsDiv.innerHTML = `
+                <h3>Error Statistiken</h3>
+                <p><strong>Gesamt Fehler:</strong> ${stats.total}</p>
+                <p><strong>Nach Typ:</strong></p>
+                <pre>${JSON.stringify(stats.byType, null, 2)}</pre>
+                <p><strong>Letzte 5 Fehler:</strong></p>
+                <pre>${JSON.stringify(stats.recent.map(e => ({
+                    type: e.type,
+                    message: e.message,
+                    timestamp: e.timestamp
+                })), null, 2)}</pre>
+            `;
+        }
+
+        function clearErrorLog() {
+            errorBoundary.clearErrors();
+            showErrorStats();
+            alert('✅ Error-Log gelöscht!');
+        }
+
+        function registerCallbacks() {
+            errorBoundary.onError('runtime', (error) => {
+                console.log('🔔 Runtime Error Callback:', error);
+            });
+
+            errorBoundary.onError('storage', (error) => {
+                console.log('🔔 Storage Error Callback:', error);
+            });
+
+            alert('✅ Callbacks registriert! Siehe Console bei Fehlern.');
+        }
+
+        function triggerCallbackTest() {
+            errorBoundary.handleError({
+                type: 'runtime',
+                message: 'Test Error für Callbacks',
+                timestamp: new Date().toISOString()
+            });
+        }
+
+        // Initial Stats anzeigen
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🛡️ Error Handler Test Suite geladen');
+            console.log('ErrorBoundary verfügbar:', typeof errorBoundary !== 'undefined');
+            showErrorStats();
+        });
+    </script>
+</body>
+</html>

@@ -3983,6 +3983,586 @@ footer {
     }
 }
 
+/* ========================================
+   ERROR BOUNDARIES & ERROR HANDLING
+   ======================================== */
+
+/* Error Toast Notifications */
+.error-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    max-width: 400px;
+    background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+    border: 2px solid #ef4444;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+    padding: 1.5rem;
+    z-index: 10000;
+    animation: errorSlideIn 0.3s ease-out;
+}
+
+.error-toast-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.error-toast-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+    animation: errorPulse 2s infinite;
+}
+
+.error-toast-text {
+    flex: 1;
+}
+
+.error-toast-text strong {
+    display: block;
+    color: #dc2626;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.error-toast-text p {
+    color: #991b1b;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.error-toast-close {
+    background: none;
+    border: none;
+    color: #dc2626;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.error-toast-close:hover {
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.error-toast-fade {
+    animation: errorSlideOut 0.3s ease-in forwards;
+}
+
+@keyframes errorSlideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes errorSlideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+}
+
+@keyframes errorPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Dark Mode */
+[data-theme="dark"] .error-toast {
+    background: linear-gradient(135deg, #1c1c1c 0%, #2e1a1a 100%);
+    border-color: #b91c1c;
+}
+
+[data-theme="dark"] .error-toast-text strong {
+    color: #f87171;
+}
+
+[data-theme="dark"] .error-toast-text p {
+    color: #fca5a5;
+}
+
+[data-theme="dark"] .error-toast-close {
+    color: #f87171;
+}
+
+[data-theme="dark"] .error-toast-close:hover {
+    background: rgba(248, 113, 113, 0.1);
+}
+
+/* Storage Warning Toasts - spezielle Styles */
+.error-toast.storage-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border-color: #ffc107;
+}
+
+.error-toast.storage-warning .error-toast-text strong {
+    color: #ff8f00;
+}
+
+.error-toast.storage-warning .error-toast-text p {
+    color: #e65100;
+}
+
+.error-toast.storage-warning .error-toast-close {
+    color: #ff8f00;
+}
+
+.error-toast.storage-critical {
+    background: linear-gradient(135deg, #fee 0%, #fcc 100%);
+    border-color: #dc2626;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+[data-theme="dark"] .error-toast.storage-warning {
+    background: linear-gradient(135deg, #2e2500 0%, #3e3000 100%);
+    border-color: #ffc107;
+}
+
+[data-theme="dark"] .error-toast.storage-warning .error-toast-text strong {
+    color: #ffca28;
+}
+
+[data-theme="dark"] .error-toast.storage-warning .error-toast-text p {
+    color: #ffd54f;
+}
+
+[data-theme="dark"] .error-toast.storage-critical {
+    background: linear-gradient(135deg, #2e1a1a 0%, #3e1a1a 100%);
+}
+
+/* Storage Info Widget */
+.storage-info-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    min-width: 250px;
+    z-index: 9999;
+    font-size: 0.85rem;
+}
+
+.storage-info-widget.collapsed {
+    padding: 0.5rem;
+    min-width: auto;
+    cursor: pointer;
+}
+
+.storage-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-weight: bold;
+    color: #2c5f2d;
+}
+
+.storage-info-toggle {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    color: #666;
+}
+
+.storage-info-progress {
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.storage-info-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+    transition: width 0.3s, background 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.storage-info-progress-bar.warning {
+    background: linear-gradient(90deg, #ff9800 0%, #ffc107 100%);
+}
+
+.storage-info-progress-bar.critical {
+    background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
+    animation: storagePulse 1.5s infinite;
+}
+
+.storage-info-details {
+    color: #666;
+    line-height: 1.6;
+}
+
+.storage-info-details div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.storage-info-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.storage-info-btn {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.storage-info-btn:hover {
+    background: #f5f5f5;
+    border-color: #2c5f2d;
+}
+
+.storage-info-btn.danger {
+    color: #dc2626;
+    border-color: #dc2626;
+}
+
+.storage-info-btn.danger:hover {
+    background: #fee;
+}
+
+@keyframes storagePulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+[data-theme="dark"] .storage-info-widget {
+    background: #1e1e1e;
+    border-color: #444;
+}
+
+[data-theme="dark"] .storage-info-header {
+    color: #8bc34a;
+}
+
+[data-theme="dark"] .storage-info-progress {
+    background: #2a2a2a;
+}
+
+[data-theme="dark"] .storage-info-details {
+    color: #ccc;
+}
+
+[data-theme="dark"] .storage-info-btn {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #ccc;
+}
+
+[data-theme="dark"] .storage-info-btn:hover {
+    background: #333;
+    border-color: #8bc34a;
+}
+
+/* Rate Limit Toasts - spezielle Styles */
+.error-toast.rate-limit {
+    background: linear-gradient(135deg, #fff8dc 0%, #ffeaa7 100%);
+    border-color: #ff9800;
+}
+
+.error-toast.rate-limit .error-toast-text strong {
+    color: #f57c00;
+}
+
+.error-toast.rate-limit .error-toast-text p {
+    color: #e65100;
+}
+
+.error-toast.rate-limit .error-toast-close {
+    color: #f57c00;
+}
+
+.error-toast.rate-limit .error-toast-icon {
+    animation: rateLimitPulse 1.5s infinite;
+}
+
+@keyframes rateLimitPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.8;
+    }
+}
+
+[data-theme="dark"] .error-toast.rate-limit {
+    background: linear-gradient(135deg, #3e2500 0%, #4e3000 100%);
+    border-color: #ff9800;
+}
+
+[data-theme="dark"] .error-toast.rate-limit .error-toast-text strong {
+    color: #ffb74d;
+}
+
+[data-theme="dark"] .error-toast.rate-limit .error-toast-text p {
+    color: #ffcc80;
+}
+
+/* Rate Limit Badge/Indicator */
+.rate-limit-badge {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    animation: badgeSlideIn 0.3s ease-out;
+}
+
+.rate-limit-badge-icon {
+    font-size: 1.2rem;
+    animation: rateLimitPulse 1.5s infinite;
+}
+
+.rate-limit-badge-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.rate-limit-badge-title {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+.rate-limit-badge-time {
+    font-size: 1rem;
+}
+
+@keyframes badgeSlideIn {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+[data-theme="dark"] .rate-limit-badge {
+    background: linear-gradient(135deg, #f57c00 0%, #e65100 100%);
+}
+
+/* Rate Limit Progress Bar (inline in buttons) */
+.rate-limit-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: rgba(255, 152, 0, 0.3);
+    transition: width 0.3s ease;
+}
+
+.rate-limit-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9800 0%, #f57c00 100%);
+    transition: width 0.1s linear;
+}
+
+/* Button mit Rate-Limit Indicator */
+.btn-rate-limited {
+    position: relative;
+    overflow: hidden;
+    opacity: 0.6;
+    cursor: not-allowed !important;
+}
+
+.btn-rate-limited::after {
+    content: '⏱️';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    opacity: 0.5;
+}
+
+/* Mobile Anpassungen */
+@media (max-width: 768px) {
+    .rate-limit-badge {
+        bottom: 60px;
+        right: 10px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+
+    .rate-limit-badge-icon {
+        font-size: 1rem;
+    }
+
+    .rate-limit-badge-time {
+        font-size: 0.85rem;
+    }
+}
+
+/* Error Boundary Fallback UI */
+.error-boundary-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: 3rem;
+    text-align: center;
+}
+
+.error-boundary-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: errorPulse 2s infinite;
+}
+
+.error-boundary-title {
+    font-size: 1.5rem;
+    color: #dc2626;
+    margin-bottom: 1rem;
+}
+
+.error-boundary-message {
+    color: #6b7280;
+    margin-bottom: 2rem;
+    max-width: 500px;
+}
+
+.error-boundary-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.error-boundary-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.error-boundary-btn-primary {
+    background: #2c5f2d;
+    color: white;
+}
+
+.error-boundary-btn-primary:hover {
+    background: #1e4620;
+    transform: translateY(-2px);
+}
+
+.error-boundary-btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.error-boundary-btn-secondary:hover {
+    background: #d1d5db;
+}
+
+[data-theme="dark"] .error-boundary-fallback {
+    background: #1a1a1a;
+}
+
+[data-theme="dark"] .error-boundary-title {
+    color: #f87171;
+}
+
+[data-theme="dark"] .error-boundary-message {
+    color: #9ca3af;
+}
+
+[data-theme="dark"] .error-boundary-btn-secondary {
+    background: #374151;
+    color: #e5e7eb;
+}
+
+[data-theme="dark"] .error-boundary-btn-secondary:hover {
+    background: #4b5563;
+}
+
+/* Loading States mit Error Handling */
+.loading-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.loading-error-icon {
+    font-size: 2rem;
+}
+
+.loading-error-text {
+    color: #991b1b;
+    text-align: center;
+}
+
+[data-theme="dark"] .loading-error {
+    background: #2e1a1a;
+    border-color: #b91c1c;
+}
+
+[data-theme="dark"] .loading-error-text {
+    color: #fca5a5;
+}
+
 /* Responsive Anpassungen */
 @media (max-width: 768px) {
     .active-users-indicator {
@@ -4002,5 +4582,26 @@ footer {
     .connection-status {
         top: 0.5rem;
         right: 7rem;
+    }
+
+    .error-toast {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+    }
+
+    .error-boundary-fallback {
+        padding: 2rem 1rem;
+        min-height: 300px;
+    }
+
+    .error-boundary-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .error-boundary-btn {
+        width: 100%;
     }
 }

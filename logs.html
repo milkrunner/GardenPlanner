@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gartenplaner - Log Viewer</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .log-viewer-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .log-controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .log-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95em;
+        }
+
+        .log-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .log-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .log-table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .log-table thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .log-table th {
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9em;
+        }
+
+        .log-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+        }
+
+        .log-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .log-level {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .log-level.debug {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .log-level.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-level.warn {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .log-level.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .log-level.critical {
+            background: #dc3545;
+            color: white;
+        }
+
+        .log-category {
+            padding: 3px 8px;
+            background: #e7f3ff;
+            color: #0066cc;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+
+        .log-message {
+            max-width: 400px;
+            word-break: break-word;
+        }
+
+        .log-context {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .log-context:hover {
+            color: #0066cc;
+        }
+
+        .log-timestamp {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .log-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .log-detail-modal.active {
+            display: flex;
+        }
+
+        .log-detail-content {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .log-detail-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            border: none;
+            background: none;
+        }
+
+        .log-detail-close:hover {
+            color: #333;
+        }
+
+        .log-detail-section {
+            margin-bottom: 20px;
+        }
+
+        .log-detail-section h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .log-detail-json {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .health-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .health-healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .health-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .health-critical {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+            .log-filters {
+                grid-template-columns: 1fr;
+            }
+
+            .log-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .log-table {
+                font-size: 0.85em;
+            }
+
+            .log-message {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="log-viewer-container">
+        <h1>📊 System Logs</h1>
+
+        <!-- Statistiken -->
+        <div class="log-stats" id="logStats">
+            <div class="stat-item">
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-label">Total Logs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statErrors">0</div>
+                <div class="stat-label">Errors (1h)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statCategories">0</div>
+                <div class="stat-label">Categories</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="statSize">0 KB</div>
+                <div class="stat-label">Log Size</div>
+            </div>
+        </div>
+
+        <!-- Filter und Aktionen -->
+        <div class="log-controls">
+            <div class="log-filters">
+                <div class="filter-group">
+                    <label>Log Level</label>
+                    <select id="filterLevel">
+                        <option value="">Alle Levels</option>
+                        <option value="DEBUG">Debug</option>
+                        <option value="INFO">Info</option>
+                        <option value="WARN">Warnung</option>
+                        <option value="ERROR">Error</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Kategorie</label>
+                    <select id="filterCategory">
+                        <option value="">Alle Kategorien</option>
+                        <option value="app">App</option>
+                        <option value="security">Security</option>
+                        <option value="storage">Storage</option>
+                        <option value="encryption">Encryption</option>
+                        <option value="rate-limit">Rate Limit</option>
+                        <option value="performance">Performance</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Suche</label>
+                    <input type="text" id="filterSearch" placeholder="Suche in Logs...">
+                </div>
+
+                <div class="filter-group">
+                    <label>Limit</label>
+                    <select id="filterLimit">
+                        <option value="50">50 Einträge</option>
+                        <option value="100" selected>100 Einträge</option>
+                        <option value="200">200 Einträge</option>
+                        <option value="">Alle Einträge</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="log-actions">
+                <button class="btn btn-primary" onclick="logViewer.refresh()">🔄 Aktualisieren</button>
+                <button class="btn" onclick="logViewer.exportJSON()">💾 Export JSON</button>
+                <button class="btn" onclick="logViewer.exportCSV()">📊 Export CSV</button>
+                <button class="btn" onclick="logViewer.exportText()">📄 Export Text</button>
+                <button class="btn btn-danger" onclick="logViewer.clearLogs()">🗑️ Logs löschen</button>
+                <div style="margin-left: auto;">
+                    <span id="healthIndicator" class="health-indicator"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log-Tabelle -->
+        <div class="log-table-container">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Zeit</th>
+                        <th>Level</th>
+                        <th>Kategorie</th>
+                        <th>Nachricht</th>
+                        <th>Context</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody">
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <p>Lade Logs...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="log-detail-modal" id="logDetailModal">
+        <div class="log-detail-content">
+            <button class="log-detail-close" onclick="logViewer.closeDetail()">×</button>
+            <div id="logDetailContent"></div>
+        </div>
+    </div>
+
+    <script src="logger.js"></script>
+    <script>
+        const logViewer = {
+            currentFilters: {},
+            autoRefresh: null,
+
+            init() {
+                // Event-Listener für Filter
+                document.getElementById('filterLevel').addEventListener('change', () => this.applyFilters());
+                document.getElementById('filterCategory').addEventListener('change', () => this.applyFilters());
+                document.getElementById('filterSearch').addEventListener('input', () => this.applyFilters());
+                document.getElementById('filterLimit').addEventListener('change', () => this.applyFilters());
+
+                // Initiales Laden
+                this.refresh();
+
+                // Auto-Refresh alle 5 Sekunden
+                this.startAutoRefresh();
+
+                console.log('Log Viewer initialisiert');
+            },
+
+            applyFilters() {
+                const level = document.getElementById('filterLevel').value;
+                const category = document.getElementById('filterCategory').value;
+                const search = document.getElementById('filterSearch').value;
+                const limit = document.getElementById('filterLimit').value;
+
+                this.currentFilters = {
+                    level: level || undefined,
+                    category: category || undefined,
+                    search: search || undefined,
+                    limit: limit ? parseInt(limit) : undefined
+                };
+
+                this.renderLogs();
+            },
+
+            refresh() {
+                this.updateStats();
+                this.renderLogs();
+                this.updateHealth();
+            },
+
+            updateStats() {
+                const stats = window.logger.getStatistics();
+                const size = LoggerHelpers.formatLogSize(window.logger.logs);
+
+                document.getElementById('statTotal').textContent = stats.total;
+                document.getElementById('statErrors').textContent = stats.recentErrors;
+                document.getElementById('statCategories').textContent = Object.keys(stats.byCategory).length;
+                document.getElementById('statSize').textContent = size;
+            },
+
+            updateHealth() {
+                const health = LoggerHelpers.checkHealth(window.logger);
+                const indicator = document.getElementById('healthIndicator');
+                
+                indicator.className = 'health-indicator health-' + health.status;
+                indicator.textContent = health.status === 'healthy' ? '✓ Healthy' : 
+                                       health.status === 'warning' ? '⚠ Warning' : 
+                                       '✗ Critical';
+                indicator.title = health.issues.join(', ') || 'System läuft einwandfrei';
+            },
+
+            renderLogs() {
+                const logs = window.logger.getLogs(this.currentFilters);
+                const tbody = document.getElementById('logTableBody');
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">🔍</div>
+                                    <p>Keine Logs gefunden</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(log => this.createLogRow(log)).join('');
+            },
+
+            createLogRow(log) {
+                const timestamp = new Date(log.timestamp).toLocaleString('de-DE');
+                const contextPreview = Object.keys(log.context).length > 0 
+                    ? `{...}` 
+                    : '-';
+
+                return `
+                    <tr onclick="logViewer.showDetail('${log.id}')">
+                        <td class="log-timestamp">${timestamp}</td>
+                        <td><span class="log-level ${log.level.toLowerCase()}">${log.level}</span></td>
+                        <td><span class="log-category">${log.category}</span></td>
+                        <td class="log-message">${this.escapeHtml(log.message)}</td>
+                        <td class="log-context">${contextPreview}</td>
+                    </tr>
+                `;
+            },
+
+            showDetail(logId) {
+                const log = window.logger.logs.find(l => l.id === logId);
+                if (!log) return;
+
+                const timestamp = new Date(log.timestamp).toLocaleString('de-DE');
+                const contextJson = JSON.stringify(log.context, null, 2);
+
+                const content = `
+                    <div class="log-detail-section">
+                        <h2><span class="log-level ${log.level.toLowerCase()}">${log.level}</span> ${this.escapeHtml(log.message)}</h2>
+                    </div>
+
+                    <div class="log-detail-section">
+                        <h3>ℹ️ Informationen</h3>
+                        <div class="log-detail-json">
+                            <strong>Zeitstempel:</strong> ${timestamp}<br>
+                            <strong>Kategorie:</strong> ${log.category}<br>
+                            <strong>Level:</strong> ${log.level}<br>
+                            <strong>ID:</strong> ${log.id}
+                        </div>
+                    </div>
+
+                    ${Object.keys(log.context).length > 0 ? `
+                        <div class="log-detail-section">
+                            <h3>🔧 Context</h3>
+                            <div class="log-detail-json">
+                                <pre>${this.escapeHtml(contextJson)}</pre>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${log.context.error && log.context.error.stack ? `
+                        <div class="log-detail-section">
+                            <h3>📋 Stack Trace</h3>
+                            <div class="log-detail-json">
+                                <pre>${this.escapeHtml(log.context.error.stack)}</pre>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="log-detail-section">
+                        <h3>🌐 Browser</h3>
+                        <div class="log-detail-json">
+                            <strong>User Agent:</strong> ${this.escapeHtml(log.userAgent || 'N/A')}<br>
+                            <strong>URL:</strong> ${this.escapeHtml(log.url || 'N/A')}
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('logDetailContent').innerHTML = content;
+                document.getElementById('logDetailModal').classList.add('active');
+            },
+
+            closeDetail() {
+                document.getElementById('logDetailModal').classList.remove('active');
+            },
+
+            exportJSON() {
+                LoggerHelpers.downloadLogs(window.logger, 'json');
+            },
+
+            exportCSV() {
+                LoggerHelpers.downloadLogs(window.logger, 'csv');
+            },
+
+            exportText() {
+                LoggerHelpers.downloadLogs(window.logger, 'text');
+            },
+
+            clearLogs() {
+                if (confirm('Möchten Sie wirklich alle Logs löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!')) {
+                    window.logger.clear();
+                    this.refresh();
+                }
+            },
+
+            startAutoRefresh() {
+                this.autoRefresh = setInterval(() => {
+                    this.refresh();
+                }, 5000);
+            },
+
+            stopAutoRefresh() {
+                if (this.autoRefresh) {
+                    clearInterval(this.autoRefresh);
+                }
+            },
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        };
+
+        // Initialisiere beim Laden
+        window.addEventListener('DOMContentLoaded', () => {
+            logViewer.init();
+        });
+
+        // Modal bei Klick außerhalb schließen
+        document.getElementById('logDetailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'logDetailModal') {
+                logViewer.closeDetail();
+            }
+        });
+    </script>
+</body>
+</html>
