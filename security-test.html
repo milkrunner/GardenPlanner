@@ -75,14 +75,14 @@
                 // HTML Escaping Tests
                 {
                     name: 'HTML-Escaping: Script-Tag',
-                    input: '<script>alert("XSS")</script>',
-                    expected: '&lt;script&gt;alert(&quot;XSS&quot;)&lt;&#x2F;script&gt;',
+                    input: `<script>alert('XSS')</script>`,
+                    expected: '&lt;script&gt;alert(&#039;XSS&#039;)&lt;&#x2F;script&gt;',
                     test: (input) => Security.escapeHtml(input)
                 },
                 {
                     name: 'HTML-Escaping: Image mit onerror',
-                    input: '<img src=x onerror="alert(1)">',
-                    expected: '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;',
+                    input: `<img src=x onerror='alert(1)'>`,
+                    expected: '&lt;img src=x onerror=&#039;alert(1)&#039;&gt;',
                     test: (input) => Security.escapeHtml(input)
                 },
                 {
