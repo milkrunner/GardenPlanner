@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <header>
+        <header role="banner">
             <h1>📊 Statistiken & Analysen</h1>
             <p class="subtitle">Detaillierte Übersicht und Auswertungen</p>
         </header>
@@ -114,16 +114,6 @@
                     <!-- Wird dynamisch gefüllt -->
                 </div>
             </section>
-
-            <!-- Schnellaktionen -->
-            <section class="quick-actions">
-                <h2>Schnellaktionen</h2>
-                <div class="btn-group">
-                    <a href="index.html" class="btn btn-primary">➕ Neue Aufgabe erstellen</a>
-                    <a href="dashboard.html" class="btn btn-secondary">📋 Zum Dashboard</a>
-                    <button id="refreshStatsBtn" class="btn btn-secondary">🔄 Statistiken aktualisieren</button>
-                </div>
-            </section>
         </main>
 
         <footer>
@@ -151,16 +141,6 @@
                 window.gartenPlaner.updateStatistics();
                 window.gartenPlaner.updateCharts();
                 window.gartenPlaner.updateAdditionalStats();
-
-                // Refresh-Button
-                const refreshBtn = document.getElementById('refreshStatsBtn');
-                if (refreshBtn) {
-                    refreshBtn.addEventListener('click', () => {
-                        window.gartenPlaner.updateStatistics();
-                        window.gartenPlaner.updateCharts();
-                        window.gartenPlaner.updateAdditionalStats();
-                    });
-                }
             }
         });
     </script>
