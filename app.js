@@ -1154,24 +1154,32 @@ class GartenPlaner {
 
     // Daten speichern (LocalStorage)
     saveTasks() {
-        localStorage.setItem('gartenplaner_tasks', JSON.stringify(this.tasks));
+        // Verwende SafeStorage für fehlertolerantes Speichern
+        const success = SafeStorage.setItem('gartenplaner_tasks', this.tasks);
+        if (!success) {
+            this.showNotification('⚠️ Speichern fehlgeschlagen. Speicherplatz voll?', 'error');
+        }
     }
 
     // Daten laden (LocalStorage)
     loadTasks() {
-        const saved = localStorage.getItem('gartenplaner_tasks');
-        return saved ? JSON.parse(saved) : [];
+        // Verwende SafeStorage für fehlertolerantes Laden
+        return SafeStorage.getItem('gartenplaner_tasks', []);
     }
 
     // Archivierte Aufgaben laden
     loadArchivedTasks() {
-        const saved = localStorage.getItem('gartenplaner_archived_tasks');
-        return saved ? JSON.parse(saved) : [];
+        // Verwende SafeStorage für fehlertolerantes Laden
+        return SafeStorage.getItem('gartenplaner_archived_tasks', []);
     }
 
     // Archivierte Aufgaben speichern
     saveArchivedTasks() {
-        localStorage.setItem('gartenplaner_archived_tasks', JSON.stringify(this.archivedTasks));
+        // Verwende SafeStorage für fehlertolerantes Speichern
+        const success = SafeStorage.setItem('gartenplaner_archived_tasks', this.archivedTasks);
+        if (!success) {
+            this.showNotification('⚠️ Archiv-Speichern fehlgeschlagen', 'error');
+        }
     }
 
     // Daten exportieren
