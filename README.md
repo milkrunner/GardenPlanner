@@ -52,19 +52,30 @@ GardenPlanner/
 
 ## Schnellstart
 
-**Einfach im Browser öffnen:**
-
-```text
-Öffnen Sie public/index.html direkt im Browser - kein Server nötig!
-```
-
-Die Anwendung läuft komplett im Browser ohne Installation oder Server.
-Alle Daten werden lokal im LocalStorage gespeichert.
-
-**Optional - Mit lokalem Server (falls gewünscht):**
+### 🐳 Mit Docker (empfohlen)
 
 ```bash
-# Python HTTP Server
-python -m http.server 8000
-# Öffnen Sie: http://localhost:8000/public/
+# Container starten
+docker-compose up -d
+
+# Öffnen: http://localhost:8080
 ```
+
+**➡️ [Vollständige Docker-Dokumentation](DOCKER.md)**
+
+### 💻 Ohne Docker
+
+**Direkt im Browser:**
+
+```bash
+# Einfach public/index.html öffnen - kein Server nötig!
+```
+
+**Mit Python HTTP-Server:**
+
+```bash
+python -m http.server 8000
+# Öffnen: http://localhost:8000/public/
+```
+
+Die Anwendung läuft komplett im Browser, alle Daten werden lokal im LocalStorage gespeichert.
