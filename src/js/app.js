@@ -1411,8 +1411,9 @@ class GartenPlaner {
     // Daten speichern (LocalStorage)
     async saveTasks() {
         try {
-            // Verwende SafeStorage für fehlertolerantes Speichern
-            const success = SafeStorage.setItem('gartenplaner_tasks', this.tasks);
+            // Speichere Aufgaben im localStorage
+            localStorage.setItem('gartenplaner_tasks', JSON.stringify(this.tasks));
+            const success = true;
             if (!success) {
                 throw new Error('Failed to save tasks to storage');
             }
@@ -1439,8 +1440,10 @@ class GartenPlaner {
     // Daten laden (LocalStorage)
     loadTasks() {
         try {
-            // Verwende SafeStorage für fehlertolerantes Laden
-            return SafeStorage.getItem('gartenplaner_tasks', []);
+            const data = localStorage.getItem('gartenplaner_tasks');
+            if (!data) return [];
+            const parsed = JSON.parse(data);
+            return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
             console.error('Fehler in loadTasks:', error);
             
@@ -1464,8 +1467,10 @@ class GartenPlaner {
     // Archivierte Aufgaben laden
     loadArchivedTasks() {
         try {
-            // Verwende SafeStorage für fehlertolerantes Laden
-            return SafeStorage.getItem('gartenplaner_archived_tasks', []);
+            const data = localStorage.getItem('gartenplaner_archived_tasks');
+            if (!data) return [];
+            const parsed = JSON.parse(data);
+            return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
             console.error('Fehler in loadArchivedTasks:', error);
             
@@ -1488,8 +1493,9 @@ class GartenPlaner {
     // Archivierte Aufgaben speichern
     async saveArchivedTasks() {
         try {
-            // Verwende SafeStorage für fehlertolerantes Speichern
-            const success = SafeStorage.setItem('gartenplaner_archived_tasks', this.archivedTasks);
+            // Speichere archivierte Aufgaben im localStorage
+            localStorage.setItem('gartenplaner_archived_tasks', JSON.stringify(this.archivedTasks));
+            const success = true;
             if (!success) {
                 throw new Error('Failed to save archived tasks to storage');
             }

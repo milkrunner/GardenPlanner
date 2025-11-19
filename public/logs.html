@@ -13,10 +13,10 @@
         }
 
         .log-controls {
-            background: white;
+            background: var(--bg-secondary);
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px var(--shadow);
             margin-bottom: 20px;
         }
 
@@ -34,16 +34,19 @@
 
         .filter-group label {
             font-size: 0.9em;
-            color: #666;
+            color: var(--text);
+            opacity: 0.8;
             margin-bottom: 5px;
         }
 
         .filter-group select,
         .filter-group input {
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border);
             border-radius: 5px;
             font-size: 0.95em;
+            background: var(--bg);
+            color: var(--text);
         }
 
         .log-actions {
@@ -79,9 +82,9 @@
         }
 
         .log-table-container {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px var(--shadow);
             overflow: hidden;
         }
 
@@ -91,26 +94,27 @@
         }
 
         .log-table thead {
-            background: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+            background: var(--bg-tertiary);
+            border-bottom: 2px solid var(--border);
         }
 
         .log-table th {
             padding: 15px 10px;
             text-align: left;
             font-weight: 600;
-            color: #495057;
+            color: var(--text);
             font-size: 0.9em;
         }
 
         .log-table td {
             padding: 12px 10px;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--border);
             font-size: 0.9em;
+            color: var(--text);
         }
 
         .log-table tbody tr:hover {
-            background: #f8f9fa;
+            background: var(--bg-tertiary);
         }
 
         .log-level {
@@ -162,16 +166,16 @@
         .log-context {
             font-family: 'Courier New', monospace;
             font-size: 0.85em;
-            color: #666;
+            color: var(--text-light);
             cursor: pointer;
         }
 
         .log-context:hover {
-            color: #0066cc;
+            color: var(--primary);
         }
 
         .log-timestamp {
-            color: #666;
+            color: var(--text-light);
             font-size: 0.85em;
         }
 
@@ -193,7 +197,7 @@
         }
 
         .log-detail-content {
-            background: white;
+            background: var(--bg-secondary);
             border-radius: 10px;
             padding: 30px;
             max-width: 800px;
@@ -208,13 +212,13 @@
             right: 15px;
             font-size: 24px;
             cursor: pointer;
-            color: #999;
+            color: var(--text-light);
             border: none;
             background: none;
         }
 
         .log-detail-close:hover {
-            color: #333;
+            color: var(--text);
         }
 
         .log-detail-section {
@@ -223,22 +227,23 @@
 
         .log-detail-section h3 {
             margin-bottom: 10px;
-            color: #333;
+            color: var(--text);
         }
 
         .log-detail-json {
-            background: #f8f9fa;
+            background: var(--bg);
             padding: 15px;
             border-radius: 5px;
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
             overflow-x: auto;
+            color: var(--text);
         }
 
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #999;
+            color: var(--text-light);
         }
 
         .empty-state-icon {
@@ -291,6 +296,13 @@
 <body>
     <div class="log-viewer-container">
         <h1>📊 System Logs</h1>
+        
+        <nav class="main-nav">
+            <a href="/index" class="nav-link">➕ Neue Aufgabe</a>
+            <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+            <a href="/statistics" class="nav-link">📊 Statistiken</a>
+            <a href="/logs" class="nav-link active">📊 Logs</a>
+        </nav>
 
         <!-- Statistiken -->
         <div class="log-stats" id="logStats">
@@ -612,5 +624,21 @@
             }
         });
     </script>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Theme umschalten" title="Dark Mode umschalten">
+            <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    </div>
+
+    <script src="../src/js/security.js"></script>
+    <script src="../src/js/encryption.js"></script>
+    <script src="../src/js/rate-limiter.js"></script>
+    <script src="../src/js/logger.js"></script>
+    <script src="../src/js/error-handler.js"></script>
+    <script src="../src/js/app.js"></script>
 </body>
 </html>

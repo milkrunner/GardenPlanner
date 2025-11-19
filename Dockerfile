@@ -7,8 +7,11 @@ FROM nginx:alpine
 LABEL maintainer="GardenPlanner"
 LABEL description="Gartenplaner - Moderne Webanwendung zur Verwaltung von Gartenaufgaben"
 
+# Entferne nginx Default-Seiten
+RUN rm -rf /usr/share/nginx/html/*
+
 # Kopiere die Anwendungsdateien in das nginx html Verzeichnis
-COPY public/ /usr/share/nginx/html/
+COPY public/ /usr/share/nginx/html/public/
 COPY src/ /usr/share/nginx/html/src/
 COPY docs/ /usr/share/nginx/html/docs/
 COPY tests/ /usr/share/nginx/html/tests/
