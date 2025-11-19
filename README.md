@@ -16,40 +16,6 @@ Moderne Webanwendung zur Verwaltung von Gartenaufgaben mit Echtzeit-Synchronisat
 - 🛡️ **Error Handling** - Automatische Fehler-Recovery
 - 📝 **Logging System** - Fehler-Tracking und Debug-Logs
 
-## 📁 Projektstruktur
-
-```file
-GardenPlanner/
-├── public/              # Haupt-HTML-Seiten
-│   ├── index.html       # Hauptseite
-│   ├── dashboard.html   # Dashboard-Ansicht
-│   ├── statistics.html  # Statistiken
-│   └── logs.html        # Log-Viewer
-├── src/                 # Quellcode
-│   ├── js/             # JavaScript-Module
-│   │   ├── app.js      # Hauptlogik
-│   │   ├── security.js # XSS-Schutz
-│   │   ├── encryption.js # Verschlüsselung
-│   │   ├── logger.js   # Logging-System
-│   │   ├── error-handler.js # Fehlerbehandlung
-│   │   ├── rate-limiter.js # Rate Limiting
-│   │   └── collaboration.js # WebSocket-Client
-│   └── css/            # Stylesheets
-│       └── styles.css  # Haupt-Styles
-├── docs/               # Dokumentation
-│   ├── SECURITY.md     # Sicherheits-Dokumentation
-│   ├── ERROR_HANDLING.md # Error Handling Guide
-│   ├── ENCRYPTION.md   # Verschlüsselung Guide
-│   └── LOGGING.md      # Logging System Doku
-├── tests/              # Test-Seiten
-│   ├── security-test.html
-│   ├── encryption-test.html
-│   ├── error-test.html
-│   ├── rate-limit-test.html
-│   └── storage-test.html
-└── README.md           # Diese Datei
-```
-
 ## Schnellstart
 
 ### 🐳 Mit Docker (empfohlen)
