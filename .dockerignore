@@ -1,0 +1,32 @@
+# Git
+.git
+.gitignore
+
+# Documentation (wenn nicht benötigt im Container)
+# docs/
+
+# Tests (optional - auskommentieren wenn Tests im Container benötigt werden)
+# tests/
+
+# Environment
+.env
+.env.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker files selbst
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+*.log
+logs/

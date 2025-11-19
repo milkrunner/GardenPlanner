@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Test</title>
+</head>
+<body>
+    <h1>Formular Test</h1>
+    
+    <form id="testForm">
+        <div>
+            <label>Titel:</label>
+            <input type="text" id="taskTitle" value="Test Aufgabe" required>
+        </div>
+        <div>
+            <label>Mitarbeiter:</label>
+            <input type="text" id="taskEmployee" value="Max Mustermann" required>
+        </div>
+        <div>
+            <label>Standort:</label>
+            <input type="text" id="taskLocation" value="Gewächshaus 1" required>
+        </div>
+        <div>
+            <label>Beschreibung:</label>
+            <textarea id="taskDescription">Test Beschreibung</textarea>
+        </div>
+        <button type="submit">Absenden</button>
+    </form>
+    
+    <div id="output"></div>
+    
+    <script src="../src/js/security.js"></script>
+    <script>
+        document.getElementById('testForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>Debug Info:</h2>';
+            
+            // Check if Security is loaded
+            output.innerHTML += '<p>Security loaded: ' + (typeof Security !== 'undefined') + '</p>';
+            
+            if (typeof Security !== 'undefined') {
+                const taskData = {
+                    title: Security.sanitizeText(document.getElementById('taskTitle').value),
+                    employee: Security.sanitizeText(document.getElementById('taskEmployee').value),
+                    location: Security.sanitizeText(document.getElementById('taskLocation').value),
+                    description: Security.sanitizeText(document.getElementById('taskDescription').value),
+                    status: 'pending'
+                };
+                
+                output.innerHTML += '<p>Task Data:</p><pre>' + JSON.stringify(taskData, null, 2) + '</pre>';
+                
+                const validation = Security.validateTask(taskData);
+                output.innerHTML += '<p>Validation Result:</p><pre>' + JSON.stringify(validation, null, 2) + '</pre>';
+                
+                if (validation.valid) {
+                    output.innerHTML += '<p style="color: green;">✅ Validation passed!</p>';
+                } else {
+                    output.innerHTML += '<p style="color: red;">❌ Validation failed!</p>';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
