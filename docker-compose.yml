@@ -3,15 +3,22 @@ services:
     build: .
     container_name: gartenplaner
     ports:
-      - "8080:80"
+      - "8080:3000"
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
+      - API_KEY=${API_KEY}
+      - PORT=3000
+    volumes:
+      - gartenplaner-data:/app/data
     labels:
-      - "description=Gartenplaner Web Application"
+      - "description=Gartenplaner Web Application with REST API"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
+
+volumes:
+  gartenplaner-data:

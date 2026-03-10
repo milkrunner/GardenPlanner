@@ -1,27 +1,31 @@
 # Gartenplaner Docker Image
-# Verwendet nginx als statischen Webserver
+# Node.js Express Server with REST API
 
-FROM nginx:alpine
+FROM node:20-alpine
 
 # Metadaten
 LABEL maintainer="GardenPlanner"
-LABEL description="Gartenplaner - Moderne Webanwendung zur Verwaltung von Gartenaufgaben"
+LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von Gartenaufgaben"
 
-# Entferne nginx Default-Seiten
-RUN rm -rf /usr/share/nginx/html/*
+WORKDIR /app
 
-# Kopiere die Anwendungsdateien in das nginx html Verzeichnis
-COPY public/ /usr/share/nginx/html/public/
-COPY src/ /usr/share/nginx/html/src/
-COPY docs/ /usr/share/nginx/html/docs/
-COPY tests/ /usr/share/nginx/html/tests/
-COPY README.md /usr/share/nginx/html/
+# Dependencies installieren
+COPY package.json package-lock.json* ./
+RUN npm config set strict-ssl false && npm install --omit=dev
 
-# Kopiere custom nginx Konfiguration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Anwendungsdateien kopieren
+COPY server.js ./
+COPY public/ ./public/
+COPY src/ ./src/
+COPY docs/ ./docs/
+COPY tests/ ./tests/
+COPY README.md ./
 
-# Exponiere Port 80
-EXPOSE 80
+# Datenverzeichnis erstellen
+RUN mkdir -p /app/data
 
-# Starte nginx im Vordergrund
-CMD ["nginx", "-g", "daemon off;"]
+# Port exponieren
+EXPOSE 3000
+
+# Server starten
+CMD ["node", "server.js"]
