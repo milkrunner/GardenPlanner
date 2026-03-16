@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
@@ -158,6 +159,15 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+app.use(limiter);
+
 // --- Static file serving (replaces nginx) ---
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
@@ -186,9 +196,18 @@ app.get('/', (req, res) => {
 // GET /api/tasks - List all tasks with optional filters
 app.get('/api/tasks', (req, res) => {
     let tasks = readTasks();
-    const { status, employee, location } = req.query;
 
-    if (status) tasks = tasks.filter(t => t.status === status);
+    // Sanitize query parameters to prevent sensitive data leakage
+    const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+    const employee = typeof req.query.employee === 'string' ? req.query.employee.trim() : '';
+    const location = typeof req.query.location === 'string' ? req.query.location.trim() : '';
+
+    if (status) {
+        const validStatuses = ['pending', 'in-progress', 'completed'];
+        if (validStatuses.includes(status)) {
+            tasks = tasks.filter(t => t.status === status);
+        }
+    }
     if (employee) tasks = tasks.filter(t => t.employee === employee);
     if (location) tasks = tasks.filter(t => t.location === location);
 
