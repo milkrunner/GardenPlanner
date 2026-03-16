@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
 
@@ -17,5 +18,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v5
+
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag "gardenplanner:$(date +%s)"
+      run: docker build . --file Dockerfile --tag gardenplanner:latest
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: gardenplanner:latest
+        format: 'table'
+        exit-code: '1'
+        severity: 'CRITICAL'

@@ -1,7 +1,7 @@
 # Gartenplaner Docker Image
 # Node.js Express Server with REST API
 
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Metadaten
 LABEL maintainer="GardenPlanner"
@@ -9,9 +9,13 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 
 WORKDIR /app
 
+# Update Alpine packages to fix known vulnerabilities
+RUN apk update && apk upgrade --no-cache
+
 # Dependencies installieren
 COPY package.json package-lock.json* ./
-RUN npm config set strict-ssl false && npm install --omit=dev
+RUN npm install --omit=dev \
+    && npm audit --audit-level=moderate || true
 
 # Anwendungsdateien kopieren
 COPY server.js ./
