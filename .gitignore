@@ -11,6 +11,12 @@
 *~
 .DS_Store
 
+# Node
+node_modules/
+
+# Data directory (runtime storage)
+data/
+
 # Build outputs
 dist/
 build/

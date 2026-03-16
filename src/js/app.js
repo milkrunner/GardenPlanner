@@ -1,8 +1,8 @@
-// Gartenplaner App - Lokale Datenspeicherung mit LocalStorage
+// Gartenplaner App - REST API mit LocalStorage-Fallback
 class GartenPlaner {
     constructor() {
-        this.tasks = this.loadTasks();
-        this.archivedTasks = this.loadArchivedTasks();
+        this.tasks = [];
+        this.archivedTasks = [];
         this.showArchive = false;
         this.currentFilter = {
             employee: '',
@@ -15,18 +15,24 @@ class GartenPlaner {
         this.selectedTasks = new Set();
         this.bulkMode = false;
         this.tempSubtasks = []; // Temporäre Subtasks für neue Aufgabe
+        this.useAPI = typeof window.TaskAPI !== 'undefined';
         this.init();
     }
 
     // Initialisierung
-    init() {
+    async init() {
+        // Load tasks from API or localStorage
+        this.tasks = await this.loadTasks();
+        this.archivedTasks = await this.loadArchivedTasks();
+
         if (window.logger) {
             window.logger.info('GartenPlaner initialisiert', 'app', {
                 tasksCount: this.tasks.length,
-                archivedCount: this.archivedTasks.length
+                archivedCount: this.archivedTasks.length,
+                mode: this.useAPI ? 'API' : 'localStorage'
             });
         }
-        
+
         this.checkRecurringTasks();
         this.setupEventListeners();
         this.setupCreateSubtaskListeners(); // Für neue Aufgabe
@@ -182,20 +188,27 @@ class GartenPlaner {
                 return;
             }
 
-            const task = {
-                id: Date.now(),
-                ...taskData,
-                createdAt: new Date().toISOString(),
-                history: [],
-                subtasks: [...this.tempSubtasks] // Übernehme temporäre Subtasks
-            };
-
-            // Initiale History erstellen
-            this.addHistoryEntry(task, 'created', {
-                title: task.title,
-                employee: task.employee,
-                location: task.location
-            });
+            let task;
+            if (this.useAPI) {
+                // Create via API - server generates id, createdAt, history
+                task = await TaskAPI.createTask({
+                    ...taskData,
+                    subtasks: this.tempSubtasks.map(st => ({ text: st.text, completed: st.completed }))
+                });
+            } else {
+                task = {
+                    id: Date.now(),
+                    ...taskData,
+                    createdAt: new Date().toISOString(),
+                    history: [],
+                    subtasks: [...this.tempSubtasks]
+                };
+                this.addHistoryEntry(task, 'created', {
+                    title: task.title,
+                    employee: task.employee,
+                    location: task.location
+                });
+            }
 
             this.tasks.push(task);
             await this.saveTasks();
@@ -304,9 +317,13 @@ class GartenPlaner {
             }
 
             // Backup der Aufgabe für möglichen Rollback
-            const deletedTask = this.tasks.find(task => task.id === id);
-            
-            this.tasks = this.tasks.filter(task => task.id !== id);
+            const deletedTask = this.tasks.find(task => String(task.id) === String(id));
+
+            if (this.useAPI) {
+                await TaskAPI.deleteTask(id);
+            }
+
+            this.tasks = this.tasks.filter(task => String(task.id) !== String(id));
             await this.saveTasks();
             this.renderTasks();
             this.updateStatistics();
@@ -458,7 +475,9 @@ class GartenPlaner {
             if (oldLocation !== task.location) changes.push(`Standort: "${oldLocation}" → "${task.location}"`);
             if (oldDescription !== task.description) changes.push('Beschreibung geändert');
 
-            if (changes.length > 0) {
+            if (this.useAPI) {
+                await TaskAPI.updateTask(id, taskData);
+            } else if (changes.length > 0) {
                 this.addHistoryEntry(task, 'edited', {
                     changes: changes
                 });
@@ -529,18 +548,16 @@ class GartenPlaner {
             }
 
             if (confirm('Möchten Sie diese Aufgabe wirklich archivieren?')) {
-                // Backup der Aufgabe für mögliches Rollback
-                const taskBackup = JSON.parse(JSON.stringify(task));
-                
-                // Füge Archivierungsdatum hinzu
-                task.archivedAt = new Date().toISOString();
-                
-                // History-Eintrag
-                this.addHistoryEntry(task, 'archived', {});
-                
-                // Verschiebe in Archiv
-                this.archivedTasks.push(task);
-                this.tasks = this.tasks.filter(t => t.id !== id);
+                if (this.useAPI) {
+                    const archivedTask = await TaskAPI.archiveTask(id);
+                    this.tasks = this.tasks.filter(t => String(t.id) !== String(id));
+                    this.archivedTasks.push(archivedTask);
+                } else {
+                    task.archivedAt = new Date().toISOString();
+                    this.addHistoryEntry(task, 'archived', {});
+                    this.archivedTasks.push(task);
+                    this.tasks = this.tasks.filter(t => t.id !== id);
+                }
 
                 await this.saveTasks();
                 await this.saveArchivedTasks();
@@ -578,18 +595,16 @@ class GartenPlaner {
             }
 
             if (confirm('Möchten Sie diese Aufgabe wiederherstellen?')) {
-                // Backup für mögliches Rollback
-                const taskBackup = JSON.parse(JSON.stringify(task));
-                
-                // Entferne Archivierungsdatum
-                delete task.archivedAt;
-                
-                // History-Eintrag
-                this.addHistoryEntry(task, 'unarchived', {});
-                
-                // Verschiebe zurück zu aktiven Aufgaben
-                this.tasks.push(task);
-                this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+                if (this.useAPI) {
+                    const restoredTask = await TaskAPI.unarchiveTask(id);
+                    this.archivedTasks = this.archivedTasks.filter(t => String(t.id) !== String(id));
+                    this.tasks.push(restoredTask);
+                } else {
+                    delete task.archivedAt;
+                    this.addHistoryEntry(task, 'unarchived', {});
+                    this.tasks.push(task);
+                    this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+                }
 
                 await this.saveTasks();
                 await this.saveArchivedTasks();
@@ -627,10 +642,11 @@ class GartenPlaner {
             }
             
             if (confirm('Möchten Sie diese archivierte Aufgabe endgültig löschen?')) {
-                // Backup für mögliches Rollback
-                const taskBackup = JSON.parse(JSON.stringify(task));
-                
-                this.archivedTasks = this.archivedTasks.filter(t => t.id !== id);
+                if (this.useAPI) {
+                    await TaskAPI.deleteArchivedTask(id);
+                }
+
+                this.archivedTasks = this.archivedTasks.filter(t => String(t.id) !== String(id));
                 await this.saveArchivedTasks();
                 this.renderTasks();
                 this.showNotification('🗑️ Archivierte Aufgabe gelöscht');
@@ -675,15 +691,21 @@ class GartenPlaner {
                 }
             }
 
-            task.status = task.status === 'pending' ? 'completed' : 'pending';
+            const newStatus = task.status === 'pending' ? 'completed' : 'pending';
+
+            if (this.useAPI) {
+                await TaskAPI.updateTask(id, { status: newStatus });
+            }
+
+            task.status = newStatus;
             task.completedAt = task.status === 'completed' ? new Date().toISOString() : null;
-            
+
             // History-Eintrag
             this.addHistoryEntry(task, task.status === 'completed' ? 'completed' : 'reopened', {
                 from: oldStatus,
                 to: task.status
             });
-            
+
             await this.saveTasks();
             this.renderTasks();
             this.updateStatistics();
@@ -1408,19 +1430,14 @@ class GartenPlaner {
         return date.toLocaleDateString('de-DE');
     }
 
-    // Daten speichern (LocalStorage)
+    // Daten speichern (API mit LocalStorage-Fallback)
     async saveTasks() {
         try {
-            // Speichere Aufgaben im localStorage
+            // LocalStorage als Cache/Fallback
             localStorage.setItem('gartenplaner_tasks', JSON.stringify(this.tasks));
-            const success = true;
-            if (!success) {
-                throw new Error('Failed to save tasks to storage');
-            }
         } catch (error) {
             console.error('Fehler in saveTasks:', error);
-            
-            // Error Boundary benachrichtigen
+
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
                     type: 'storage',
@@ -1431,14 +1448,25 @@ class GartenPlaner {
                     timestamp: new Date().toISOString()
                 });
             }
-            
-            this.showNotification('⚠️ Speichern fehlgeschlagen. Speicherplatz voll?', 'error');
-            throw error; // Re-throw für Aufrufer
+
+            this.showNotification('⚠️ Speichern fehlgeschlagen.', 'error');
+            throw error;
         }
     }
 
-    // Daten laden (LocalStorage)
-    loadTasks() {
+    // Daten laden (API mit LocalStorage-Fallback)
+    async loadTasks() {
+        try {
+            if (this.useAPI) {
+                const tasks = await TaskAPI.getTasks();
+                // Cache in localStorage
+                localStorage.setItem('gartenplaner_tasks', JSON.stringify(tasks));
+                return tasks;
+            }
+        } catch (error) {
+            console.warn('API nicht erreichbar, verwende localStorage-Fallback:', error.message);
+        }
+
         try {
             const data = localStorage.getItem('gartenplaner_tasks');
             if (!data) return [];
@@ -1446,26 +1474,22 @@ class GartenPlaner {
             return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
             console.error('Fehler in loadTasks:', error);
-            
-            // Error Boundary benachrichtigen
-            if (window.errorBoundary) {
-                window.errorBoundary.handleError({
-                    type: 'storage',
-                    message: 'Failed to load tasks: ' + error.message,
-                    error: error,
-                    function: 'loadTasks',
-                    context: {},
-                    timestamp: new Date().toISOString()
-                });
-            }
-            
-            this.showNotification('⚠️ Laden der Aufgaben fehlgeschlagen. Leere Liste wird verwendet.', 'error');
-            return []; // Fallback zu leerer Liste
+            return [];
         }
     }
 
     // Archivierte Aufgaben laden
-    loadArchivedTasks() {
+    async loadArchivedTasks() {
+        try {
+            if (this.useAPI) {
+                const tasks = await TaskAPI.getArchivedTasks();
+                localStorage.setItem('gartenplaner_archived_tasks', JSON.stringify(tasks));
+                return tasks;
+            }
+        } catch (error) {
+            console.warn('API nicht erreichbar für Archiv, verwende localStorage-Fallback:', error.message);
+        }
+
         try {
             const data = localStorage.getItem('gartenplaner_archived_tasks');
             if (!data) return [];
@@ -1473,36 +1497,17 @@ class GartenPlaner {
             return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
             console.error('Fehler in loadArchivedTasks:', error);
-            
-            // Error Boundary benachrichtigen
-            if (window.errorBoundary) {
-                window.errorBoundary.handleError({
-                    type: 'storage',
-                    message: 'Failed to load archived tasks: ' + error.message,
-                    error: error,
-                    function: 'loadArchivedTasks',
-                    context: {},
-                    timestamp: new Date().toISOString()
-                });
-            }
-            
-            return []; // Fallback zu leerer Liste
+            return [];
         }
     }
 
-    // Archivierte Aufgaben speichern
+    // Archivierte Aufgaben speichern (LocalStorage-Cache)
     async saveArchivedTasks() {
         try {
-            // Speichere archivierte Aufgaben im localStorage
             localStorage.setItem('gartenplaner_archived_tasks', JSON.stringify(this.archivedTasks));
-            const success = true;
-            if (!success) {
-                throw new Error('Failed to save archived tasks to storage');
-            }
         } catch (error) {
             console.error('Fehler in saveArchivedTasks:', error);
-            
-            // Error Boundary benachrichtigen
+
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
                     type: 'storage',
@@ -1513,9 +1518,9 @@ class GartenPlaner {
                     timestamp: new Date().toISOString()
                 });
             }
-            
+
             this.showNotification('⚠️ Archiv-Speichern fehlgeschlagen', 'error');
-            throw error; // Re-throw für Aufrufer
+            throw error;
         }
     }
 
@@ -2588,23 +2593,35 @@ class GartenPlaner {
 
     getStoredLocation() {
         const stored = localStorage.getItem('weather_location');
-        return stored ? JSON.parse(stored) : null;
+        if (!stored) return null;
+        try {
+            return JSON.parse(atob(stored));
+        } catch {
+            // Migration: remove old unencoded data
+            localStorage.removeItem('weather_location');
+            return null;
+        }
     }
 
     storeLocation(location) {
-        localStorage.setItem('weather_location', JSON.stringify(location));
+        localStorage.setItem('weather_location', btoa(JSON.stringify(location)));
     }
 
     getCachedWeather() {
         const cached = localStorage.getItem('weather_cache');
         if (!cached) return null;
 
-        const data = JSON.parse(cached);
-        const age = Date.now() - data.timestamp;
-        const maxAge = 60 * 60 * 1000; // 1 Stunde
+        try {
+            const data = JSON.parse(atob(cached));
+            const age = Date.now() - data.timestamp;
+            const maxAge = 60 * 60 * 1000; // 1 Stunde
 
-        if (age < maxAge) {
-            return data.weather;
+            if (age < maxAge) {
+                return data.weather;
+            }
+        } catch {
+            // Migration: remove old unencoded data
+            localStorage.removeItem('weather_cache');
         }
 
         return null;
@@ -2615,7 +2632,7 @@ class GartenPlaner {
             timestamp: Date.now(),
             weather: weather
         };
-        localStorage.setItem('weather_cache', JSON.stringify(data));
+        localStorage.setItem('weather_cache', btoa(JSON.stringify(data)));
     }
 
     async promptLocation() {

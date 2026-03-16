@@ -34,13 +34,18 @@
     <script>
         document.getElementById('testForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            
+
             const output = document.getElementById('output');
-            output.innerHTML = '<h2>Debug Info:</h2>';
-            
-            // Check if Security is loaded
-            output.innerHTML += '<p>Security loaded: ' + (typeof Security !== 'undefined') + '</p>';
-            
+            output.textContent = '';
+
+            const heading = document.createElement('h2');
+            heading.textContent = 'Debug Info:';
+            output.appendChild(heading);
+
+            const secLoaded = document.createElement('p');
+            secLoaded.textContent = 'Security loaded: ' + (typeof Security !== 'undefined');
+            output.appendChild(secLoaded);
+
             if (typeof Security !== 'undefined') {
                 const taskData = {
                     title: Security.sanitizeText(document.getElementById('taskTitle').value),
@@ -49,17 +54,31 @@
                     description: Security.sanitizeText(document.getElementById('taskDescription').value),
                     status: 'pending'
                 };
-                
-                output.innerHTML += '<p>Task Data:</p><pre>' + JSON.stringify(taskData, null, 2) + '</pre>';
-                
+
+                const taskLabel = document.createElement('p');
+                taskLabel.textContent = 'Task Data:';
+                output.appendChild(taskLabel);
+                const taskPre = document.createElement('pre');
+                taskPre.textContent = JSON.stringify(taskData, null, 2);
+                output.appendChild(taskPre);
+
                 const validation = Security.validateTask(taskData);
-                output.innerHTML += '<p>Validation Result:</p><pre>' + JSON.stringify(validation, null, 2) + '</pre>';
-                
+                const valLabel = document.createElement('p');
+                valLabel.textContent = 'Validation Result:';
+                output.appendChild(valLabel);
+                const valPre = document.createElement('pre');
+                valPre.textContent = JSON.stringify(validation, null, 2);
+                output.appendChild(valPre);
+
+                const resultMsg = document.createElement('p');
                 if (validation.valid) {
-                    output.innerHTML += '<p style="color: green;">✅ Validation passed!</p>';
+                    resultMsg.style.color = 'green';
+                    resultMsg.textContent = '\u2705 Validation passed!';
                 } else {
-                    output.innerHTML += '<p style="color: red;">❌ Validation failed!</p>';
+                    resultMsg.style.color = 'red';
+                    resultMsg.textContent = '\u274C Validation failed!';
                 }
+                output.appendChild(resultMsg);
             }
         });
     </script>
