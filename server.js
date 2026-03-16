@@ -178,38 +178,54 @@ app.use('/docs', express.static(path.join(__dirname, 'docs')));
 // HTML page routes (with and without .html extension)
 const pages = ['index', 'dashboard', 'statistics', 'logs'];
 pages.forEach(page => {
-    app.get(`/${page}`, (req, res) => {
+    app.get(`/${page}`, limiter, (req, res) => {
         res.sendFile(path.join(__dirname, 'public', `${page}.html`));
     });
-    app.get(`/${page}.html`, (req, res) => {
+    app.get(`/${page}.html`, limiter, (req, res) => {
         res.sendFile(path.join(__dirname, 'public', `${page}.html`));
     });
 });
 
 // Root -> index.html
-app.get('/', (req, res) => {
+app.get('/', limiter, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // --- API Routes ---
 
-// GET /api/tasks - List all tasks with optional filters
+// GET /api/tasks - List all tasks (use POST /api/tasks/search for filtered queries)
 app.get('/api/tasks', (req, res) => {
     let tasks = readTasks();
 
-    // Sanitize query parameters to prevent sensitive data leakage
+    // Only allow non-sensitive filter via query param
     const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
-    const employee = typeof req.query.employee === 'string' ? req.query.employee.trim() : '';
-    const location = typeof req.query.location === 'string' ? req.query.location.trim() : '';
-
     if (status) {
         const validStatuses = ['pending', 'in-progress', 'completed'];
         if (validStatuses.includes(status)) {
             tasks = tasks.filter(t => t.status === status);
         }
     }
-    if (employee) tasks = tasks.filter(t => t.employee === employee);
-    if (location) tasks = tasks.filter(t => t.location === location);
+
+    res.json(tasks);
+});
+
+// POST /api/tasks/search - Filter tasks with sensitive criteria via request body
+app.post('/api/tasks/search', (req, res) => {
+    let tasks = readTasks();
+    const { status, employee, location } = req.body;
+
+    if (typeof status === 'string' && status.trim()) {
+        const validStatuses = ['pending', 'in-progress', 'completed'];
+        if (validStatuses.includes(status.trim())) {
+            tasks = tasks.filter(t => t.status === status.trim());
+        }
+    }
+    if (typeof employee === 'string' && employee.trim()) {
+        tasks = tasks.filter(t => t.employee === employee.trim());
+    }
+    if (typeof location === 'string' && location.trim()) {
+        tasks = tasks.filter(t => t.location === location.trim());
+    }
 
     res.json(tasks);
 });
