@@ -82,7 +82,7 @@ Browser-Anfragen von der Anwendung selbst benötigen keinen API-Key.
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: YOUR_API_KEY_HERE" \
+  -H "X-API-Key: $API_KEY" \
   -d '{"title":"Rasen mähen","employee":"Max","location":"Garten","description":"Vorgarten und Hinterhof"}'
 ```
 
