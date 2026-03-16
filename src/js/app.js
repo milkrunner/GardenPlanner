@@ -2593,23 +2593,35 @@ class GartenPlaner {
 
     getStoredLocation() {
         const stored = localStorage.getItem('weather_location');
-        return stored ? JSON.parse(stored) : null;
+        if (!stored) return null;
+        try {
+            return JSON.parse(atob(stored));
+        } catch {
+            // Migration: remove old unencoded data
+            localStorage.removeItem('weather_location');
+            return null;
+        }
     }
 
     storeLocation(location) {
-        localStorage.setItem('weather_location', JSON.stringify(location));
+        localStorage.setItem('weather_location', btoa(JSON.stringify(location)));
     }
 
     getCachedWeather() {
         const cached = localStorage.getItem('weather_cache');
         if (!cached) return null;
 
-        const data = JSON.parse(cached);
-        const age = Date.now() - data.timestamp;
-        const maxAge = 60 * 60 * 1000; // 1 Stunde
+        try {
+            const data = JSON.parse(atob(cached));
+            const age = Date.now() - data.timestamp;
+            const maxAge = 60 * 60 * 1000; // 1 Stunde
 
-        if (age < maxAge) {
-            return data.weather;
+            if (age < maxAge) {
+                return data.weather;
+            }
+        } catch {
+            // Migration: remove old unencoded data
+            localStorage.removeItem('weather_cache');
         }
 
         return null;
@@ -2620,7 +2632,7 @@ class GartenPlaner {
             timestamp: Date.now(),
             weather: weather
         };
-        localStorage.setItem('weather_cache', JSON.stringify(data));
+        localStorage.setItem('weather_cache', btoa(JSON.stringify(data)));
     }
 
     async promptLocation() {
