@@ -3,11 +3,12 @@
 
 class DataEncryption {
     constructor() {
-        this.algorithm = 'AES-GCM';
-        this.keyLength = 256;
-        this.ivLength = 12; // 96 bits für GCM
-        this.saltLength = 16;
-        this.iterations = 100000;
+        const encConfig = (window.APP_CONFIG && window.APP_CONFIG.encryption) || {};
+        this.algorithm = encConfig.algorithm || 'AES-GCM';
+        this.keyLength = encConfig.keyLength || 256;
+        this.ivLength = encConfig.ivLength || 12;
+        this.saltLength = encConfig.saltLength || 16;
+        this.iterations = encConfig.iterations || 100000;
         this.encryptionKey = null;
         this.keyGenerated = false;
         

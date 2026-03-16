@@ -4,15 +4,15 @@
 class RateLimiter {
     constructor() {
         this.limiters = new Map();
-        this.defaultLimits = {
-            storage: { maxRequests: 60, windowMs: 60000 }, // 60 Requests pro Minute
-            taskCreate: { maxRequests: 10, windowMs: 60000 }, // 10 neue Aufgaben pro Minute
-            taskEdit: { maxRequests: 30, windowMs: 60000 }, // 30 Edits pro Minute
-            taskDelete: { maxRequests: 20, windowMs: 60000 }, // 20 Löschungen pro Minute
-            search: { maxRequests: 100, windowMs: 60000 }, // 100 Suchen pro Minute
-            filter: { maxRequests: 100, windowMs: 60000 }, // 100 Filter-Operationen pro Minute
-            export: { maxRequests: 5, windowMs: 300000 }, // 5 Exports pro 5 Minuten
-            api: { maxRequests: 30, windowMs: 60000 } // 30 API-Calls pro Minute
+        this.defaultLimits = (window.APP_CONFIG && window.APP_CONFIG.rateLimits) || {
+            storage: { maxRequests: 60, windowMs: 60000 },
+            taskCreate: { maxRequests: 10, windowMs: 60000 },
+            taskEdit: { maxRequests: 30, windowMs: 60000 },
+            taskDelete: { maxRequests: 20, windowMs: 60000 },
+            search: { maxRequests: 100, windowMs: 60000 },
+            filter: { maxRequests: 100, windowMs: 60000 },
+            export: { maxRequests: 5, windowMs: 300000 },
+            api: { maxRequests: 30, windowMs: 60000 }
         };
 
         this.callbacks = new Map();
