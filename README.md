@@ -49,7 +49,7 @@ Die API ermöglicht externe Integration, z.B. mit n8n, um Tasks automatisiert zu
 
 Externe Anfragen (z.B. von n8n) benötigen einen API-Key im Header:
 
-```
+```http
 X-API-Key: your-secret-key
 ```
 
