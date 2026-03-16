@@ -139,19 +139,24 @@ app.use((req, res, next) => {
     next();
 });
 
+// Auth status endpoint (always accessible, no auth required)
+app.get('/api/auth/status', (req, res) => {
+    res.json({ authRequired: !!API_KEY });
+});
+
 // API key authentication for /api/* routes
 app.use('/api', (req, res, next) => {
-    // Skip auth for same-origin browser requests
-    const fetchSite = req.headers['sec-fetch-site'];
-    if (fetchSite === 'same-origin') {
+    // Auth status endpoint is always accessible
+    if (req.path === '/auth/status') {
         return next();
     }
 
-    // Require API key for external requests
+    // No API key configured = no auth required
     if (!API_KEY) {
-        return next(); // No API key configured = no auth required
+        return next();
     }
 
+    // Require valid API key for all requests
     const providedKey = req.headers['x-api-key'];
     if (providedKey !== API_KEY) {
         return res.status(401).json({ error: 'Unauthorized. Provide a valid X-API-Key header.' });

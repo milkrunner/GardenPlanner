@@ -2,9 +2,40 @@
 const TaskAPI = {
     baseUrl: '/api',
 
+    getApiKey() {
+        try {
+            return localStorage.getItem('gardenplanner_api_key') || '';
+        } catch {
+            return '';
+        }
+    },
+
+    setApiKey(key) {
+        try {
+            if (key) {
+                localStorage.setItem('gardenplanner_api_key', key);
+            } else {
+                localStorage.removeItem('gardenplanner_api_key');
+            }
+        } catch {
+            // localStorage unavailable
+        }
+    },
+
+    async checkAuthRequired() {
+        const res = await fetch(this.baseUrl + '/auth/status');
+        const data = await res.json();
+        return data.authRequired;
+    },
+
     async _fetch(url, options = {}) {
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        const apiKey = this.getApiKey();
+        if (apiKey) {
+            headers['X-API-Key'] = apiKey;
+        }
         const res = await fetch(this.baseUrl + url, {
-            headers: { 'Content-Type': 'application/json', ...options.headers },
+            headers,
             ...options
         });
         if (!res.ok) {
