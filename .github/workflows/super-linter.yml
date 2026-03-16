@@ -40,3 +40,4 @@ jobs:
           VALIDATE_YAML_PRETTIER: false
           VALIDATE_CHECKOV: false
           VALIDATE_JSCPD: false
+          VALIDATE_JSON: false
