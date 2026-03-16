@@ -9,6 +9,9 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 
 WORKDIR /app
 
+# Update Alpine packages to fix known vulnerabilities
+RUN apk update && apk upgrade --no-cache
+
 # Dependencies installieren
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev \
