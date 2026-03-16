@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
@@ -127,6 +128,7 @@ function sanitizeTaskData(data) {
 
 // --- Middleware ---
 
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 
