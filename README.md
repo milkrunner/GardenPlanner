@@ -50,7 +50,7 @@ Die API ermöglicht externe Integration, z.B. mit n8n, um Tasks automatisiert zu
 Externe Anfragen (z.B. von n8n) benötigen einen API-Key im Header:
 
 ```http
-X-API-Key: your-secret-key
+X-API-Key: YOUR_API_KEY_HERE
 ```
 
 Den API-Key konfiguriert man über die Umgebungsvariable `API_KEY` (siehe `.env.example`).
@@ -82,7 +82,7 @@ Browser-Anfragen von der Anwendung selbst benötigen keinen API-Key.
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: your-secret-key" \
+  -H "X-API-Key: YOUR_API_KEY_HERE" \
   -d '{"title":"Rasen mähen","employee":"Max","location":"Garten","description":"Vorgarten und Hinterhof"}'
 ```
 
@@ -90,7 +90,7 @@ curl -X POST http://localhost:8080/api/tasks \
 
 - **Method:** POST
 - **URL:** `http://gartenplaner:3000/api/tasks`
-- **Headers:** `X-API-Key: your-secret-key`
+- **Headers:** `X-API-Key: YOUR_API_KEY_HERE`
 - **Body (JSON):**
   ```json
   {
