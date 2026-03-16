@@ -11,7 +11,8 @@ WORKDIR /app
 
 # Dependencies installieren
 COPY package.json package-lock.json* ./
-RUN npm config set strict-ssl false && npm install --omit=dev
+RUN npm config set strict-ssl false && npm install --omit=dev \
+    && npm audit --audit-level=moderate || true
 
 # Anwendungsdateien kopieren
 COPY server.js ./

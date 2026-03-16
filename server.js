@@ -428,11 +428,15 @@ app.delete('/api/archived-tasks/:id', (req, res) => {
 
 // --- Start server ---
 
-app.listen(PORT, () => {
-    console.log(`Gartenplaner API running on port ${PORT}`);
-    if (API_KEY) {
-        console.log('API key authentication enabled for external requests');
-    } else {
-        console.log('Warning: No API_KEY set. API is open for all requests.');
-    }
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Gartenplaner API running on port ${PORT}`);
+        if (API_KEY) {
+            console.log('API key authentication enabled for external requests');
+        } else {
+            console.log('Warning: No API_KEY set. API is open for all requests.');
+        }
+    });
+}
+
+module.exports = { app, validateTask, escapeHtml, sanitizeTaskData };
