@@ -1,7 +1,7 @@
 # Gartenplaner Docker Image
 # Node.js Express Server with REST API
 
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Metadaten
 LABEL maintainer="GardenPlanner"
@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Dependencies installieren
 COPY package.json package-lock.json* ./
-RUN npm config set strict-ssl false && npm install --omit=dev \
+RUN npm install --omit=dev \
     && npm audit --audit-level=moderate || true
 
 # Anwendungsdateien kopieren
