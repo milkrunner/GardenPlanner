@@ -25,8 +25,8 @@ COPY docs/ ./docs/
 COPY tests/ ./tests/
 COPY README.md ./
 
-# Datenverzeichnis erstellen und Berechtigungen setzen
-RUN mkdir -p /app/data && chown -R node:node /app/data
+# Datenverzeichnis erstellen und Rechte setzen
+RUN mkdir -p /app/data && chown -R node:node /app
 
 # Non-root User verwenden
 USER node
@@ -36,7 +36,7 @@ EXPOSE 3000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000/api/tasks', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/auth/status || exit 1
 
 # Server starten
 CMD ["node", "server.js"]

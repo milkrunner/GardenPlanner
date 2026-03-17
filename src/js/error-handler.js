@@ -4,7 +4,7 @@
 class ErrorBoundary {
     constructor() {
         this.errors = [];
-        this.maxErrors = 50; // Maximum gespeicherte Fehler
+        this.maxErrors = (window.APP_CONFIG && window.APP_CONFIG.errors.maxStoredErrors) || 50;
         this.isProduction = window.location.hostname !== 'localhost';
         this.errorCallbacks = new Map();
         
@@ -116,11 +116,12 @@ class ErrorBoundary {
         
         document.body.appendChild(toast);
         
-        // Auto-remove nach 8 Sekunden
+        // Auto-remove nach konfigurierbarer Dauer (mehr Lesezeit für Fehlermeldungen)
+        const duration = (window.APP_CONFIG && window.APP_CONFIG.ui.errorNotificationDuration) || 15000;
         setTimeout(() => {
             toast.classList.add('error-toast-fade');
             setTimeout(() => toast.remove(), 300);
-        }, 8000);
+        }, duration);
     }
 
     getUserFriendlyMessage(errorInfo) {

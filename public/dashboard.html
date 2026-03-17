@@ -166,11 +166,11 @@
     </div>
 
     <!-- Edit Modal -->
-    <div id="editModal" class="modal">
+    <div id="editModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>✏️ Aufgabe bearbeiten</h2>
-                <span class="modal-close">&times;</span>
+                <h2 id="editModalTitle">✏️ Aufgabe bearbeiten</h2>
+                <button class="modal-close" aria-label="Dialog schließen" type="button">&times;</button>
             </div>
             <form id="editTaskForm">
                 <div class="form-group">
@@ -218,7 +218,7 @@
     </div>
 
     <!-- Confirm Modal -->
-    <div id="confirmModal" class="modal">
+    <div id="confirmModal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmModalMessage" aria-hidden="true">
         <div class="modal-content confirm-modal-content">
             <div class="modal-header confirm-modal-header">
                 <h2 id="confirmModalTitle">Bestätigung erforderlich</h2>
@@ -245,6 +245,7 @@
 
     <!-- jsPDF für PDF-Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-kEkSzCQPJtfaVoMcphFieyHeo0/B5WL+sFCuMFCskdPQgjFMHaA+5JFCQP3mEBJ4sFtIzEbOJKwEjBpSExBOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="../src/js/config.js"></script>
     <script src="../src/js/security.js"></script>
     <script src="../src/js/encryption.js"></script>
     <script src="../src/js/rate-limiter.js"></script>
