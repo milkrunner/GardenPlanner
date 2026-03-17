@@ -19,6 +19,8 @@ class GartenPlaner {
 		this.bulkMode = false;
 		this.tempSubtasks = [];
 		this.useAPI = typeof window.TaskAPI !== "undefined";
+		this.undoStack = [];
+		this.undoTimeout = null;
 		this.init();
 	}
 

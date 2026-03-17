@@ -926,6 +926,99 @@ GartenPlaner.prototype.showConfirm = function (options) {
 	});
 };
 
+// Focus Trap - hält den Fokus innerhalb eines Modals
+GartenPlaner.prototype._trapFocus = function (modal, e) {
+	const focusableSelectors =
+		'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
+	const focusable = Array.from(modal.querySelectorAll(focusableSelectors)).filter(
+		(el) => el.offsetParent !== null,
+	);
+	if (focusable.length === 0) return;
+
+	const firstFocusable = focusable[0];
+	const lastFocusable = focusable[focusable.length - 1];
+
+	if (e.shiftKey) {
+		if (document.activeElement === firstFocusable) {
+			e.preventDefault();
+			lastFocusable.focus();
+		}
+	} else {
+		if (document.activeElement === lastFocusable) {
+			e.preventDefault();
+			firstFocusable.focus();
+		}
+	}
+};
+
+// Loading State für Buttons - verhindert Doppelklicks
+GartenPlaner.prototype.setButtonLoading = function (button, loading, originalText) {
+	if (!button) return;
+	if (loading) {
+		button.dataset.originalText = button.innerHTML;
+		button.disabled = true;
+		button.classList.add("btn-loading");
+		button.setAttribute("aria-busy", "true");
+		const spinnerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
+		button.innerHTML = originalText ? spinnerHTML + " " + originalText : spinnerHTML;
+	} else {
+		button.disabled = false;
+		button.classList.remove("btn-loading");
+		button.removeAttribute("aria-busy");
+		if (button.dataset.originalText) {
+			button.innerHTML = button.dataset.originalText;
+			delete button.dataset.originalText;
+		}
+	}
+};
+
+// Undo-Aktion registrieren und Notification anzeigen
+GartenPlaner.prototype._registerUndo = function (action) {
+	this.undoStack.push(action);
+	this._showUndoNotification(action.description);
+};
+
+GartenPlaner.prototype._showUndoNotification = function (message) {
+	const existing = document.querySelector(".undo-notification");
+	if (existing) existing.remove();
+	if (this.undoTimeout) clearTimeout(this.undoTimeout);
+
+	const notification = document.createElement("div");
+	notification.className = "undo-notification";
+	notification.setAttribute("role", "alert");
+	notification.innerHTML = `
+		<span class="undo-message">${Security.escapeHtml(message)}</span>
+		<button class="undo-btn" type="button" aria-label="Rückgängig machen">Rückgängig</button>
+		<button class="undo-close-btn" type="button" aria-label="Schließen">&times;</button>
+	`;
+
+	document.body.appendChild(notification);
+
+	notification.querySelector(".undo-btn").addEventListener("click", () => {
+		const lastAction = this.undoStack.pop();
+		if (lastAction && lastAction.undo) {
+			lastAction.undo();
+			this.showNotification("\u21a9\ufe0f R\u00fcckg\u00e4ngig gemacht: " + lastAction.description);
+			this.announce("Aktion r\u00fcckg\u00e4ngig gemacht: " + lastAction.description);
+		}
+		notification.remove();
+		if (this.undoTimeout) clearTimeout(this.undoTimeout);
+	});
+
+	notification.querySelector(".undo-close-btn").addEventListener("click", () => {
+		notification.classList.add("undo-notification-hiding");
+		setTimeout(() => notification.remove(), 300);
+		if (this.undoTimeout) clearTimeout(this.undoTimeout);
+	});
+
+	this.undoTimeout = setTimeout(() => {
+		if (notification.parentElement) {
+			notification.classList.add("undo-notification-hiding");
+			setTimeout(() => notification.remove(), 300);
+		}
+	}, 8000);
+};
+
 GartenPlaner.prototype.showAlert = function (title, message, icon) {
 	if (icon === undefined) icon = "ℹ️";
 	return this.showConfirm({

@@ -3,6 +3,10 @@
 // Do NOT add defer or async to script tags.
 
 GartenPlaner.prototype.addTask = async function () {
+	const submitBtn = document.querySelector(
+		"#taskForm button[type=\"submit\"], #taskForm .btn-primary",
+	);
+	this.setButtonLoading(submitBtn, true, "Speichert...");
 	try {
 		if (window.logger) {
 			window.logger.startPerformance("addTask", "performance");
@@ -144,6 +148,8 @@ GartenPlaner.prototype.addTask = async function () {
 			"\u274c Fehler beim Hinzuf\u00fcgen der Aufgabe. Bitte versuchen Sie es erneut.",
 			"error",
 		);
+	} finally {
+		this.setButtonLoading(submitBtn, false);
 	}
 };
 
@@ -214,6 +220,8 @@ GartenPlaner.prototype.deleteTask = async function (id) {
 };
 
 GartenPlaner.prototype.saveEditedTask = async function (id) {
+	const saveBtn = document.querySelector('#editTaskForm button[type="submit"]');
+	this.setButtonLoading(saveBtn, true, "Speichert...");
 	try {
 		if (window.rateLimiter) {
 			const limitResult = window.rateLimiter.checkLimit(
@@ -307,6 +315,8 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 			"\u274c Fehler beim Speichern der Aufgabe. Bitte versuchen Sie es erneut.",
 			"error",
 		);
+	} finally {
+		this.setButtonLoading(saveBtn, false);
 	}
 };
 
@@ -765,18 +775,31 @@ GartenPlaner.prototype.bulkCompleteTasksAction = function () {
 		this.showNotification("\u26a0\ufe0f Keine Aufgaben ausgew\u00e4hlt");
 		return;
 	}
+	const previousStates = [];
 	this.selectedTasks.forEach((taskId) => {
 		const task = this.tasks.find((t) => t.id === taskId);
 		if (task && task.status !== "completed") {
+			previousStates.push({ id: task.id, status: task.status, completedAt: task.completedAt || null });
 			task.status = "completed";
 			task.completedAt = new Date().toISOString();
 		}
 	});
+	const count = previousStates.length;
 	this.saveTasks();
 	this.selectedTasks.clear();
 	this.renderTasks();
 	this.updateStatistics();
-	this.showNotification("\u2705 Aufgaben als erledigt markiert!");
+	this._registerUndo({
+		type: "bulkComplete",
+		description: `${count} Aufgabe(n) als erledigt markiert`,
+		undo: () => {
+			previousStates.forEach((s) => {
+				const task = this.tasks.find((t) => t.id === s.id);
+				if (task) { task.status = s.status; task.completedAt = s.completedAt; }
+			});
+			this.saveTasks(); this.renderTasks(); this.updateStatistics();
+		},
+	});
 };
 
 GartenPlaner.prototype.bulkUncompleteTasksAction = function () {
@@ -784,18 +807,31 @@ GartenPlaner.prototype.bulkUncompleteTasksAction = function () {
 		this.showNotification("\u26a0\ufe0f Keine Aufgaben ausgew\u00e4hlt");
 		return;
 	}
+	const previousStates = [];
 	this.selectedTasks.forEach((taskId) => {
 		const task = this.tasks.find((t) => t.id === taskId);
 		if (task && task.status === "completed") {
+			previousStates.push({ id: task.id, status: task.status, completedAt: task.completedAt });
 			task.status = "pending";
 			task.completedAt = null;
 		}
 	});
+	const count = previousStates.length;
 	this.saveTasks();
 	this.selectedTasks.clear();
 	this.renderTasks();
 	this.updateStatistics();
-	this.showNotification("\ud83d\udd04 Aufgaben reaktiviert!");
+	this._registerUndo({
+		type: "bulkUncomplete",
+		description: `${count} Aufgabe(n) reaktiviert`,
+		undo: () => {
+			previousStates.forEach((s) => {
+				const task = this.tasks.find((t) => t.id === s.id);
+				if (task) { task.status = s.status; task.completedAt = s.completedAt; }
+			});
+			this.saveTasks(); this.renderTasks(); this.updateStatistics();
+		},
+	});
 };
 
 GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
@@ -813,6 +849,7 @@ GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
 		danger: true,
 	});
 	if (confirmed) {
+		const deletedTasks = this.tasks.filter((task) => this.selectedTasks.has(task.id)).map((t) => ({ ...t }));
 		this.tasks = this.tasks.filter((task) => !this.selectedTasks.has(task.id));
 		this.selectedTasks.clear();
 		this.saveTasks();
@@ -820,22 +857,34 @@ GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
 		this.updateStatistics();
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
-		this.showNotification(
-			`\ud83d\uddd1\ufe0f ${count} Aufgabe(n) gel\u00f6scht`,
-		);
+		this._registerUndo({
+			type: "bulkDelete",
+			description: `${count} Aufgabe(n) gel\u00f6scht`,
+			undo: () => {
+				this.tasks.push(...deletedTasks);
+				this.saveTasks(); this.renderTasks(); this.updateStatistics();
+				this.updateEmployeeFilter(); this.updateLocationFilter();
+			},
+		});
 	}
 };
 
-GartenPlaner.prototype.bulkArchiveTasksAction = function () {
+GartenPlaner.prototype.bulkArchiveTasksAction = async function () {
 	if (this.selectedTasks.size === 0) {
-		alert("Bitte w\u00e4hlen Sie mindestens eine Aufgabe aus.");
+		this.showNotification("\u26a0\ufe0f Keine Aufgaben ausgew\u00e4hlt");
 		return;
 	}
 	const count = this.selectedTasks.size;
-	if (confirm(`M\u00f6chten Sie wirklich ${count} Aufgabe(n) archivieren?`)) {
-		const tasksToArchive = this.tasks.filter((task) =>
-			this.selectedTasks.has(task.id),
-		);
+	const confirmed = await this.showConfirm({
+		title: "Aufgaben archivieren",
+		icon: "\ud83d\udce6",
+		message: `M\u00f6chten Sie wirklich ${count} Aufgabe(n) archivieren?`,
+		confirmText: "Archivieren",
+		cancelText: "Abbrechen",
+	});
+	if (confirmed) {
+		const archivedTasksCopy = this.tasks.filter((task) => this.selectedTasks.has(task.id)).map((t) => ({ ...t }));
+		const tasksToArchive = this.tasks.filter((task) => this.selectedTasks.has(task.id));
 		tasksToArchive.forEach((task) => {
 			task.archivedAt = new Date().toISOString();
 			this.archivedTasks.push(task);
@@ -848,6 +897,16 @@ GartenPlaner.prototype.bulkArchiveTasksAction = function () {
 		this.updateStatistics();
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
-		this.showNotification(`\ud83d\udce6 ${count} Aufgabe(n) archiviert`);
+		this._registerUndo({
+			type: "bulkArchive",
+			description: `${count} Aufgabe(n) archiviert`,
+			undo: () => {
+				const ids = new Set(archivedTasksCopy.map((t) => t.id));
+				this.archivedTasks = this.archivedTasks.filter((t) => !ids.has(t.id));
+				this.tasks.push(...archivedTasksCopy);
+				this.saveTasks(); this.saveArchivedTasks(); this.renderTasks();
+				this.updateStatistics(); this.updateEmployeeFilter(); this.updateLocationFilter();
+			},
+		});
 	}
 };

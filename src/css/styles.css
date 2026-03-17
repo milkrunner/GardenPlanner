@@ -2548,8 +2548,9 @@ main > section > h2::after {
     display: flex;
     align-items: center;
     gap: 4px;
-    /* Touch-optimiert */
-    min-height: 40px;
+    /* Touch-optimiert: 44x44px WCAG 2.5.8 */
+    min-height: 44px;
+    min-width: 44px;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     position: relative;
@@ -2560,12 +2561,12 @@ main > section > h2::after {
     transition: all 0.2s ease;
 }
 
-/* Icon-Only Buttons */
+/* Icon-Only Buttons - 44x44px WCAG Touch Target */
 .task-btn-icon {
     padding: 10px;
-    min-width: 40px;
-    width: 40px;
-    height: 40px;
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
     justify-content: center;
     border-radius: 8px;
     gap: 0;
@@ -3260,10 +3261,10 @@ footer {
     }
 
     .task-btn-icon {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         padding: 10px;
-        flex: 0 0 40px;
+        flex: 0 0 44px;
     }
 
     .task-btn svg {
@@ -3566,6 +3567,141 @@ footer {
         min-width: calc(50% - 5px);
     }
 }
+
+/* ============================================
+   #77 - LOADING STATES
+   ============================================ */
+
+.btn-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.6s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+@keyframes btn-spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-loading {
+    opacity: 0.75;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn-loading .btn-spinner {
+    margin-right: 6px;
+}
+
+/* ============================================
+   #78 - TOUCH TARGETS 44x44px (WCAG 2.5.8)
+   ============================================ */
+
+.modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-add-subtask { min-width: 44px; min-height: 44px; }
+.btn-delete-subtask { min-width: 44px; min-height: 44px; }
+.btn-change-location { min-width: 44px; min-height: 44px; }
+.subtask-checkbox { width: 22px; height: 22px; min-width: 22px; }
+.task-select-checkbox { width: 22px; height: 22px; min-width: 22px; }
+.nav-link { min-height: 44px; display: inline-flex; align-items: center; }
+.filter-group select, .filter-group input { min-height: 44px; }
+.clear-search-btn { min-width: 44px; min-height: 44px; }
+
+/* ============================================
+   #80 - UNDO NOTIFICATION
+   ============================================ */
+
+.undo-notification {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    animation: undoSlideUp 0.3s ease-out;
+    max-width: 90vw;
+}
+
+[data-theme="dark"] .undo-notification {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes undoSlideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.undo-notification-hiding {
+    animation: undoSlideDown 0.3s ease-in forwards;
+}
+
+@keyframes undoSlideDown {
+    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+    to { opacity: 0; transform: translateX(-50%) translateY(20px); }
+}
+
+.undo-message { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.undo-btn {
+    background: transparent;
+    color: var(--primary, #4ade80);
+    border: 1px solid var(--primary, #4ade80);
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    min-height: 36px;
+}
+
+.undo-btn:hover { background: var(--primary, #4ade80); color: #1a1a1a; }
+
+.undo-close-btn {
+    background: transparent;
+    color: #999;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    min-width: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.undo-close-btn:hover { color: white; }
 
 /* ============================================
    PRINT STYLES
