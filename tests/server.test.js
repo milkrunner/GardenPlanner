@@ -1,6 +1,6 @@
 const request = require('supertest');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { app, validateTask, escapeHtml, sanitizeTaskData } = require('../server');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');

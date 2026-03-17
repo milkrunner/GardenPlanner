@@ -446,7 +446,7 @@
                     level: level || undefined,
                     category: category || undefined,
                     search: search || undefined,
-                    limit: limit ? parseInt(limit) : undefined
+                    limit: limit ? parseInt(limit, 10) : undefined
                 };
 
                 this.renderLogs();

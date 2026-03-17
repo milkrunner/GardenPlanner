@@ -25,11 +25,18 @@ COPY docs/ ./docs/
 COPY tests/ ./tests/
 COPY README.md ./
 
-# Datenverzeichnis erstellen
-RUN mkdir -p /app/data
+# Datenverzeichnis erstellen und Berechtigungen setzen
+RUN mkdir -p /app/data && chown -R node:node /app/data
+
+# Non-root User verwenden
+USER node
 
 # Port exponieren
 EXPOSE 3000
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/api/tasks', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"
 
 # Server starten
 CMD ["node", "server.js"]
