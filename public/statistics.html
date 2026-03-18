@@ -144,18 +144,6 @@
     <script src="../src/js/task-renderer.js"></script>
     <script src="../src/js/task-events.js"></script>
     <script src="../src/js/task-export.js"></script>
-    <script>
-        // Statistiken-Seite initialisieren
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.gartenPlaner) {
-                console.log('📊 Statistiken-Seite geladen');
-                
-                // Initial laden
-                window.gartenPlaner.updateStatistics();
-                window.gartenPlaner.updateCharts();
-                window.gartenPlaner.updateAdditionalStats();
-            }
-        });
-    </script>
+    <script src="../src/js/statistics-init.js"></script>
 </body>
 </html>

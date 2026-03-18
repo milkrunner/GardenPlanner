@@ -567,7 +567,9 @@ window.logger = new Logger({
     consoleOutput: true,
     includeStackTrace: true
 });
+window.GP.logger = window.logger;
 
 window.LoggerHelpers = LoggerHelpers;
+window.GP.LoggerHelpers = LoggerHelpers;
 
 console.log('📊 Logger-System initialisiert');

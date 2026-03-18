@@ -487,10 +487,13 @@ const RateLimitHelpers = {
 
 // Global verfügbar machen
 window.RateLimiter = RateLimiter;
+window.GP.RateLimiter = RateLimiter;
 window.RateLimitHelpers = RateLimitHelpers;
+window.GP.RateLimitHelpers = RateLimitHelpers;
 
 // Auto-Initialisierung
 window.rateLimiter = new RateLimiter();
+window.GP.rateLimiter = window.rateLimiter;
 
 // Freeze
 Object.freeze(RateLimiter.prototype);
