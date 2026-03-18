@@ -101,6 +101,11 @@ function validateTask(taskData, partial = false) {
             errors.push('Beschreibung darf maximal 2000 Zeichen lang sein');
         }
     }
+    if (taskData.notes !== undefined && taskData.notes !== '') {
+        if (typeof taskData.notes !== 'string' || taskData.notes.length > 5000) {
+            errors.push('Notizen dürfen maximal 5000 Zeichen lang sein');
+        }
+    }
     if (taskData.status !== undefined) {
         const valid = ['pending', 'in-progress', 'completed'];
         if (!valid.includes(taskData.status)) {
@@ -139,6 +144,7 @@ function sanitizeTaskData(data) {
     if (data.employee !== undefined) sanitized.employee = escapeHtml(data.employee.trim());
     if (data.location !== undefined) sanitized.location = escapeHtml(data.location.trim());
     if (data.description !== undefined) sanitized.description = escapeHtml(data.description.trim());
+    if (data.notes !== undefined) sanitized.notes = escapeHtml(data.notes.trim());
     if (data.status !== undefined) sanitized.status = data.status;
     if (data.priority !== undefined) sanitized.priority = data.priority;
     if (data.recurrence !== undefined) sanitized.recurrence = data.recurrence;
@@ -289,6 +295,7 @@ app.post('/api/tasks', (req, res) => {
         employee: sanitized.employee,
         location: sanitized.location,
         description: sanitized.description || '',
+        notes: sanitized.notes || '',
         status: sanitized.status || 'pending',
         priority: sanitized.priority || 'medium',
         recurrence: sanitized.recurrence || 'none',
@@ -349,6 +356,10 @@ app.put('/api/tasks/:id', (req, res) => {
     if (sanitized.description !== undefined && sanitized.description !== task.description) {
         changes.push('Beschreibung geändert');
         task.description = sanitized.description;
+    }
+    if (sanitized.notes !== undefined && sanitized.notes !== task.notes) {
+        changes.push('Notizen geändert');
+        task.notes = sanitized.notes;
     }
     if (sanitized.status !== undefined && sanitized.status !== task.status) {
         const oldStatus = task.status;
