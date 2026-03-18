@@ -293,7 +293,7 @@ GartenPlaner.prototype.updateStatistics = function () {
 	}
 
 	// Diagramme aktualisieren (nur auf Statistiken-Seite)
-	if (window.location.pathname.includes("statistics.html")) {
+	if (window.location.pathname.includes("statistics")) {
 		this.updateCharts();
 	}
 };

@@ -44,6 +44,14 @@ class GartenPlaner {
 		this.renderTasks();
 		this.updateStatistics();
 		this.initWeather();
+
+		this._ready = true;
+		if (this._onReady) this._onReady();
+	}
+
+	whenReady() {
+		if (this._ready) return Promise.resolve();
+		return new Promise((resolve) => { this._onReady = resolve; });
 	}
 
 	// ===== WEATHER API INTEGRATION =====
