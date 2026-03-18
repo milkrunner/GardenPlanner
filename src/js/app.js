@@ -235,7 +235,7 @@ class GartenPlaner {
 
 		const days = weather.daily.time.slice(0, 7);
 
-		weatherForecast.innerHTML = days
+		const cardsHtml = days
 			.map((date, index) => {
 				const weatherCode = weather.daily.weather_code[index];
 				const tempMax = Math.round(weather.daily.temperature_2m_max[index]);
@@ -244,6 +244,9 @@ class GartenPlaner {
 				const dayName = this.getDayName(date, index);
 				const weatherInfo = this.getWeatherInfo(weatherCode);
 				const todayClass = index === 0 ? "today" : "";
+
+				const precipitation = weather.daily.precipitation_sum[index] || 0;
+				const gardenTip = this.getGardenTip(weatherCode, tempMax, precipitation);
 
 				return `
                 <div class="weather-day-card ${todayClass}">
@@ -256,11 +259,15 @@ class GartenPlaner {
                         <div class="weather-temp">${tempMax}°</div>
                         <div class="weather-temp-range">${tempMin}° - ${tempMax}°</div>
                         <div class="weather-description">${weatherInfo.description}</div>
+                        ${gardenTip}
                     </div>
                 </div>
             `;
 			})
 			.join("");
+
+		const reminders = this.getWeatherReminders(weather);
+		weatherForecast.innerHTML = cardsHtml + reminders;
 	}
 
 	getDayName(dateString, index) {
@@ -322,6 +329,60 @@ class GartenPlaner {
 		}
 
 		return tip ? `<div class="garden-tip">${tip}</div>` : "";
+	}
+
+	getWeatherReminders(weather) {
+		const reminders = [];
+		const todayCode = weather.daily.weather_code[0];
+		const todayTemp = Math.round(weather.daily.temperature_2m_max[0]);
+		const todayPrecip = weather.daily.precipitation_sum[0] || 0;
+		const tomorrowCode = weather.daily.weather_code[1];
+		const tomorrowPrecip = weather.daily.precipitation_sum[1] || 0;
+
+		// Rainy today — skip watering
+		if ((todayCode >= 51 && todayCode <= 65) || (todayCode >= 80 && todayCode <= 82)) {
+			reminders.push({ icon: "💧", text: "Heute regnet es — Bewässerung kann ausgesetzt werden." });
+		} else if (todayTemp > 25 && todayPrecip < 1) {
+			reminders.push({ icon: "🚿", text: "Heiß und trocken heute — Pflanzen gut gießen, am besten morgens oder abends." });
+		}
+
+		// Frost warning
+		const minTemps = weather.daily.temperature_2m_min.slice(0, 3);
+		if (minTemps.some(t => t <= 2)) {
+			reminders.push({ icon: "❄️", text: "Frost möglich in den nächsten Tagen — empfindliche Pflanzen schützen!" });
+		}
+
+		// Storm warning
+		if (todayCode >= 95 || tomorrowCode >= 95) {
+			reminders.push({ icon: "⛈️", text: "Gewitter erwartet — Gartenmöbel und lose Gegenstände sichern." });
+		}
+
+		// Good planting conditions
+		if (todayTemp > 15 && todayTemp < 25 && todayPrecip < 5 && todayCode <= 3) {
+			reminders.push({ icon: "🌱", text: "Ideale Bedingungen heute zum Pflanzen und Arbeiten im Garten." });
+		}
+
+		// Rain tomorrow — plan outdoor work today
+		if ((tomorrowCode >= 51 && tomorrowCode <= 65) || (tomorrowCode >= 80 && tomorrowCode <= 82)) {
+			if (todayCode <= 3) {
+				reminders.push({ icon: "📋", text: "Morgen wird es nass — Außenarbeiten besser heute erledigen." });
+			}
+		}
+
+		// Wind warning
+		const windMax = weather.daily.wind_speed_10m_max?.[0] || 0;
+		if (windMax > 50) {
+			reminders.push({ icon: "💨", text: `Starker Wind heute (${Math.round(windMax)} km/h) — Gewächshäuser prüfen.` });
+		}
+
+		if (reminders.length === 0) return "";
+
+		return `<div class="weather-reminders">
+			<h3>🌿 Garten-Empfehlungen</h3>
+			<ul class="reminder-list">
+				${reminders.map(r => `<li><span class="reminder-icon">${r.icon}</span> ${r.text}</li>`).join("")}
+			</ul>
+		</div>`;
 	}
 
 	showWeatherError(message) {

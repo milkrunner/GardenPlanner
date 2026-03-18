@@ -39,8 +39,19 @@ describe('validateTask', () => {
         expect(result.valid).toBe(false);
     });
 
-    test('rejects missing employee', () => {
+    test('accepts empty employee (optional field)', () => {
         const result = validateTask({ ...validTask, employee: '' });
+        expect(result.valid).toBe(true);
+    });
+
+    test('accepts missing employee', () => {
+        const { employee, ...noEmployee } = validTask;
+        const result = validateTask(noEmployee);
+        expect(result.valid).toBe(true);
+    });
+
+    test('rejects employee over 100 chars', () => {
+        const result = validateTask({ ...validTask, employee: 'x'.repeat(101) });
         expect(result.valid).toBe(false);
     });
 

@@ -101,9 +101,9 @@ const Security = {
             errors.push('Beschreibung darf maximal 2000 Zeichen lang sein');
         }
 
-        // Mitarbeiter
-        if (!this.validateInput.text(taskData.employee, 1, 100)) {
-            errors.push('Mitarbeiter muss angegeben werden');
+        // Mitarbeiter (optional)
+        if (taskData.employee && !this.validateInput.text(taskData.employee, 0, 100)) {
+            errors.push('Mitarbeiter darf maximal 100 Zeichen lang sein');
         }
 
         // Standort
