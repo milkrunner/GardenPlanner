@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pflanzenbibliothek - Gartenplaner</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="stylesheet" href="../src/css/styles.css">
+    <link rel="stylesheet" href="../src/css/plants.css">
+</head>
+<body>
+    <div class="container">
+        <header role="banner">
+            <h1>🌱 Pflanzenbibliothek</h1>
+            <p class="subtitle">Pflegeanleitungen und Tipps für Ihren Garten</p>
+        </header>
+
+        <nav class="main-nav">
+            <a href="/index" class="nav-link">➕ Neue Aufgabe</a>
+            <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+            <a href="/statistics" class="nav-link">📊 Statistiken</a>
+            <a href="/plants" class="nav-link active">🌱 Pflanzen</a>
+            <a href="/logs" class="nav-link">📊 Logs</a>
+        </nav>
+
+        <main>
+            <section class="plant-controls">
+                <div class="search-box">
+                    <input type="text" id="plantSearch" placeholder="Pflanze suchen..." aria-label="Pflanzen durchsuchen">
+                </div>
+                <div class="category-filters" id="categoryFilters">
+                    <button class="category-btn active" data-category="">Alle</button>
+                </div>
+            </section>
+
+            <section class="plant-grid" id="plantGrid">
+                <div class="loading">Lade Pflanzenbibliothek...</div>
+            </section>
+
+            <!-- Plant Detail Modal -->
+            <div class="plant-modal" id="plantModal" style="display:none">
+                <div class="plant-modal-content" id="plantModalContent"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Gartenplaner | Pflanzenbibliothek</p>
+        </footer>
+    </div>
+
+    <div class="theme-toggle">
+        <button id="themeToggle" class="theme-toggle-btn" aria-label="Theme umschalten" title="Dark Mode umschalten">
+            <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+    </div>
+
+    <script src="../src/js/config.js"></script>
+    <script src="../src/js/security.js"></script>
+    <script src="../src/js/encryption.js"></script>
+    <script src="../src/js/rate-limiter.js"></script>
+    <script src="../src/js/logger.js"></script>
+    <script src="../src/js/error-handler.js"></script>
+    <script src="../src/js/api.js"></script>
+    <script src="../src/js/app.js"></script>
+    <script src="../src/js/task-state.js"></script>
+    <script src="../src/js/task-filters.js"></script>
+    <script src="../src/js/task-renderer.js"></script>
+    <script src="../src/js/task-events.js"></script>
+    <script src="../src/js/task-export.js"></script>
+    <script src="../src/js/plants.js"></script>
+</body>
+</html>

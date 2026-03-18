@@ -217,7 +217,7 @@ app.use('/tests', express.static(path.join(__dirname, 'tests')));
 app.use('/docs', express.static(path.join(__dirname, 'docs')));
 
 // HTML page routes (with and without .html extension)
-const pages = ['index', 'dashboard', 'statistics', 'logs'];
+const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];
 pages.forEach(page => {
     app.get(`/${page}`, limiter, (req, res) => {
         res.sendFile(path.join(__dirname, 'public', `${page}.html`));
@@ -478,6 +478,76 @@ app.delete('/api/archived-tasks/:id', (req, res) => {
 
     audit('archived_task_deleted', { taskId: deletedArchived.id, title: deletedArchived.title });
     res.status(204).send();
+});
+
+// --- Plant Library ---
+
+const PLANTS_FILE = path.join(__dirname, 'data', 'plants.json');
+
+const DEFAULT_PLANTS = [
+    { id: 'tomato', name: 'Tomate', category: 'Gemüse', icon: '🍅', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'], spacing: '50cm', germination: '7-14 Tage', harvest: '60-85 Tage', companions: ['Basilikum', 'Karotte', 'Petersilie'], avoid: ['Fenchel', 'Kartoffel'], tips: 'Regelmäßig ausgeizen. Vor Regen schützen um Braunfäule zu vermeiden. Tief pflanzen für kräftige Wurzeln.' },
+    { id: 'carrot', name: 'Karotte', category: 'Gemüse', icon: '🥕', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring', 'summer', 'autumn'], spacing: '5cm', germination: '14-21 Tage', harvest: '70-80 Tage', companions: ['Tomate', 'Zwiebel', 'Lauch'], avoid: ['Dill'], tips: 'Boden gut lockern für gerade Wurzeln. Nicht frisch düngen. Gleichmäßig feucht halten.' },
+    { id: 'basil', name: 'Basilikum', category: 'Kräuter', icon: '🌿', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'], spacing: '25cm', germination: '5-10 Tage', harvest: '21-30 Tage', companions: ['Tomate', 'Paprika'], avoid: ['Salbei'], tips: 'Regelmäßig ernten fördert buschigen Wuchs. Blüten abknipsen. Frostempfindlich.' },
+    { id: 'strawberry', name: 'Erdbeere', category: 'Obst', icon: '🍓', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring'], spacing: '30cm', germination: '14-28 Tage', harvest: '60-90 Tage', companions: ['Knoblauch', 'Zwiebel', 'Salat'], avoid: ['Kartoffel'], tips: 'Stroh unterlegen gegen Fäulnis. Ausläufer entfernen für größere Früchte. Nach 3 Jahren Standort wechseln.' },
+    { id: 'lettuce', name: 'Salat', category: 'Gemüse', icon: '🥬', difficulty: 'easy', sun: 'partial', water: 'medium', season: ['spring', 'summer', 'autumn'], spacing: '25cm', germination: '7-10 Tage', harvest: '45-60 Tage', companions: ['Karotte', 'Radieschen', 'Erdbeere'], avoid: [], tips: 'Staffelweise aussäen für durchgehende Ernte. Bei Hitze schießt er schnell. Morgens gießen.' },
+    { id: 'potato', name: 'Kartoffel', category: 'Gemüse', icon: '🥔', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring'], spacing: '35cm', germination: '14-21 Tage', harvest: '90-120 Tage', companions: ['Bohne', 'Mais', 'Spinat'], avoid: ['Tomate', 'Sonnenblume'], tips: 'Regelmäßig anhäufeln. Ernte wenn Kraut welkt. Nicht neben Tomaten pflanzen (Krautfäule).' },
+    { id: 'zucchini', name: 'Zucchini', category: 'Gemüse', icon: '🥒', difficulty: 'easy', sun: 'full', water: 'high', season: ['spring', 'summer'], spacing: '80cm', germination: '7-10 Tage', harvest: '50-60 Tage', companions: ['Mais', 'Bohne', 'Kapuzinerkresse'], avoid: ['Kartoffel'], tips: 'Braucht viel Platz. Jung ernten für besten Geschmack. Morgens bestäuben bei schlechtem Wetter.' },
+    { id: 'sunflower', name: 'Sonnenblume', category: 'Blumen', icon: '🌻', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring', 'summer'], spacing: '45cm', germination: '7-14 Tage', harvest: '80-100 Tage', companions: ['Gurke', 'Mais'], avoid: ['Kartoffel'], tips: 'Stütze bei großen Sorten. Lockt Bienen und Nützlinge an. Kerne im Herbst ernten.' },
+    { id: 'pepper', name: 'Paprika', category: 'Gemüse', icon: '🌶️', difficulty: 'medium', sun: 'full', water: 'medium', season: ['spring', 'summer'], spacing: '40cm', germination: '10-21 Tage', harvest: '70-90 Tage', companions: ['Basilikum', 'Tomate', 'Karotte'], avoid: ['Fenchel'], tips: 'Erste Blüte (Königsblüte) ausbrechen für mehr Ertrag. Warm halten, min. 15°C.' },
+    { id: 'radish', name: 'Radieschen', category: 'Gemüse', icon: '🔴', difficulty: 'easy', sun: 'partial', water: 'medium', season: ['spring', 'summer', 'autumn'], spacing: '5cm', germination: '3-7 Tage', harvest: '25-35 Tage', companions: ['Karotte', 'Salat', 'Spinat'], avoid: [], tips: 'Schnellstes Gemüse im Garten. Ideal als Lückenfüller. Bei Hitze werden sie scharf und holzig.' },
+    { id: 'lavender', name: 'Lavendel', category: 'Kräuter', icon: '💜', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring'], spacing: '40cm', germination: '14-28 Tage', harvest: 'mehrjährig', companions: ['Rose', 'Thymian'], avoid: [], tips: 'Liebt trockene, kalkhaltige Böden. Nach Blüte zurückschneiden. Vertreibt Blattläuse.' },
+    { id: 'rose', name: 'Rose', category: 'Blumen', icon: '🌹', difficulty: 'medium', sun: 'full', water: 'medium', season: ['spring', 'autumn'], spacing: '50cm', germination: '-', harvest: 'mehrjährig', companions: ['Lavendel', 'Knoblauch'], avoid: [], tips: 'Im Frühjahr schneiden. Auf Sternrußtau und Blattläuse achten. Gut mulchen.' },
+    { id: 'mint', name: 'Minze', category: 'Kräuter', icon: '🌿', difficulty: 'easy', sun: 'partial', water: 'high', season: ['spring'], spacing: '30cm', germination: '10-15 Tage', harvest: 'mehrjährig', companions: ['Tomate', 'Kohl'], avoid: [], tips: 'Wuchert stark — am besten im Topf halten! Regelmäßig ernten. Vermehrung über Ausläufer.' },
+    { id: 'pumpkin', name: 'Kürbis', category: 'Gemüse', icon: '🎃', difficulty: 'easy', sun: 'full', water: 'high', season: ['spring', 'summer'], spacing: '100cm', germination: '7-14 Tage', harvest: '90-120 Tage', companions: ['Mais', 'Bohne'], avoid: ['Kartoffel'], tips: 'Braucht sehr viel Platz. Auf Stroh lagern gegen Fäulnis. Ernte wenn Stiel verholzt.' },
+    { id: 'garlic', name: 'Knoblauch', category: 'Gemüse', icon: '🧄', difficulty: 'easy', sun: 'full', water: 'low', season: ['autumn', 'spring'], spacing: '15cm', germination: '14-21 Tage', harvest: '90-150 Tage', companions: ['Erdbeere', 'Rose', 'Tomate'], avoid: ['Bohne', 'Erbse'], tips: 'Im Herbst stecken für größere Knollen. Ernte wenn untere Blätter gelb werden. Gut trocknen lassen.' },
+    { id: 'bean', name: 'Bohne', category: 'Gemüse', icon: '🫘', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'], spacing: '10cm', germination: '7-14 Tage', harvest: '50-70 Tage', companions: ['Mais', 'Kürbis', 'Kartoffel'], avoid: ['Knoblauch', 'Zwiebel'], tips: 'Stangenbohnen brauchen Rankhilfe. Nie roh essen! Regelmäßig ernten fördert Nachblüte.' },
+    { id: 'cucumber', name: 'Gurke', category: 'Gemüse', icon: '🥒', difficulty: 'medium', sun: 'full', water: 'high', season: ['spring', 'summer'], spacing: '40cm', germination: '7-14 Tage', harvest: '50-70 Tage', companions: ['Bohne', 'Erbse', 'Sonnenblume'], avoid: ['Tomate', 'Kartoffel'], tips: 'Wärmeliebend, min. 15°C. Rankhilfe nutzen für Platzersparnis. Regelmäßig ernten.' },
+    { id: 'thyme', name: 'Thymian', category: 'Kräuter', icon: '🌱', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring'], spacing: '20cm', germination: '14-21 Tage', harvest: 'mehrjährig', companions: ['Lavendel', 'Rose', 'Kohl'], avoid: [], tips: 'Liebt magere, durchlässige Böden. Winterhart. Vor der Blüte ernten für bestes Aroma.' },
+    { id: 'onion', name: 'Zwiebel', category: 'Gemüse', icon: '🧅', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring', 'autumn'], spacing: '10cm', germination: '10-14 Tage', harvest: '90-120 Tage', companions: ['Karotte', 'Erdbeere', 'Salat'], avoid: ['Bohne', 'Erbse'], tips: 'Steckzwiebeln sind einfacher als Aussaat. Ernte wenn Laub umknickt. Gut trocknen lassen.' },
+    { id: 'apple', name: 'Apfelbaum', category: 'Obst', icon: '🍎', difficulty: 'medium', sun: 'full', water: 'medium', season: ['autumn', 'spring'], spacing: '300cm', germination: '-', harvest: 'mehrjährig (ab Jahr 3)', companions: ['Kapuzinerkresse', 'Knoblauch'], avoid: [], tips: 'Winterschnitt im Februar. Auf Befruchtersorte achten. Fallobst entfernen gegen Schädlinge.' }
+];
+
+function readPlants() {
+    try {
+        if (fs.existsSync(PLANTS_FILE)) {
+            return JSON.parse(fs.readFileSync(PLANTS_FILE, 'utf8'));
+        }
+    } catch { /* ignore */ }
+    return DEFAULT_PLANTS;
+}
+
+// GET /api/plants - List all plants, optional ?category=&search=
+app.get('/api/plants', (req, res) => {
+    let plants = readPlants();
+    const category = typeof req.query.category === 'string' ? req.query.category.trim() : '';
+    const search = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase() : '';
+
+    if (category) {
+        plants = plants.filter(p => p.category === category);
+    }
+    if (search) {
+        plants = plants.filter(p =>
+            p.name.toLowerCase().includes(search) ||
+            p.category.toLowerCase().includes(search) ||
+            p.tips.toLowerCase().includes(search)
+        );
+    }
+    res.json(plants);
+});
+
+// GET /api/plants/:id - Get single plant
+app.get('/api/plants/:id', (req, res) => {
+    const plants = readPlants();
+    const plant = plants.find(p => p.id === req.params.id);
+    if (!plant) return res.status(404).json({ error: 'Plant not found' });
+    res.json(plant);
+});
+
+// GET /api/plants/categories - List unique categories
+app.get('/api/plant-categories', (req, res) => {
+    const plants = readPlants();
+    const categories = [...new Set(plants.map(p => p.category))].sort();
+    res.json(categories);
 });
 
 // --- Start server ---
