@@ -627,9 +627,11 @@ class DataEncryption {
 
 // Global verfügbar machen
 window.DataEncryption = DataEncryption;
+window.GP.DataEncryption = DataEncryption;
 
 // Auto-Initialisierung
 window.dataEncryption = new DataEncryption();
+window.GP.dataEncryption = window.dataEncryption;
 
 // Freeze
 Object.freeze(DataEncryption.prototype);

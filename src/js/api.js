@@ -106,3 +106,4 @@ const TaskAPI = {
 };
 
 window.TaskAPI = TaskAPI;
+window.GP.TaskAPI = TaskAPI;

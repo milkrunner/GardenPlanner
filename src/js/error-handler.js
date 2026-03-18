@@ -1,5 +1,11 @@
 // Error Boundaries und Fehlerbehandlung für Gartenplaner
 // Graceful Error Handling mit User-Feedback
+//
+// === Error Handling Konvention (#73) ===
+// 1. Async/API-Funktionen: Werfen Errors, Caller fängt sie mit try/catch
+// 2. DOM-Helper: Geben null zurück + console.warn bei fehlendem Element
+// 3. Kritische Fehler: → errorBoundary.handleError() mit Context-Objekt
+// 4. Logging: window.logger für strukturiertes Logging, console.* nur als Fallback
 
 class ErrorBoundary {
     constructor() {
@@ -584,13 +590,19 @@ const SafeDOM = {
 
 // Global verfügbar machen
 window.ErrorBoundary = ErrorBoundary;
+window.GP.ErrorBoundary = ErrorBoundary;
 window.safeExecute = safeExecute;
+window.GP.safeExecute = safeExecute;
 window.safeAsync = safeAsync;
+window.GP.safeAsync = safeAsync;
 window.SafeStorage = SafeStorage;
+window.GP.SafeStorage = SafeStorage;
 window.SafeDOM = SafeDOM;
+window.GP.SafeDOM = SafeDOM;
 
 // Auto-Initialisierung
 window.errorBoundary = new ErrorBoundary();
+window.GP.errorBoundary = window.errorBoundary;
 
 // Starte Storage-Monitoring (alle 5 Minuten)
 window.errorBoundary.startStorageMonitoring(5);

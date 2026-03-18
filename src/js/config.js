@@ -53,5 +53,11 @@ const APP_CONFIG = {
     }
 };
 
+// Globaler Namespace (#72)
+window.GP = window.GP || {};
+window.GP.APP_CONFIG = APP_CONFIG;
+
+// Rückwärtskompatibilität
 window.APP_CONFIG = APP_CONFIG;
+
 Object.freeze(APP_CONFIG);

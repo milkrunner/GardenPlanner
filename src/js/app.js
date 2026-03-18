@@ -78,6 +78,16 @@ class GartenPlaner {
 			await this.fetchWeather(location);
 		} catch (error) {
 			console.error("Fehler beim Laden des Wetters:", error);
+			if (window.errorBoundary) {
+				window.errorBoundary.handleError({
+					type: 'runtime',
+					message: 'Wetterdaten konnten nicht geladen werden: ' + error.message,
+					error: error,
+					function: 'loadWeather',
+					context: {},
+					timestamp: new Date().toISOString()
+				});
+			}
 			this.showWeatherError("Fehler beim Laden der Wetterdaten");
 		}
 	}
@@ -155,6 +165,16 @@ class GartenPlaner {
 			await this.fetchWeather(location);
 		} catch (error) {
 			console.error("Fehler beim Geocoding:", error);
+			if (window.errorBoundary) {
+				window.errorBoundary.handleError({
+					type: 'runtime',
+					message: 'Geocoding fehlgeschlagen: ' + error.message,
+					error: error,
+					function: 'promptLocation',
+					context: {},
+					timestamp: new Date().toISOString()
+				});
+			}
 			alert("Fehler beim Suchen des Standorts.");
 		}
 	}
@@ -181,6 +201,16 @@ class GartenPlaner {
 			this.renderWeather(weather);
 		} catch (error) {
 			console.error("Fehler beim Abrufen der Wetterdaten:", error);
+			if (window.errorBoundary) {
+				window.errorBoundary.handleError({
+					type: 'runtime',
+					message: 'Wetterdaten-Abruf fehlgeschlagen: ' + error.message,
+					error: error,
+					function: 'fetchWeather',
+					context: { location: location.name },
+					timestamp: new Date().toISOString()
+				});
+			}
 			this.showWeatherError("Fehler beim Laden der Wetterdaten");
 		}
 	}
@@ -361,8 +391,10 @@ class ThemeManager {
 // App initialisieren
 document.addEventListener("DOMContentLoaded", () => {
 	window.themeManager = new ThemeManager();
+	window.GP.themeManager = window.themeManager;
 
 	window.gartenPlaner = new GartenPlaner();
+	window.GP.gartenPlaner = window.gartenPlaner;
 	window.gartenPlaner.setupBulkActionListeners();
 
 	const container = document.querySelector(".container");
@@ -409,6 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	announcer.className = "sr-only";
 	document.body.appendChild(announcer);
 	window.announcer = announcer;
+	window.GP.announcer = announcer;
 
 	console.log("🌱 Gartenplaner erfolgreich gestartet!");
 	console.log(

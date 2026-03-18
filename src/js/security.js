@@ -179,17 +179,27 @@ const Security = {
             if (typeof data === 'string') {
                 JSON.parse(data);
             }
-            
+
             // Größenlimit prüfen (5MB für LocalStorage)
             const size = new Blob([JSON.stringify(data)]).size;
             if (size > 5 * 1024 * 1024) {
-                console.warn(`Storage data for ${key} exceeds 5MB limit`);
+                console.warn(`Speicherdaten für '${key}' überschreiten 5MB Limit`);
                 return false;
             }
-            
+
             return true;
         } catch (e) {
-            console.error(`Invalid storage data for ${key}:`, e);
+            console.warn(`Ungültige Speicherdaten für '${key}':`, e.message);
+            if (window.errorBoundary) {
+                window.errorBoundary.handleError({
+                    type: 'validation',
+                    message: `Ungültige Speicherdaten für '${key}': ${e.message}`,
+                    error: e,
+                    function: 'validateStorageData',
+                    context: { key },
+                    timestamp: new Date().toISOString()
+                });
+            }
             return false;
         }
     },
@@ -199,7 +209,7 @@ const Security = {
         // Entferne gefährliche Protokolle aus Event Handlern
         const dangerous = /javascript:|data:|vbscript:/gi;
         if (dangerous.test(handler)) {
-            console.error('Dangerous event handler detected:', handler);
+            this.logSecurityEvent('error', 'Gefährlicher Event-Handler erkannt', { handler });
             return '';
         }
         return handler;
@@ -213,18 +223,36 @@ const Security = {
             message: message,
             data: data
         };
-        
-        // In Production würde man dies an ein Monitoring-System senden
-        if (type === 'error' || type === 'warning') {
-            console.warn('[Security]', event);
+
+        // Strukturiertes Logging über Logger wenn verfügbar
+        if (window.logger) {
+            const level = type === 'error' ? 'error' : type === 'warning' ? 'warn' : 'info';
+            window.logger[level](message, 'security', data || {});
         } else {
-            console.log('[Security]', event);
+            // Fallback auf Console
+            if (type === 'error' || type === 'warning') {
+                console.warn('[Security]', event);
+            } else {
+                console.log('[Security]', event);
+            }
+        }
+
+        // Kritische Security-Events an ErrorBoundary melden
+        if (type === 'error' && window.errorBoundary) {
+            window.errorBoundary.handleError({
+                type: 'security',
+                message: message,
+                function: 'logSecurityEvent',
+                context: data || {},
+                timestamp: new Date().toISOString()
+            });
         }
     }
 };
 
 // Global verfügbar machen
 window.Security = Security;
+window.GP.Security = Security;
 
 // Freeze das Objekt um Manipulation zu verhindern
 Object.freeze(Security);
