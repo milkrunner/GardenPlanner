@@ -86,9 +86,9 @@ function validateTask(taskData, partial = false) {
             errors.push('Titel muss zwischen 1 und 200 Zeichen lang sein');
         }
     }
-    if (!partial || taskData.employee !== undefined) {
-        if (typeof taskData.employee !== 'string' || taskData.employee.trim().length < 1 || taskData.employee.trim().length > 100) {
-            errors.push('Mitarbeiter muss angegeben werden (max 100 Zeichen)');
+    if (taskData.employee !== undefined && taskData.employee !== '') {
+        if (typeof taskData.employee !== 'string' || taskData.employee.trim().length > 100) {
+            errors.push('Mitarbeiter darf maximal 100 Zeichen lang sein');
         }
     }
     if (!partial || taskData.location !== undefined) {
@@ -292,7 +292,7 @@ app.post('/api/tasks', (req, res) => {
     const task = {
         id: uuidv4(),
         title: sanitized.title,
-        employee: sanitized.employee,
+        employee: sanitized.employee || '',
         location: sanitized.location,
         description: sanitized.description || '',
         notes: sanitized.notes || '',
