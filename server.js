@@ -5,6 +5,7 @@ const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const { logger, audit, requestLogger } = require('./src/server/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -141,6 +142,9 @@ app.use((req, res, next) => {
     next();
 });
 
+// Request logging
+app.use(requestLogger);
+
 // Auth status endpoint (always accessible, no auth required)
 app.get('/api/auth/status', (req, res) => {
     res.json({ authRequired: !!API_KEY });
@@ -161,6 +165,11 @@ app.use('/api', (req, res, next) => {
     // Require valid API key for all requests
     const providedKey = req.headers['x-api-key'];
     if (providedKey !== API_KEY) {
+        audit('auth_failure', {
+            ip: req.ip || req.connection.remoteAddress,
+            path: req.originalUrl,
+            method: req.method
+        });
         return res.status(401).json({ error: 'Unauthorized. Provide a valid X-API-Key header.' });
     }
     next();
@@ -284,6 +293,7 @@ app.post('/api/tasks', (req, res) => {
     tasks.push(task);
     writeTasks(tasks);
 
+    audit('task_created', { taskId: task.id, title: sanitized.title, employee: sanitized.employee });
     res.status(201).json(task);
 });
 
@@ -351,6 +361,7 @@ app.put('/api/tasks/:id', (req, res) => {
     tasks[index] = task;
     writeTasks(tasks);
 
+    audit('task_updated', { taskId: task.id, changes });
     res.json(task);
 });
 
@@ -360,9 +371,10 @@ app.delete('/api/tasks/:id', (req, res) => {
     const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
     if (index === -1) return res.status(404).json({ error: 'Task not found' });
 
-    tasks.splice(index, 1);
+    const deletedTask = tasks.splice(index, 1)[0];
     writeTasks(tasks);
 
+    audit('task_deleted', { taskId: deletedTask.id, title: deletedTask.title });
     res.status(204).send();
 });
 
@@ -388,6 +400,7 @@ app.post('/api/tasks/:id/archive', (req, res) => {
     writeTasks(tasks);
     writeArchivedTasks(archived);
 
+    audit('task_archived', { taskId: task.id, title: task.title });
     res.json(task);
 });
 
@@ -413,6 +426,7 @@ app.post('/api/tasks/:id/unarchive', (req, res) => {
     writeArchivedTasks(archived);
     writeTasks(tasks);
 
+    audit('task_unarchived', { taskId: task.id, title: task.title });
     res.json(task);
 });
 
@@ -427,9 +441,10 @@ app.delete('/api/archived-tasks/:id', (req, res) => {
     const index = archived.findIndex(t => String(t.id) === String(req.params.id));
     if (index === -1) return res.status(404).json({ error: 'Archived task not found' });
 
-    archived.splice(index, 1);
+    const deletedArchived = archived.splice(index, 1)[0];
     writeArchivedTasks(archived);
 
+    audit('archived_task_deleted', { taskId: deletedArchived.id, title: deletedArchived.title });
     res.status(204).send();
 });
 
@@ -437,11 +452,10 @@ app.delete('/api/archived-tasks/:id', (req, res) => {
 
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`Gartenplaner API running on port ${PORT}`);
-        if (API_KEY) {
-            console.log('API key authentication enabled for external requests');
-        } else {
-            console.log('Warning: No API_KEY set. API is open for all requests.');
+        logger.info({ port: PORT, auth: !!API_KEY }, 'Gartenplaner API started');
+        audit('server_started', { port: PORT, authEnabled: !!API_KEY });
+        if (!API_KEY) {
+            logger.warn('No API_KEY set. API is open for all requests.');
         }
     });
 }
