@@ -1700,6 +1700,11 @@ textarea {
     white-space: nowrap;
 }
 
+.timeline-bar.completion-bar {
+    background: linear-gradient(to top, #27ae60, #2ecc71);
+    border: 1px solid #1e8449;
+}
+
 .chart-empty {
     text-align: center;
     padding: 2rem;

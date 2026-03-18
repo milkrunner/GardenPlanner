@@ -338,6 +338,7 @@ GartenPlaner.prototype.updateCharts = function () {
 	this.updateEmployeeChart();
 	this.updateLocationChart();
 	this.updateActivityChart();
+	this.updateCompletionTrendChart();
 };
 
 GartenPlaner.prototype.updateEmployeeChart = function () {
@@ -462,6 +463,56 @@ GartenPlaner.prototype.updateActivityChart = function () {
 		.join("");
 };
 
+GartenPlaner.prototype.updateCompletionTrendChart = function () {
+	var chartEl = document.getElementById("completionTrendChart");
+	if (!chartEl) return;
+
+	// Last 30 days
+	var days = [];
+	var today = new Date();
+	for (var i = 29; i >= 0; i--) {
+		var date = new Date(today);
+		date.setDate(date.getDate() - i);
+		days.push(date);
+	}
+
+	// Collect all completed tasks (active + archived)
+	var allTasks = this.tasks.concat(this.archivedTasks);
+
+	var dayCounts = days.map((day) => {
+		var dayStr = day.toISOString().split("T")[0];
+		return {
+			date: day,
+			label: day.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
+			count: allTasks.filter((task) => {
+				if (!task.completedAt) return false;
+				var completedDate = new Date(task.completedAt).toISOString().split("T")[0];
+				return completedDate === dayStr;
+			}).length,
+		};
+	});
+
+	var maxCount = Math.max(...dayCounts.map((d) => d.count), 1);
+	var totalCompleted = dayCounts.reduce((sum, d) => sum + d.count, 0);
+
+	if (totalCompleted === 0) {
+		chartEl.innerHTML = '<div class="chart-empty">Noch keine erledigten Aufgaben in den letzten 30 Tagen</div>';
+		return;
+	}
+
+	chartEl.innerHTML = dayCounts
+		.map((day) => {
+			var height = (day.count / maxCount) * 100;
+			return `
+				<div class="timeline-bar completion-bar" style="height: ${height}%" title="${day.count} erledigt am ${day.label}">
+					${day.count > 0 ? `<div class="timeline-bar-value">${day.count}</div>` : ""}
+					<div class="timeline-bar-label">${day.label}</div>
+				</div>
+			`;
+		})
+		.join("");
+};
+
 GartenPlaner.prototype.updateAdditionalStats = function () {
 	var statArchived = document.getElementById("statArchived");
 	var statLocations = document.getElementById("statLocations");
@@ -495,6 +546,41 @@ GartenPlaner.prototype.updateAdditionalStats = function () {
 			return new Date(task.createdAt) >= weekAgo;
 		});
 		statThisWeek.textContent = weekTasks.length;
+	}
+
+	// Completed this week
+	var statCompletedThisWeek = document.getElementById("statCompletedThisWeek");
+	if (statCompletedThisWeek) {
+		var weekAgo = new Date();
+		weekAgo.setDate(weekAgo.getDate() - 7);
+		var allTasks = this.tasks.concat(this.archivedTasks);
+		var completedThisWeek = allTasks.filter((task) => {
+			return task.completedAt && new Date(task.completedAt) >= weekAgo;
+		});
+		statCompletedThisWeek.textContent = completedThisWeek.length;
+	}
+
+	// Average completion time
+	var statAvgCompletionTime = document.getElementById("statAvgCompletionTime");
+	if (statAvgCompletionTime) {
+		var allTasks = this.tasks.concat(this.archivedTasks);
+		var completedWithTime = allTasks.filter((t) => t.completedAt && t.createdAt);
+		if (completedWithTime.length > 0) {
+			var totalHours = completedWithTime.reduce((sum, t) => {
+				var diff = new Date(t.completedAt) - new Date(t.createdAt);
+				return sum + diff / (1000 * 60 * 60);
+			}, 0);
+			var avgHours = totalHours / completedWithTime.length;
+			if (avgHours < 1) {
+				statAvgCompletionTime.textContent = Math.round(avgHours * 60) + " Min.";
+			} else if (avgHours < 24) {
+				statAvgCompletionTime.textContent = avgHours.toFixed(1) + " Std.";
+			} else {
+				statAvgCompletionTime.textContent = (avgHours / 24).toFixed(1) + " Tage";
+			}
+		} else {
+			statAvgCompletionTime.textContent = "-";
+		}
 	}
 
 	// History-Timeline rendern

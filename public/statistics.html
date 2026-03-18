@@ -65,8 +65,14 @@
                     </div>
                 </div>
                 <div class="chart-container full-width">
-                    <h3>📈 Wöchentliche Aktivität</h3>
+                    <h3>📈 Wöchentliche Aktivität (Erstellt)</h3>
                     <div id="activityChart" class="chart-timeline">
+                        <!-- Wird dynamisch gefüllt -->
+                    </div>
+                </div>
+                <div class="chart-container full-width">
+                    <h3>✅ Abschluss-Trend (30 Tage)</h3>
+                    <div id="completionTrendChart" class="chart-timeline">
                         <!-- Wird dynamisch gefüllt -->
                     </div>
                 </div>
@@ -102,6 +108,20 @@
                         <div class="stat-content">
                             <h4>Diese Woche</h4>
                             <p class="stat-value" id="statThisWeek">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <h4>Diese Woche erledigt</h4>
+                            <p class="stat-value" id="statCompletedThisWeek">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-content">
+                            <h4>Durchschn. Bearbeitungszeit</h4>
+                            <p class="stat-value" id="statAvgCompletionTime">-</p>
                         </div>
                     </div>
                 </div>
