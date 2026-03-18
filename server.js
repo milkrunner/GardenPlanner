@@ -57,6 +57,25 @@ function writeArchivedTasks(tasks) {
     fs.renameSync(tmp, ARCHIVED_FILE);
 }
 
+// --- Pagination helper ---
+
+function paginate(tasks, query) {
+    const page = parseInt(query.page, 10);
+    const limit = parseInt(query.limit, 10);
+
+    // No pagination params → return raw array (backwards-compatible)
+    if (!page && !limit) return null;
+
+    const safePage = (Number.isInteger(page) && page > 0) ? page : 1;
+    const safeLimit = (Number.isInteger(limit) && limit > 0 && limit <= 200) ? limit : 50;
+    const total = tasks.length;
+    const pages = Math.ceil(total / safeLimit);
+    const start = (safePage - 1) * safeLimit;
+    const data = tasks.slice(start, start + safeLimit);
+
+    return { data, total, page: safePage, limit: safeLimit, pages };
+}
+
 // --- Validation ---
 
 function validateTask(taskData, partial = false) {
@@ -209,7 +228,7 @@ app.get('/', limiter, (req, res) => {
 
 // --- API Routes ---
 
-// GET /api/tasks - List all tasks (use POST /api/tasks/search for filtered queries)
+// GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
 app.get('/api/tasks', (req, res) => {
     let tasks = readTasks();
 
@@ -222,13 +241,14 @@ app.get('/api/tasks', (req, res) => {
         }
     }
 
-    res.json(tasks);
+    const paginated = paginate(tasks, req.query);
+    res.json(paginated || tasks);
 });
 
 // POST /api/tasks/search - Filter tasks with sensitive criteria via request body
 app.post('/api/tasks/search', (req, res) => {
     let tasks = readTasks();
-    const { status, employee, location } = req.body;
+    const { status, employee, location, page, limit } = req.body;
 
     if (typeof status === 'string' && status.trim()) {
         const validStatuses = ['pending', 'in-progress', 'completed'];
@@ -243,7 +263,8 @@ app.post('/api/tasks/search', (req, res) => {
         tasks = tasks.filter(t => t.location === location.trim());
     }
 
-    res.json(tasks);
+    const paginated = paginate(tasks, { page, limit });
+    res.json(paginated || tasks);
 });
 
 // GET /api/tasks/:id - Get single task
@@ -460,4 +481,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { app, validateTask, escapeHtml, sanitizeTaskData };
+module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate };

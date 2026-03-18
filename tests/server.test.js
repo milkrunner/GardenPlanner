@@ -1,7 +1,7 @@
 const request = require('supertest');
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData } = require('../server');
+const { app, validateTask, escapeHtml, sanitizeTaskData, paginate } = require('../server');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
@@ -295,6 +295,117 @@ describe('API Endpoints', () => {
             expect(res.body).toHaveLength(1);
             expect(res.body[0].employee).toBe('Max');
         });
+    });
+});
+
+// --- Pagination Tests ---
+
+describe('paginate', () => {
+    const items = Array.from({ length: 10 }, (_, i) => ({ id: i + 1 }));
+
+    test('returns null when no page/limit params', () => {
+        expect(paginate(items, {})).toBeNull();
+    });
+
+    test('paginates with page and limit', () => {
+        const result = paginate(items, { page: '1', limit: '3' });
+        expect(result.data).toHaveLength(3);
+        expect(result.total).toBe(10);
+        expect(result.page).toBe(1);
+        expect(result.limit).toBe(3);
+        expect(result.pages).toBe(4);
+    });
+
+    test('returns correct page 2', () => {
+        const result = paginate(items, { page: '2', limit: '3' });
+        expect(result.data).toHaveLength(3);
+        expect(result.data[0].id).toBe(4);
+    });
+
+    test('returns partial last page', () => {
+        const result = paginate(items, { page: '4', limit: '3' });
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].id).toBe(10);
+    });
+
+    test('returns empty data for page beyond range', () => {
+        const result = paginate(items, { page: '99', limit: '3' });
+        expect(result.data).toHaveLength(0);
+        expect(result.total).toBe(10);
+    });
+
+    test('defaults to page 1 limit 50 for invalid values', () => {
+        const result = paginate(items, { page: 'abc', limit: '-5' });
+        expect(result.page).toBe(1);
+        expect(result.limit).toBe(50);
+        expect(result.data).toHaveLength(10);
+    });
+
+    test('caps limit at 200', () => {
+        const result = paginate(items, { page: '1', limit: '999' });
+        expect(result.limit).toBe(50);
+    });
+});
+
+describe('GET /api/tasks with pagination', () => {
+    const validTask = {
+        title: 'Rasen mähen',
+        employee: 'Max',
+        location: 'Garten'
+    };
+
+    test('returns array without pagination params (backwards-compatible)', async () => {
+        await request(app).post('/api/tasks').send(validTask);
+        const res = await request(app).get('/api/tasks');
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    test('returns paginated object with page param', async () => {
+        for (let i = 0; i < 5; i++) {
+            await request(app).post('/api/tasks').send({ ...validTask, title: `Task ${i}` });
+        }
+        const res = await request(app).get('/api/tasks?page=1&limit=2');
+        expect(res.body).toHaveProperty('data');
+        expect(res.body).toHaveProperty('total', 5);
+        expect(res.body).toHaveProperty('page', 1);
+        expect(res.body).toHaveProperty('limit', 2);
+        expect(res.body).toHaveProperty('pages', 3);
+        expect(res.body.data).toHaveLength(2);
+    });
+
+    test('pagination works with status filter', async () => {
+        for (let i = 0; i < 3; i++) {
+            await request(app).post('/api/tasks').send(validTask);
+        }
+        const res = await request(app).get('/api/tasks?status=pending&page=1&limit=2');
+        expect(res.body.data).toHaveLength(2);
+        expect(res.body.total).toBe(3);
+    });
+});
+
+describe('POST /api/tasks/search with pagination', () => {
+    const validTask = {
+        title: 'Rasen mähen',
+        employee: 'Max',
+        location: 'Garten'
+    };
+
+    test('returns array without pagination (backwards-compatible)', async () => {
+        await request(app).post('/api/tasks').send(validTask);
+        const res = await request(app).post('/api/tasks/search').send({ employee: 'Max' });
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    test('returns paginated object with page/limit in body', async () => {
+        for (let i = 0; i < 5; i++) {
+            await request(app).post('/api/tasks').send(validTask);
+        }
+        const res = await request(app)
+            .post('/api/tasks/search')
+            .send({ employee: 'Max', page: 1, limit: 2 });
+        expect(res.body).toHaveProperty('data');
+        expect(res.body.data).toHaveLength(2);
+        expect(res.body.total).toBe(5);
     });
 });
 
