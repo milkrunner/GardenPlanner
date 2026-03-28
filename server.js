@@ -141,11 +141,11 @@ function escapeHtml(str) {
 
 function sanitizeTaskData(data) {
     const sanitized = {};
-    if (data.title !== undefined) sanitized.title = escapeHtml(data.title.trim());
-    if (data.employee !== undefined) sanitized.employee = escapeHtml(data.employee.trim());
-    if (data.location !== undefined) sanitized.location = escapeHtml(data.location.trim());
-    if (data.description !== undefined) sanitized.description = escapeHtml(data.description.trim());
-    if (data.notes !== undefined) sanitized.notes = escapeHtml(data.notes.trim());
+    if (data.title !== undefined) sanitized.title = data.title.trim();
+    if (data.employee !== undefined) sanitized.employee = data.employee.trim();
+    if (data.location !== undefined) sanitized.location = data.location.trim();
+    if (data.description !== undefined) sanitized.description = data.description.trim();
+    if (data.notes !== undefined) sanitized.notes = data.notes.trim();
     if (data.status !== undefined) sanitized.status = data.status;
     if (data.priority !== undefined) sanitized.priority = data.priority;
     if (data.recurrence !== undefined) sanitized.recurrence = data.recurrence;
@@ -316,7 +316,7 @@ app.post('/api/tasks', (req, res) => {
         }],
         subtasks: Array.isArray(sanitized.subtasks) ? sanitized.subtasks.map(st => ({
             id: Date.now() + Math.random(),
-            text: typeof st === 'string' ? escapeHtml(st) : escapeHtml(st.text || ''),
+            text: typeof st === 'string' ? st : (st.text || ''),
             completed: typeof st === 'object' ? !!st.completed : false
         })) : [],
         sortOrder: Date.now()
