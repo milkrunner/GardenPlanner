@@ -14,12 +14,14 @@
             <p class="subtitle">Detaillierte Übersicht und Auswertungen</p>
         </header>
 
-        <nav class="main-nav">
-            <a href="/index" class="nav-link">➕ Neue Aufgabe</a>
-            <a href="/dashboard" class="nav-link">📋 Dashboard</a>
-            <a href="/statistics" class="nav-link active">📊 Statistiken</a>
-            <a href="/logs" class="nav-link">📊 Logs</a>
-        </nav>
+        <div class="nav-container">
+            <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+                <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+                <a href="/statistics" class="nav-link active" aria-current="page">📊 Statistiken</a>
+                <a href="/logs" class="nav-link">📜 Logs</a>
+            </nav>
+            <a href="/index" class="btn btn-primary nav-action-btn">➕ Neue Aufgabe</a>
+        </div>
 
         <main>
             <!-- Statistiken mit Fortschrittsbalken -->

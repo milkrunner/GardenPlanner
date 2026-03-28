@@ -297,12 +297,14 @@
     <div class="log-viewer-container">
         <h1>📊 System Logs</h1>
         
-        <nav class="main-nav">
-            <a href="/index" class="nav-link">➕ Neue Aufgabe</a>
-            <a href="/dashboard" class="nav-link">📋 Dashboard</a>
-            <a href="/statistics" class="nav-link">📊 Statistiken</a>
-            <a href="/logs" class="nav-link active">📊 Logs</a>
-        </nav>
+        <div class="nav-container">
+            <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+                <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+                <a href="/statistics" class="nav-link">📊 Statistiken</a>
+                <a href="/logs" class="nav-link active" aria-current="page">📜 Logs</a>
+            </nav>
+            <a href="/index" class="btn btn-primary nav-action-btn">➕ Neue Aufgabe</a>
+        </div>
 
         <!-- Statistiken -->
         <div class="log-stats" id="logStats">

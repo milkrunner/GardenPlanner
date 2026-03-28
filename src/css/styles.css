@@ -248,6 +248,41 @@ header h1 {
   background: rgba(27, 94, 63, 0.08);
 }
 
+/* Nav Container - flex layout for nav + action button */
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Nav Action Button */
+.nav-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nav-action-btn {
+    text-align: center;
+    justify-content: center;
+  }
+}
+
 /* Main Content */
 @keyframes fadeIn {
   from {
