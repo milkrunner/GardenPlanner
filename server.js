@@ -200,7 +200,7 @@ function sanitizeTaskData(data) {
 // --- Middleware ---
 
 app.use(compression());
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 // Security headers (#2 CORS removed - same-origin, #8 CSP added)
 app.use((req, res, next) => {
