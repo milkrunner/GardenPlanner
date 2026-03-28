@@ -288,8 +288,14 @@ describe('API Endpoints', () => {
             expect(res.body.id).toBe(created.body.id);
         });
 
-        test('returns 404 for non-existent task', async () => {
+        test('returns 400 for invalid ID format', async () => {
             const res = await request(app).get('/api/tasks/nonexistent');
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/Invalid ID format/);
+        });
+
+        test('returns 404 for valid UUID that does not exist', async () => {
+            const res = await request(app).get('/api/tasks/00000000-0000-4000-a000-000000000000');
             expect(res.status).toBe(404);
         });
     });
@@ -305,9 +311,17 @@ describe('API Endpoints', () => {
             expect(res.body.title).toBe('Hecke schneiden');
         });
 
-        test('returns 404 for non-existent task', async () => {
+        test('returns 400 for invalid ID format', async () => {
             const res = await request(app)
                 .put('/api/tasks/nonexistent')
+                .send({ title: 'Test' });
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/Invalid ID format/);
+        });
+
+        test('returns 404 for valid UUID that does not exist', async () => {
+            const res = await request(app)
+                .put('/api/tasks/00000000-0000-4000-a000-000000000000')
                 .send({ title: 'Test' });
             expect(res.status).toBe(404);
         });
@@ -367,8 +381,14 @@ describe('API Endpoints', () => {
             expect(list.body).toHaveLength(0);
         });
 
-        test('returns 404 for non-existent task', async () => {
+        test('returns 400 for invalid ID format', async () => {
             const res = await request(app).delete('/api/tasks/nonexistent');
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/Invalid ID format/);
+        });
+
+        test('returns 404 for valid UUID that does not exist', async () => {
+            const res = await request(app).delete('/api/tasks/00000000-0000-4000-a000-000000000000');
             expect(res.status).toBe(404);
         });
     });
@@ -528,6 +548,36 @@ describe('POST /api/tasks/search with pagination', () => {
         expect(res.body).toHaveProperty('data');
         expect(res.body.data).toHaveLength(2);
         expect(res.body.total).toBe(5);
+    });
+});
+
+// --- UUID Validation Tests ---
+
+describe('UUID validation for :id parameters', () => {
+    const invalidIds = ['nonexistent', '123', 'not-a-uuid', '../etc/passwd'];
+    const routes = [
+        { method: 'get', path: '/api/tasks/' },
+        { method: 'put', path: '/api/tasks/', body: { title: 'Test' } },
+        { method: 'delete', path: '/api/tasks/' },
+        { method: 'post', path: '/api/tasks/', suffix: '/archive' },
+        { method: 'post', path: '/api/tasks/', suffix: '/unarchive' },
+        { method: 'delete', path: '/api/archived-tasks/' },
+    ];
+
+    routes.forEach(({ method, path, body, suffix }) => {
+        const fullPath = `${path}INVALID_ID${suffix || ''}`;
+        test(`${method.toUpperCase()} ${fullPath} returns 400 for invalid ID`, async () => {
+            const req = request(app)[method](`${path}not-a-uuid${suffix || ''}`);
+            if (body) req.send(body);
+            const res = await req;
+            expect(res.status).toBe(400);
+            expect(res.body.error).toMatch(/Invalid ID format/);
+        });
+    });
+
+    test('accepts valid UUID v4 format', async () => {
+        const res = await request(app).get('/api/tasks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+        expect(res.status).toBe(404); // valid format, just doesn't exist
     });
 });
 
