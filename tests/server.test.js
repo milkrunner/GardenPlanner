@@ -94,6 +94,69 @@ describe('validateTask', () => {
         const result = validateTask({ ...validTask, description: 'x'.repeat(2001) });
         expect(result.valid).toBe(false);
     });
+
+    test('rejects more than 50 subtasks', () => {
+        const subtasks = Array.from({ length: 51 }, (_, i) => ({ text: `Subtask ${i}`, completed: false }));
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('50')]));
+    });
+
+    test('accepts exactly 50 subtasks', () => {
+        const subtasks = Array.from({ length: 50 }, (_, i) => ({ text: `Subtask ${i}`, completed: false }));
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(true);
+    });
+
+    test('rejects subtask text over 500 chars', () => {
+        const subtasks = [{ text: 'x'.repeat(501), completed: false }];
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('500')]));
+    });
+
+    test('rejects subtask string over 500 chars', () => {
+        const subtasks = ['x'.repeat(501)];
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('500')]));
+    });
+
+    test('rejects subtasks that are not an array', () => {
+        const result = validateTask({ ...validTask, subtasks: 'not-an-array' });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Array')]));
+    });
+
+    test('rejects subtask with non-string text', () => {
+        const subtasks = [{ text: 123, completed: false }];
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('String')]));
+    });
+
+    test('rejects subtask with non-boolean completed', () => {
+        const subtasks = [{ text: 'Valid text', completed: 'yes' }];
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Boolean')]));
+    });
+
+    test('rejects subtask with invalid type (number)', () => {
+        const subtasks = [42];
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('String oder Objekt')]));
+    });
+
+    test('accepts valid subtasks (mixed strings and objects)', () => {
+        const subtasks = [
+            { text: 'Object subtask', completed: true },
+            'String subtask'
+        ];
+        const result = validateTask({ ...validTask, subtasks });
+        expect(result.valid).toBe(true);
+    });
 });
 
 // --- Unit Tests: escapeHtml ---
@@ -247,6 +310,38 @@ describe('API Endpoints', () => {
                 .put('/api/tasks/nonexistent')
                 .send({ title: 'Test' });
             expect(res.status).toBe(404);
+        });
+
+        test('normalizes subtasks like POST does', async () => {
+            const created = await request(app).post('/api/tasks').send(validTask);
+            const res = await request(app)
+                .put(`/api/tasks/${created.body.id}`)
+                .send({
+                    subtasks: [
+                        { text: 'Object subtask', completed: true },
+                        'String subtask'
+                    ]
+                });
+
+            expect(res.status).toBe(200);
+            expect(res.body.subtasks).toHaveLength(2);
+            expect(res.body.subtasks[0]).toHaveProperty('id');
+            expect(res.body.subtasks[0].text).toBe('Object subtask');
+            expect(res.body.subtasks[0].completed).toBe(true);
+            expect(res.body.subtasks[1]).toHaveProperty('id');
+            expect(res.body.subtasks[1].text).toBe('String subtask');
+            expect(res.body.subtasks[1].completed).toBe(false);
+        });
+
+        test('rejects subtasks exceeding max count via PUT', async () => {
+            const created = await request(app).post('/api/tasks').send(validTask);
+            const subtasks = Array.from({ length: 51 }, (_, i) => ({ text: `Sub ${i}`, completed: false }));
+            const res = await request(app)
+                .put(`/api/tasks/${created.body.id}`)
+                .send({ subtasks });
+
+            expect(res.status).toBe(400);
+            expect(res.body.errors).toEqual(expect.arrayContaining([expect.stringContaining('50')]));
         });
 
         test('tracks status change in history', async () => {

@@ -169,6 +169,33 @@ function validateTask(taskData, partial = false) {
             errors.push('Ungültige Wiederholung (erlaubt: none, daily, weekly, monthly)');
         }
     }
+    if (taskData.subtasks !== undefined) {
+        if (!Array.isArray(taskData.subtasks)) {
+            errors.push('Unteraufgaben müssen ein Array sein');
+        } else {
+            if (taskData.subtasks.length > 50) {
+                errors.push('Maximal 50 Unteraufgaben erlaubt');
+            }
+            taskData.subtasks.forEach((st, i) => {
+                if (typeof st === 'string') {
+                    if (st.length > 500) {
+                        errors.push(`Unteraufgabe ${i + 1}: Text darf maximal 500 Zeichen lang sein`);
+                    }
+                } else if (typeof st === 'object' && st !== null) {
+                    if (typeof st.text !== 'string') {
+                        errors.push(`Unteraufgabe ${i + 1}: text muss ein String sein`);
+                    } else if (st.text.length > 500) {
+                        errors.push(`Unteraufgabe ${i + 1}: Text darf maximal 500 Zeichen lang sein`);
+                    }
+                    if (st.completed !== undefined && typeof st.completed !== 'boolean') {
+                        errors.push(`Unteraufgabe ${i + 1}: completed muss ein Boolean sein`);
+                    }
+                } else {
+                    errors.push(`Unteraufgabe ${i + 1}: muss ein String oder Objekt mit text-Eigenschaft sein`);
+                }
+            });
+        }
+    }
 
     return { valid: errors.length === 0, errors };
 }
@@ -442,7 +469,13 @@ app.put('/api/tasks/:id', async (req, res) => {
         }
         if (sanitized.priority !== undefined) task.priority = sanitized.priority;
         if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
-        if (sanitized.subtasks !== undefined) task.subtasks = sanitized.subtasks;
+        if (sanitized.subtasks !== undefined) {
+            task.subtasks = Array.isArray(sanitized.subtasks) ? sanitized.subtasks.map(st => ({
+                id: Date.now() + Math.random(),
+                text: typeof st === 'string' ? st : (st.text || ''),
+                completed: typeof st === 'object' ? !!st.completed : false
+            })) : [];
+        }
 
         if (changes.length > 0) {
             if (!task.history) task.history = [];
