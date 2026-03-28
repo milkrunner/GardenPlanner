@@ -11,6 +11,15 @@ const logViewer = {
         document.getElementById('filterSearch').addEventListener('input', () => this.applyFilters());
         document.getElementById('filterLimit').addEventListener('change', () => this.applyFilters());
 
+        // Button event listeners (#12: extracted from inline onclick)
+        const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', () => fn()); };
+        bind('logRefreshBtn', () => this.refresh());
+        bind('logExportJsonBtn', () => this.exportJSON());
+        bind('logExportCsvBtn', () => this.exportCSV());
+        bind('logExportTextBtn', () => this.exportText());
+        bind('logClearBtn', () => this.clearLogs());
+        bind('logDetailCloseBtn', () => this.closeDetail());
+
         // Initiales Laden
         this.refresh();
 
@@ -91,7 +100,7 @@ const logViewer = {
             : '-';
 
         return `
-            <tr onclick="logViewer.showDetail('${log.id}')">
+            <tr data-log-id="${this.escapeHtml(log.id)}" class="log-row-clickable">
                 <td class="log-timestamp">${timestamp}</td>
                 <td><span class="log-level ${log.level.toLowerCase()}">${log.level}</span></td>
                 <td><span class="log-category">${log.category}</span></td>
@@ -199,11 +208,17 @@ const logViewer = {
 // Initialisiere beim Laden
 window.addEventListener('DOMContentLoaded', () => {
     logViewer.init();
-});
 
-// Modal bei Klick außerhalb schließen
-document.getElementById('logDetailModal').addEventListener('click', (e) => {
-    if (e.target.id === 'logDetailModal') {
-        logViewer.closeDetail();
-    }
+    // Event delegation for log row clicks (#12)
+    document.getElementById('logTableBody').addEventListener('click', (e) => {
+        const row = e.target.closest('tr[data-log-id]');
+        if (row) logViewer.showDetail(row.dataset.logId);
+    });
+
+    // Modal bei Klick außerhalb schließen
+    document.getElementById('logDetailModal').addEventListener('click', (e) => {
+        if (e.target.id === 'logDetailModal') {
+            logViewer.closeDetail();
+        }
+    });
 });

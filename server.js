@@ -1,6 +1,5 @@
 const express = require('express');
 const compression = require('compression');
-const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
@@ -25,36 +24,81 @@ if (!fs.existsSync(ARCHIVED_FILE)) {
     fs.writeFileSync(ARCHIVED_FILE, '[]', 'utf8');
 }
 
-// --- Storage helpers ---
+// --- Storage helpers with file locking (#22) ---
 
-function readTasks() {
+const locks = new Map();
+
+function acquireLock(file, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+        const start = Date.now();
+        (function tryLock() {
+            if (!locks.get(file)) {
+                locks.set(file, true);
+                return resolve();
+            }
+            if (Date.now() - start > timeout) {
+                return reject(new Error(`Lock timeout for ${path.basename(file)}`));
+            }
+            setTimeout(tryLock, 10);
+        })();
+    });
+}
+
+function releaseLock(file) {
+    locks.delete(file);
+}
+
+function readJSON(file) {
     try {
-        const data = fs.readFileSync(TASKS_FILE, 'utf8');
+        const data = fs.readFileSync(file, 'utf8');
         return JSON.parse(data);
     } catch {
         return [];
     }
 }
 
-function writeTasks(tasks) {
-    const tmp = TASKS_FILE + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(tasks, null, 2), 'utf8');
-    fs.renameSync(tmp, TASKS_FILE);
-}
-
-function readArchivedTasks() {
-    try {
-        const data = fs.readFileSync(ARCHIVED_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch {
-        return [];
+function writeJSON(file, data) {
+    const tmp = file + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            fs.renameSync(tmp, file);
+            return;
+        } catch (err) {
+            if (attempt === 2 || err.code !== 'EPERM') throw err;
+            const start = Date.now();
+            while (Date.now() - start < 50) { /* spin */ }
+        }
     }
 }
 
-function writeArchivedTasks(tasks) {
-    const tmp = ARCHIVED_FILE + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(tasks, null, 2), 'utf8');
-    fs.renameSync(tmp, ARCHIVED_FILE);
+function readTasks() { return readJSON(TASKS_FILE); }
+function writeTasks(tasks) { writeJSON(TASKS_FILE, tasks); }
+function readArchivedTasks() { return readJSON(ARCHIVED_FILE); }
+function writeArchivedTasks(tasks) { writeJSON(ARCHIVED_FILE, tasks); }
+
+async function withLockedTasks(fn) {
+    await acquireLock(TASKS_FILE);
+    try {
+        const tasks = readTasks();
+        const result = fn(tasks);
+        if (result.tasks !== undefined) writeTasks(result.tasks);
+        return result;
+    } finally {
+        releaseLock(TASKS_FILE);
+    }
+}
+
+async function withLockedArchive(fn) {
+    await acquireLock(ARCHIVED_FILE);
+    try {
+        const tasks = readArchivedTasks();
+        const result = fn(tasks);
+        if (result.tasks !== undefined) writeArchivedTasks(result.tasks);
+        return result;
+    } finally {
+        releaseLock(ARCHIVED_FILE);
+    }
 }
 
 // --- Pagination helper ---
@@ -155,15 +199,26 @@ function sanitizeTaskData(data) {
 // --- Middleware ---
 
 app.use(compression());
-app.use(cors());
 app.use(express.json());
 
-// Security headers
+// Security headers (#2 CORS removed - same-origin, #8 CSP added)
 app.use((req, res, next) => {
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Content-Security-Policy', [
+        "default-src 'self'",
+        "script-src 'self' https://cdnjs.cloudflare.com",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'"
+    ].join('; '));
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     next();
 });
 
@@ -213,8 +268,12 @@ app.use(limiter);
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/src', express.static(path.join(__dirname, 'src')));
-app.use('/tests', express.static(path.join(__dirname, 'tests')));
-app.use('/docs', express.static(path.join(__dirname, 'docs')));
+
+// #7: /tests/ and /docs/ only in development
+if (process.env.NODE_ENV !== 'production') {
+    app.use('/tests', express.static(path.join(__dirname, 'tests')));
+    app.use('/docs', express.static(path.join(__dirname, 'docs')));
+}
 
 // HTML page routes (with and without .html extension)
 const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];
@@ -282,7 +341,7 @@ app.get('/api/tasks/:id', (req, res) => {
 });
 
 // POST /api/tasks - Create a new task
-app.post('/api/tasks', (req, res) => {
+app.post('/api/tasks', async (req, res) => {
     const validation = validateTask(req.body);
     if (!validation.valid) {
         return res.status(400).json({ errors: validation.errors });
@@ -317,149 +376,167 @@ app.post('/api/tasks', (req, res) => {
         sortOrder: Date.now()
     };
 
-    const tasks = readTasks();
-    tasks.push(task);
-    writeTasks(tasks);
+    await withLockedTasks((tasks) => {
+        tasks.push(task);
+        return { tasks };
+    });
 
     audit('task_created', { taskId: task.id, title: sanitized.title, employee: sanitized.employee });
     res.status(201).json(task);
 });
 
 // PUT /api/tasks/:id - Update a task
-app.put('/api/tasks/:id', (req, res) => {
+app.put('/api/tasks/:id', async (req, res) => {
     const validation = validateTask(req.body, true);
     if (!validation.valid) {
         return res.status(400).json({ errors: validation.errors });
     }
 
-    const tasks = readTasks();
-    const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Task not found' });
-
-    const task = tasks[index];
     const sanitized = sanitizeTaskData(req.body);
-    const changes = [];
+    const result = await withLockedTasks((tasks) => {
+        const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
+        if (index === -1) return { tasks: undefined, notFound: true };
 
-    // Track changes for history
-    if (sanitized.title !== undefined && sanitized.title !== task.title) {
-        changes.push(`Titel: "${task.title}" → "${sanitized.title}"`);
-        task.title = sanitized.title;
-    }
-    if (sanitized.employee !== undefined && sanitized.employee !== task.employee) {
-        changes.push(`Mitarbeiter: "${task.employee}" → "${sanitized.employee}"`);
-        task.employee = sanitized.employee;
-    }
-    if (sanitized.location !== undefined && sanitized.location !== task.location) {
-        changes.push(`Standort: "${task.location}" → "${sanitized.location}"`);
-        task.location = sanitized.location;
-    }
-    if (sanitized.description !== undefined && sanitized.description !== task.description) {
-        changes.push('Beschreibung geändert');
-        task.description = sanitized.description;
-    }
-    if (sanitized.notes !== undefined && sanitized.notes !== task.notes) {
-        changes.push('Notizen geändert');
-        task.notes = sanitized.notes;
-    }
-    if (sanitized.status !== undefined && sanitized.status !== task.status) {
-        const oldStatus = task.status;
-        task.status = sanitized.status;
-        if (sanitized.status === 'completed') {
-            task.completedAt = new Date().toISOString();
-        } else {
-            task.completedAt = null;
+        const task = tasks[index];
+        const changes = [];
+
+        if (sanitized.title !== undefined && sanitized.title !== task.title) {
+            changes.push(`Titel: "${task.title}" → "${sanitized.title}"`);
+            task.title = sanitized.title;
         }
-        if (!task.history) task.history = [];
-        task.history.push({
-            timestamp: new Date().toISOString(),
-            action: sanitized.status === 'completed' ? 'completed' : 'reopened',
-            details: { from: oldStatus, to: sanitized.status }
-        });
-    }
-    if (sanitized.priority !== undefined) task.priority = sanitized.priority;
-    if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
-    if (sanitized.subtasks !== undefined) task.subtasks = sanitized.subtasks;
+        if (sanitized.employee !== undefined && sanitized.employee !== task.employee) {
+            changes.push(`Mitarbeiter: "${task.employee}" → "${sanitized.employee}"`);
+            task.employee = sanitized.employee;
+        }
+        if (sanitized.location !== undefined && sanitized.location !== task.location) {
+            changes.push(`Standort: "${task.location}" → "${sanitized.location}"`);
+            task.location = sanitized.location;
+        }
+        if (sanitized.description !== undefined && sanitized.description !== task.description) {
+            changes.push('Beschreibung geändert');
+            task.description = sanitized.description;
+        }
+        if (sanitized.notes !== undefined && sanitized.notes !== task.notes) {
+            changes.push('Notizen geändert');
+            task.notes = sanitized.notes;
+        }
+        if (sanitized.status !== undefined && sanitized.status !== task.status) {
+            const oldStatus = task.status;
+            task.status = sanitized.status;
+            if (sanitized.status === 'completed') {
+                task.completedAt = new Date().toISOString();
+            } else {
+                task.completedAt = null;
+            }
+            if (!task.history) task.history = [];
+            task.history.push({
+                timestamp: new Date().toISOString(),
+                action: sanitized.status === 'completed' ? 'completed' : 'reopened',
+                details: { from: oldStatus, to: sanitized.status }
+            });
+        }
+        if (sanitized.priority !== undefined) task.priority = sanitized.priority;
+        if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
+        if (sanitized.subtasks !== undefined) task.subtasks = sanitized.subtasks;
 
-    // Add edit history entry if fields changed
-    if (changes.length > 0) {
-        if (!task.history) task.history = [];
-        task.history.push({
-            timestamp: new Date().toISOString(),
-            action: 'edited',
-            details: { changes }
-        });
-    }
+        if (changes.length > 0) {
+            if (!task.history) task.history = [];
+            task.history.push({
+                timestamp: new Date().toISOString(),
+                action: 'edited',
+                details: { changes }
+            });
+        }
 
-    tasks[index] = task;
-    writeTasks(tasks);
+        tasks[index] = task;
+        return { tasks, task, changes };
+    });
 
-    audit('task_updated', { taskId: task.id, changes });
-    res.json(task);
+    if (result.notFound) return res.status(404).json({ error: 'Task not found' });
+
+    audit('task_updated', { taskId: result.task.id, changes: result.changes });
+    res.json(result.task);
 });
 
 // DELETE /api/tasks/:id - Delete a task
-app.delete('/api/tasks/:id', (req, res) => {
-    const tasks = readTasks();
-    const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Task not found' });
+app.delete('/api/tasks/:id', async (req, res) => {
+    const result = await withLockedTasks((tasks) => {
+        const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
+        if (index === -1) return { tasks: undefined, notFound: true };
+        const deletedTask = tasks.splice(index, 1)[0];
+        return { tasks, deletedTask };
+    });
 
-    const deletedTask = tasks.splice(index, 1)[0];
-    writeTasks(tasks);
+    if (result.notFound) return res.status(404).json({ error: 'Task not found' });
 
-    audit('task_deleted', { taskId: deletedTask.id, title: deletedTask.title });
+    audit('task_deleted', { taskId: result.deletedTask.id, title: result.deletedTask.title });
     res.status(204).send();
 });
 
 // POST /api/tasks/:id/archive - Archive a task
-app.post('/api/tasks/:id/archive', (req, res) => {
-    const tasks = readTasks();
-    const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Task not found' });
+app.post('/api/tasks/:id/archive', async (req, res) => {
+    await acquireLock(TASKS_FILE);
+    await acquireLock(ARCHIVED_FILE);
+    try {
+        const tasks = readTasks();
+        const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
+        if (index === -1) {
+            releaseLock(ARCHIVED_FILE);
+            releaseLock(TASKS_FILE);
+            return res.status(404).json({ error: 'Task not found' });
+        }
 
-    const task = tasks[index];
-    task.archivedAt = new Date().toISOString();
-    if (!task.history) task.history = [];
-    task.history.push({
-        timestamp: new Date().toISOString(),
-        action: 'archived',
-        details: {}
-    });
+        const task = tasks[index];
+        task.archivedAt = new Date().toISOString();
+        if (!task.history) task.history = [];
+        task.history.push({ timestamp: new Date().toISOString(), action: 'archived', details: {} });
 
-    tasks.splice(index, 1);
-    const archived = readArchivedTasks();
-    archived.push(task);
+        tasks.splice(index, 1);
+        const archived = readArchivedTasks();
+        archived.push(task);
 
-    writeTasks(tasks);
-    writeArchivedTasks(archived);
+        writeTasks(tasks);
+        writeArchivedTasks(archived);
 
-    audit('task_archived', { taskId: task.id, title: task.title });
-    res.json(task);
+        audit('task_archived', { taskId: task.id, title: task.title });
+        res.json(task);
+    } finally {
+        releaseLock(ARCHIVED_FILE);
+        releaseLock(TASKS_FILE);
+    }
 });
 
 // POST /api/tasks/:id/unarchive - Restore a task from archive
-app.post('/api/tasks/:id/unarchive', (req, res) => {
-    const archived = readArchivedTasks();
-    const index = archived.findIndex(t => String(t.id) === String(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Archived task not found' });
+app.post('/api/tasks/:id/unarchive', async (req, res) => {
+    await acquireLock(ARCHIVED_FILE);
+    await acquireLock(TASKS_FILE);
+    try {
+        const archived = readArchivedTasks();
+        const index = archived.findIndex(t => String(t.id) === String(req.params.id));
+        if (index === -1) {
+            releaseLock(TASKS_FILE);
+            releaseLock(ARCHIVED_FILE);
+            return res.status(404).json({ error: 'Archived task not found' });
+        }
 
-    const task = archived[index];
-    delete task.archivedAt;
-    if (!task.history) task.history = [];
-    task.history.push({
-        timestamp: new Date().toISOString(),
-        action: 'unarchived',
-        details: {}
-    });
+        const task = archived[index];
+        delete task.archivedAt;
+        if (!task.history) task.history = [];
+        task.history.push({ timestamp: new Date().toISOString(), action: 'unarchived', details: {} });
 
-    archived.splice(index, 1);
-    const tasks = readTasks();
-    tasks.push(task);
+        archived.splice(index, 1);
+        const tasks = readTasks();
+        tasks.push(task);
 
-    writeArchivedTasks(archived);
-    writeTasks(tasks);
+        writeArchivedTasks(archived);
+        writeTasks(tasks);
 
-    audit('task_unarchived', { taskId: task.id, title: task.title });
-    res.json(task);
+        audit('task_unarchived', { taskId: task.id, title: task.title });
+        res.json(task);
+    } finally {
+        releaseLock(TASKS_FILE);
+        releaseLock(ARCHIVED_FILE);
+    }
 });
 
 // GET /api/archived-tasks - List archived tasks
@@ -468,15 +545,17 @@ app.get('/api/archived-tasks', (req, res) => {
 });
 
 // DELETE /api/archived-tasks/:id - Delete an archived task permanently
-app.delete('/api/archived-tasks/:id', (req, res) => {
-    const archived = readArchivedTasks();
-    const index = archived.findIndex(t => String(t.id) === String(req.params.id));
-    if (index === -1) return res.status(404).json({ error: 'Archived task not found' });
+app.delete('/api/archived-tasks/:id', async (req, res) => {
+    const result = await withLockedArchive((archived) => {
+        const index = archived.findIndex(t => String(t.id) === String(req.params.id));
+        if (index === -1) return { tasks: undefined, notFound: true };
+        const deletedArchived = archived.splice(index, 1)[0];
+        return { tasks: archived, deletedArchived };
+    });
 
-    const deletedArchived = archived.splice(index, 1)[0];
-    writeArchivedTasks(archived);
+    if (result.notFound) return res.status(404).json({ error: 'Archived task not found' });
 
-    audit('archived_task_deleted', { taskId: deletedArchived.id, title: deletedArchived.title });
+    audit('archived_task_deleted', { taskId: result.deletedArchived.id, title: result.deletedArchived.title });
     res.status(204).send();
 });
 
