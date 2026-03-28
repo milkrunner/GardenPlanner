@@ -176,11 +176,8 @@
 .log-detail-modal {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  inset: 0;
+  background: rgb(0 0 0 / 70%);
   z-index: 10000;
   align-items: center;
   justify-content: center;
@@ -268,7 +265,7 @@
   color: #721c24;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .log-filters {
     grid-template-columns: 1fr;
   }

@@ -339,7 +339,7 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .plant-controls {
     padding: 1rem 1.5rem;
     flex-direction: column;
