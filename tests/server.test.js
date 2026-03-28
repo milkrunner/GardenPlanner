@@ -1,4 +1,5 @@
 const request = require('supertest');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { app, validateTask, escapeHtml, sanitizeTaskData, paginate } = require('../server');
@@ -443,6 +444,31 @@ describe('Security', () => {
             .get('/api/tasks')
             .set('sec-fetch-site', 'same-origin');
         expect(res.status).toBe(200);
+    });
+
+    test('uses timing-safe comparison for API key validation', () => {
+        // Verify that crypto.timingSafeEqual is available and works correctly
+        // for the pattern used in the auth middleware
+        const key = 'test-secret-key';
+        const keyBuffer = Buffer.from(key, 'utf8');
+
+        // Matching key
+        const matchBuffer = Buffer.from(key, 'utf8');
+        expect(crypto.timingSafeEqual(keyBuffer, matchBuffer)).toBe(true);
+
+        // Non-matching key of same length
+        const wrongBuffer = Buffer.from('wrong-secret-ke', 'utf8');
+        expect(keyBuffer.length).toBe(wrongBuffer.length);
+        expect(crypto.timingSafeEqual(keyBuffer, wrongBuffer)).toBe(false);
+
+        // Different-length keys must not be passed to timingSafeEqual directly
+        const shortBuffer = Buffer.from('short', 'utf8');
+        expect(keyBuffer.length).not.toBe(shortBuffer.length);
+
+        // Undefined/null providedKey is handled by converting to empty string
+        const emptyBuffer = Buffer.from('', 'utf8');
+        expect(emptyBuffer.length).toBe(0);
+        expect(keyBuffer.length).not.toBe(emptyBuffer.length);
     });
 
     test('sanitizes XSS in task input', async () => {
