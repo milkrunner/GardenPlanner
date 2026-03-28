@@ -542,3 +542,16 @@ describe('Security', () => {
         expect(res.body.subtasks[1].text).toBe('Plain string with "quotes"');
     });
 });
+
+// --- JSON body size limit ---
+
+describe('JSON body size limit', () => {
+    test('rejects payloads over 100kb with 413 status', async () => {
+        const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
+        const res = await request(app)
+            .post('/api/tasks')
+            .send(largeBody);
+
+        expect(res.status).toBe(413);
+    });
+});
