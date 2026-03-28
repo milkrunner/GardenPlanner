@@ -90,10 +90,10 @@ textarea:focus-visible {
   --radius-full: 9999px;
 
   /* Shadows (Elevation) */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 8%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 12%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 15%);
+  --shadow-xl: 0 20px 60px rgb(0 0 0 / 30%);
 
   /* Status Colors */
   --success: #16a34a;
@@ -113,18 +113,17 @@ textarea:focus-visible {
   --text: #0a0a0a;
   --text-light: #525252;
   --bg: #f5f5f5;
-  --bg-secondary: #ffffff;
+  --bg-secondary: #fff;
   --border: #d4d4d4;
-  --shadow: rgba(0, 0, 0, 0.12);
-  --focus-ring: rgba(27, 94, 63, 0.5);
+  --shadow: rgb(0 0 0 / 12%);
+  --focus-ring: rgb(27 94 63 / 50%);
 }
 
 [data-theme="dark"] {
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.7);
-
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 20%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 35%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 50%);
+  --shadow-xl: 0 20px 60px rgb(0 0 0 / 70%);
   --success: #4ade80;
   --success-light: #14532d;
   --warning: #fb923c;
@@ -133,7 +132,6 @@ textarea:focus-visible {
   --error-light: #450a0a;
   --info: #60a5fa;
   --info-light: #172554;
-
   --primary: #4ade80;
   --primary-light: #6ee7a0;
   --primary-dark: #22c55e;
@@ -142,13 +140,13 @@ textarea:focus-visible {
   --text: #f5f5f5;
   --text-light: #a3a3a3;
   --bg: #0f0f0f;
-  --focus-ring: rgba(74, 222, 128, 0.6);
+  --focus-ring: rgb(74 222 128 / 60%);
   --bg-secondary: #1c1c1c;
   --bg-tertiary: #262626;
-  --border: #333333;
+  --border: #333;
   --border-light: #404040;
-  --shadow: rgba(0, 0, 0, 0.5);
-  --shadow-heavy: rgba(0, 0, 0, 0.8);
+  --shadow: rgb(0 0 0 / 50%);
+  --shadow-heavy: rgb(0 0 0 / 80%);
 }
 
 body {
