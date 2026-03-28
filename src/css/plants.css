@@ -366,3 +366,120 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ==========================================
+   Dark Mode Support (additional components)
+   ========================================== */
+
+[data-theme="dark"] .plant-controls {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .search-box input {
+  background: var(--bg-tertiary, #262626);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .search-box input::placeholder {
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .search-box input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(74 222 128 / 20%);
+}
+
+[data-theme="dark"] .category-btn {
+  background: var(--bg-tertiary, #262626);
+  color: var(--text-light);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .category-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .category-btn.active {
+  background: var(--primary);
+  color: #0f0f0f;
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .plant-card {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+}
+
+[data-theme="dark"] .plant-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 40%);
+}
+
+[data-theme="dark"] .plant-card-body {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .plant-card-name {
+  color: var(--text);
+}
+
+[data-theme="dark"] .plant-tag {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .plant-modal {
+  background: rgb(0 0 0 / 80%);
+}
+
+[data-theme="dark"] .plant-modal-content {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 70%);
+  color: var(--text);
+}
+
+[data-theme="dark"] .plant-modal-close:hover {
+  color: var(--text);
+  background: var(--bg-tertiary, #262626);
+}
+
+[data-theme="dark"] .plant-detail-header h2 {
+  color: var(--text);
+}
+
+[data-theme="dark"] .plant-detail-item {
+  background: var(--bg-tertiary, #262626);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .plant-detail-section h3 {
+  color: var(--primary);
+}
+
+[data-theme="dark"] .plant-detail-actions {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .loading {
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .empty-state {
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .plant-modal-content::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .plant-modal-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+[data-theme="dark"] .plant-modal-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}
