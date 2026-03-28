@@ -866,14 +866,22 @@ GartenPlaner.prototype.updateBulkToolbar = function () {
 	}
 };
 
-GartenPlaner.prototype.showNotification = (message) => {
-	// Erstelle Benachrichtigungselement
+GartenPlaner.prototype.showNotification = (message, type) => {
+	var config = (window.APP_CONFIG && window.APP_CONFIG.ui) || {};
+	var isError = type === "error" || message.startsWith("❌");
+	var duration = isError
+		? (config.errorNotificationDuration || 15000)
+		: (config.successNotificationDuration || 5000);
+	var bgColor = isError ? "#e74c3c" : "#2ecc71";
+
 	var notification = document.createElement("div");
+	notification.setAttribute("role", "status");
+	notification.setAttribute("aria-live", "polite");
 	notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #2ecc71;
+        background: ${bgColor};
         color: white;
         padding: 15px 25px;
         border-radius: 8px;
@@ -881,10 +889,11 @@ GartenPlaner.prototype.showNotification = (message) => {
         z-index: 10000;
         font-weight: 600;
         animation: slideIn 0.3s ease;
+        cursor: pointer;
     `;
 	notification.textContent = message;
+	notification.title = "Klicken zum Schließen";
 
-	// CSS Animation
 	if (!document.querySelector("#notification-style")) {
 		var style = document.createElement("style");
 		style.id = "notification-style";
@@ -899,11 +908,17 @@ GartenPlaner.prototype.showNotification = (message) => {
 
 	document.body.appendChild(notification);
 
-	// Nach 3 Sekunden entfernen
-	setTimeout(() => {
+	notification.addEventListener("click", () => {
 		notification.style.animation = "slideIn 0.3s ease reverse";
 		setTimeout(() => notification.remove(), 300);
-	}, 3000);
+	});
+
+	setTimeout(() => {
+		if (notification.parentElement) {
+			notification.style.animation = "slideIn 0.3s ease reverse";
+			setTimeout(() => notification.remove(), 300);
+		}
+	}, duration);
 };
 
 GartenPlaner.prototype.announce = (message) => {
