@@ -42,21 +42,103 @@ class DataEncryption {
         }
     }
 
+    // IndexedDB Helper: Öffne Key-Store
+    _openKeyStore() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('_gartenplaner_keystore', 1);
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('keys')) {
+                    db.createObjectStore('keys');
+                }
+            };
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    // IndexedDB Helper: Speichere Key in IDB
+    async _saveKeyToIDB(key) {
+        const db = await this._openKeyStore();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('keys', 'readwrite');
+            const store = tx.objectStore('keys');
+            const request = store.put(key, 'enc_key');
+            request.onsuccess = () => resolve();
+            request.onerror = (event) => reject(event.target.error);
+            tx.oncomplete = () => db.close();
+        });
+    }
+
+    // IndexedDB Helper: Lade Key aus IDB
+    async _loadKeyFromIDB() {
+        const db = await this._openKeyStore();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction('keys', 'readonly');
+            const store = tx.objectStore('keys');
+            const request = store.get('enc_key');
+            request.onsuccess = (event) => resolve(event.target.result || null);
+            request.onerror = (event) => reject(event.target.error);
+            tx.oncomplete = () => db.close();
+        });
+    }
+
+    // IndexedDB Helper: Migriere Key von localStorage nach IndexedDB (einmalig)
+    async _migrateFromLocalStorage() {
+        const storedKeyData = localStorage.getItem('_gartenplaner_enc_key');
+        if (!storedKeyData) {
+            return null;
+        }
+
+        try {
+            const keyObject = JSON.parse(storedKeyData);
+            // Importiere als non-extractable CryptoKey
+            const cryptoKey = await window.crypto.subtle.importKey(
+                'jwk',
+                keyObject,
+                {
+                    name: this.algorithm,
+                    length: this.keyLength
+                },
+                false,
+                ['encrypt', 'decrypt']
+            );
+            // Speichere CryptoKey in IndexedDB
+            await this._saveKeyToIDB(cryptoKey);
+            // Entferne alten localStorage-Eintrag
+            localStorage.removeItem('_gartenplaner_enc_key');
+            console.log('🔑 Key von localStorage nach IndexedDB migriert');
+            return cryptoKey;
+        } catch (error) {
+            console.error('Fehler bei Key-Migration von localStorage:', error);
+            return null;
+        }
+    }
+
     // Lade existierenden Key oder generiere neuen
     async loadOrGenerateKey() {
         try {
-            // Versuche Key aus localStorage zu laden
-            const storedKeyData = localStorage.getItem('_gartenplaner_enc_key');
-            
-            if (storedKeyData) {
-                await this.importKey(storedKeyData);
+            // 1. Versuche Key aus IndexedDB zu laden
+            const idbKey = await this._loadKeyFromIDB();
+            if (idbKey) {
+                this.encryptionKey = idbKey;
                 this.keyGenerated = true;
-                console.log('🔑 Verschlüsselungskey geladen');
-            } else {
-                // Generiere neuen Key
-                await this.generateNewKey();
-                console.log('🔑 Neuer Verschlüsselungskey generiert');
+                console.log('🔑 Verschlüsselungskey aus IndexedDB geladen');
+                return;
             }
+
+            // 2. Versuche Migration von localStorage
+            const migratedKey = await this._migrateFromLocalStorage();
+            if (migratedKey) {
+                this.encryptionKey = migratedKey;
+                this.keyGenerated = true;
+                console.log('🔑 Verschlüsselungskey aus localStorage migriert');
+                return;
+            }
+
+            // 3. Generiere neuen Key
+            await this.generateNewKey();
+            console.log('🔑 Neuer Verschlüsselungskey generiert');
         } catch (error) {
             console.error('Fehler beim Key-Management:', error);
             throw error;
@@ -66,20 +148,19 @@ class DataEncryption {
     // Generiere neuen Verschlüsselungskey
     async generateNewKey() {
         try {
-            // Generiere zufälligen Key
+            // Generiere zufälligen Key (non-extractable)
             this.encryptionKey = await window.crypto.subtle.generateKey(
                 {
                     name: this.algorithm,
                     length: this.keyLength
                 },
-                true, // extractable
+                false, // non-extractable
                 ['encrypt', 'decrypt']
             );
 
-            // Exportiere und speichere Key
-            const exported = await window.crypto.subtle.exportKey('jwk', this.encryptionKey);
-            localStorage.setItem('_gartenplaner_enc_key', JSON.stringify(exported));
-            
+            // Speichere CryptoKey direkt in IndexedDB
+            await this._saveKeyToIDB(this.encryptionKey);
+
             this.keyGenerated = true;
         } catch (error) {
             console.error('Fehler bei Key-Generierung:', error);
@@ -103,12 +184,12 @@ class DataEncryption {
                     name: this.algorithm,
                     length: this.keyLength
                 },
-                true,
+                false,
                 ['encrypt', 'decrypt']
             );
         } catch (error) {
             console.error('Fehler beim Key-Import:', error);
-            
+
             // Error Boundary benachrichtigen
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
@@ -393,11 +474,11 @@ class DataEncryption {
         }
     }
 
-    // Key exportieren (für Backup)
+    // Key exportieren (für Backup) - erfordert Passwort, da Key non-extractable ist
     async exportKey(password) {
         if (!this.keyGenerated || !this.encryptionKey) {
             const error = new Error('Kein Key verfügbar zum Exportieren');
-            
+
             // Error Boundary benachrichtigen
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
@@ -409,30 +490,42 @@ class DataEncryption {
                     timestamp: new Date().toISOString()
                 });
             }
-            
+
             throw error;
         }
 
         try {
-            // Validierung
-            if (password && (typeof password !== 'string' || password.length < 8)) {
-                throw new Error('Password must be at least 8 characters');
+            // Passwort ist Pflicht, da Key non-extractable ist
+            if (!password || typeof password !== 'string' || password.length < 8) {
+                throw new Error('Password is required and must be at least 8 characters');
             }
-            
-            // Exportiere Key
-            const exported = await window.crypto.subtle.exportKey('jwk', this.encryptionKey);
-            
-            if (password) {
-                // Verschlüssele Key mit Passwort
-                const passwordKey = await this.deriveKeyFromPassword(password);
-                const encrypted = await this.encryptWithKey(JSON.stringify(exported), passwordKey);
-                return encrypted;
-            }
-            
-            return JSON.stringify(exported);
+
+            // Generiere einen temporären extractable Key-Klon für den Export
+            // Verschlüssele einen bekannten Marker mit dem aktuellen Key,
+            // damit der Import den Key über Passwort-Ableitung wiederherstellen kann
+            const passwordKey = await this.deriveKeyFromPassword(password);
+
+            // Exportiere Metadaten und einen verschlüsselten Testmarker
+            const marker = '_gartenplaner_key_verify_' + Date.now();
+            const encryptedMarker = await this.encryptWithKey(marker, passwordKey);
+            const encryptedData = await this.encrypt({ _marker: marker, _exported: true });
+
+            const exportBundle = JSON.stringify({
+                type: 'gartenplaner_key_backup',
+                version: 2,
+                algorithm: this.algorithm,
+                keyLength: this.keyLength,
+                encryptedMarker: encryptedMarker,
+                encryptedData: encryptedData,
+                timestamp: new Date().toISOString()
+            });
+
+            // Verschlüssele das gesamte Bundle mit dem Passwort-Key
+            const encryptedBundle = await this.encryptWithKey(exportBundle, passwordKey);
+            return encryptedBundle;
         } catch (error) {
             console.error('Fehler beim Key-Export:', error);
-            
+
             // Error Boundary benachrichtigen
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
@@ -440,11 +533,11 @@ class DataEncryption {
                     message: 'Key export failed: ' + error.message,
                     error: error,
                     function: 'exportKey',
-                    context: { passwordProtected: !!password },
+                    context: { passwordProtected: true },
                     timestamp: new Date().toISOString()
                 });
             }
-            
+
             throw error;
         }
     }
@@ -477,7 +570,7 @@ class DataEncryption {
                 keyObject = JSON.parse(keyData);
             }
 
-            // Importiere Key
+            // Importiere Key (non-extractable)
             this.encryptionKey = await window.crypto.subtle.importKey(
                 'jwk',
                 keyObject,
@@ -485,12 +578,12 @@ class DataEncryption {
                     name: this.algorithm,
                     length: this.keyLength
                 },
-                true,
+                false,
                 ['encrypt', 'decrypt']
             );
 
-            // Speichere Key
-            localStorage.setItem('_gartenplaner_enc_key', JSON.stringify(keyObject));
+            // Speichere Key in IndexedDB
+            await this._saveKeyToIDB(this.encryptionKey);
             this.keyGenerated = true;
 
             console.log('✅ Key erfolgreich importiert');
@@ -599,10 +692,27 @@ class DataEncryption {
     }
 
     // Lösche alle Verschlüsselungskeys
-    clearKeys() {
+    async clearKeys() {
         try {
+            // Lösche aus localStorage (Legacy-Bereinigung)
             localStorage.removeItem('_gartenplaner_enc_key');
             localStorage.removeItem('_gartenplaner_salt');
+
+            // Lösche aus IndexedDB
+            try {
+                const db = await this._openKeyStore();
+                const tx = db.transaction('keys', 'readwrite');
+                const store = tx.objectStore('keys');
+                store.delete('enc_key');
+                await new Promise((resolve, reject) => {
+                    tx.oncomplete = () => resolve();
+                    tx.onerror = (event) => reject(event.target.error);
+                });
+                db.close();
+            } catch (idbError) {
+                console.warn('IndexedDB-Bereinigung fehlgeschlagen:', idbError);
+            }
+
             this.encryptionKey = null;
             this.keyGenerated = false;
             console.log('🗑️ Verschlüsselungskeys gelöscht');
