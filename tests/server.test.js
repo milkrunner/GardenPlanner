@@ -2,16 +2,17 @@ const request = require('supertest');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData, paginate } = require('../server');
+const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches } = require('../server');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
 
-// Reset data files before each test
+// Reset data files and caches before each test
 beforeEach(() => {
     fs.writeFileSync(TASKS_FILE, '[]', 'utf8');
     fs.writeFileSync(ARCHIVED_FILE, '[]', 'utf8');
+    resetCaches();
 });
 
 // --- Unit Tests: validateTask ---

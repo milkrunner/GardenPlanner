@@ -4,6 +4,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const fsp = fs.promises;
 const path = require('path');
 const { logger, audit, requestLogger } = require('./src/server/logger');
 
@@ -49,41 +50,52 @@ function releaseLock(file) {
     locks.delete(file);
 }
 
+// --- In-memory cache ---
+const cache = new Map();
+
 function readJSON(file) {
+    const cached = cache.get(file);
+    if (cached !== undefined) return cached;
     try {
         const data = fs.readFileSync(file, 'utf8');
-        return JSON.parse(data);
+        const parsed = JSON.parse(data);
+        cache.set(file, parsed);
+        return parsed;
     } catch {
         return [];
     }
 }
 
-function writeJSON(file, data) {
+async function writeJSON(file, data) {
+    cache.set(file, data);
     const tmp = file + '.tmp';
-    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
+    await fsp.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8');
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
-            fs.renameSync(tmp, file);
+            await fsp.rename(tmp, file);
             return;
         } catch (err) {
             if (attempt === 2 || err.code !== 'EPERM') throw err;
-            const start = Date.now();
-            while (Date.now() - start < 50) { /* spin */ }
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
     }
 }
 
+function resetCaches() {
+    cache.clear();
+}
+
 function readTasks() { return readJSON(TASKS_FILE); }
-function writeTasks(tasks) { writeJSON(TASKS_FILE, tasks); }
+async function writeTasks(tasks) { await writeJSON(TASKS_FILE, tasks); }
 function readArchivedTasks() { return readJSON(ARCHIVED_FILE); }
-function writeArchivedTasks(tasks) { writeJSON(ARCHIVED_FILE, tasks); }
+async function writeArchivedTasks(tasks) { await writeJSON(ARCHIVED_FILE, tasks); }
 
 async function withLockedTasks(fn) {
     await acquireLock(TASKS_FILE);
     try {
         const tasks = readTasks();
         const result = fn(tasks);
-        if (result.tasks !== undefined) writeTasks(result.tasks);
+        if (result.tasks !== undefined) await writeTasks(result.tasks);
         return result;
     } finally {
         releaseLock(TASKS_FILE);
@@ -95,7 +107,7 @@ async function withLockedArchive(fn) {
     try {
         const tasks = readArchivedTasks();
         const result = fn(tasks);
-        if (result.tasks !== undefined) writeArchivedTasks(result.tasks);
+        if (result.tasks !== undefined) await writeArchivedTasks(result.tasks);
         return result;
     } finally {
         releaseLock(ARCHIVED_FILE);
@@ -542,8 +554,8 @@ app.post('/api/tasks/:id/archive', validateIdParam, async (req, res) => {
         const archived = readArchivedTasks();
         archived.push(task);
 
-        writeTasks(tasks);
-        writeArchivedTasks(archived);
+        await writeTasks(tasks);
+        await writeArchivedTasks(archived);
 
         audit('task_archived', { taskId: task.id, title: task.title });
         res.json(task);
@@ -575,8 +587,8 @@ app.post('/api/tasks/:id/unarchive', validateIdParam, async (req, res) => {
         const tasks = readTasks();
         tasks.push(task);
 
-        writeArchivedTasks(archived);
-        writeTasks(tasks);
+        await writeArchivedTasks(archived);
+        await writeTasks(tasks);
 
         audit('task_unarchived', { taskId: task.id, title: task.title });
         res.json(task);
@@ -688,4 +700,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate };
+module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches };
