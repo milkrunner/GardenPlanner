@@ -688,16 +688,48 @@ app.get('/api/plant-categories', (req, res) => {
     res.json(categories);
 });
 
+// --- Test-only error route (for verifying error handler) ---
+if (process.env.NODE_ENV === 'test') {
+    app.get('/api/test-error', (req, res, next) => {
+        next(new Error('Test error for verification'));
+    });
+}
+
+// --- Global error handler ---
+app.use((err, req, res, next) => {
+    // Let Express-generated HTTP errors (e.g., 413 Payload Too Large) pass through with their status
+    if (err.status && err.status < 500) {
+        return res.status(err.status).json({ error: err.message });
+    }
+    logger.error({ err: err.message, url: req.originalUrl, method: req.method }, 'unhandled error');
+    res.status(500).json({ error: 'Internal server error' });
+});
+
 // --- Start server ---
 
 if (require.main === module) {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
         logger.info({ port: PORT, auth: !!API_KEY }, 'Gartenplaner API started');
         audit('server_started', { port: PORT, authEnabled: !!API_KEY });
         if (!API_KEY) {
             logger.warn('No API_KEY set. API is open for all requests.');
         }
     });
+
+    function shutdown(signal) {
+        logger.info({ signal }, 'shutting down gracefully');
+        server.close(() => {
+            logger.info('all connections closed');
+            process.exit(0);
+        });
+        setTimeout(() => {
+            logger.error('forced shutdown after timeout');
+            process.exit(1);
+        }, 10000);
+    }
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
 module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches };

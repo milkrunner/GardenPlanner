@@ -582,6 +582,18 @@ describe('UUID validation for :id parameters', () => {
     });
 });
 
+// --- Error Handler Tests ---
+
+describe('Global error handler', () => {
+    test('returns 500 with generic message and no stack trace', async () => {
+        const res = await request(app).get('/api/test-error');
+        expect(res.status).toBe(500);
+        expect(res.body).toEqual({ error: 'Internal server error' });
+        expect(res.body.stack).toBeUndefined();
+        expect(res.body.message).toBeUndefined();
+    });
+});
+
 // --- Security Tests ---
 
 describe('Security', () => {
