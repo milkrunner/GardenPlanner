@@ -18,12 +18,10 @@ COPY package.json package-lock.json* ./
 RUN npm install --omit=dev \
     && npm audit --audit-level=moderate || true
 
-# Anwendungsdateien kopieren
+# Anwendungsdateien kopieren (#7: no tests/docs in production)
 COPY server.js ./
 COPY public/ ./public/
 COPY src/ ./src/
-COPY docs/ ./docs/
-COPY tests/ ./tests/
 COPY README.md ./
 
 # Datenverzeichnis erstellen und Rechte setzen
@@ -31,6 +29,9 @@ RUN mkdir -p /app/data && chown -R node:node /app
 
 # Non-root User verwenden
 USER node
+
+# Production environment
+ENV NODE_ENV=production
 
 # Port exponieren
 EXPOSE 3000

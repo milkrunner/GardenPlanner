@@ -14,10 +14,17 @@ const APP_CONFIG = {
         api: { maxRequests: 30, windowMs: 60000 }
     },
 
-    // Logging
+    // Logging (#15)
     logging: {
         maxLogs: 1000,
-        storageKey: '_gartenplaner_logs'
+        maxPersisted: 500,
+        maxOnError: 100,
+        recentErrorWindowMs: 60 * 60 * 1000,
+        cleanupIntervalMs: 5 * 60 * 1000,
+        retentionMs: 24 * 60 * 60 * 1000,
+        maxAfterCleanup: 500,
+        storageKey: '_gartenplaner_logs',
+        autoRefreshMs: 5000
     },
 
     // Encryption (AES-GCM)
@@ -29,13 +36,15 @@ const APP_CONFIG = {
         iterations: 100000
     },
 
-    // UI Timings (ms)
+    // UI Timings (ms) (#15, #20)
     ui: {
         errorNotificationDuration: 15000,
         successNotificationDuration: 5000,
         animationDelay: 400,
         retryDelay: 500,
-        debounceDelay: 100
+        debounceDelay: 100,
+        focusDelay: 100,
+        mobileBreakpoint: 768
     },
 
     // Error Handling
@@ -50,6 +59,27 @@ const APP_CONFIG = {
         warningThresholdPercent: 75,
         criticalThresholdPercent: 90,
         monitoringIntervalMinutes: 5
+    },
+
+    // Validation limits (#15)
+    validation: {
+        titleMaxLength: 200,
+        descriptionMaxLength: 2000,
+        employeeMaxLength: 100,
+        notesMaxLength: 5000
+    },
+
+    // API
+    api: {
+        baseUrl: '/api'
+    },
+
+    // PDF Export (#15)
+    pdf: {
+        pageHeight: 280,
+        bottomMargin: 40,
+        startY: 46,
+        newPageY: 20
     }
 };
 
