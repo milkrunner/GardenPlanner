@@ -480,12 +480,7 @@ section h2 {
 
 .add-task-section .form-row {
   width: 100%;
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.add-task-section .form-row-two-cols {
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-xl);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .add-task-section .form-group {
@@ -631,6 +626,91 @@ section h2 {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.25);
   background: var(--bg-secondary);
+}
+
+/* Required field indicator */
+.required-indicator {
+  color: var(--danger, #b91c1c);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+/* Optional label hint */
+.optional-label {
+  color: var(--text-light);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+/* Field error message */
+.field-error {
+  display: none;
+  color: var(--danger, #b91c1c);
+  font-size: 0.8rem;
+  margin-top: 4px;
+  min-height: 0;
+}
+
+.field-error.visible {
+  display: block;
+}
+
+.form-group input.invalid,
+.form-group textarea.invalid,
+.form-group select.invalid {
+  border-color: var(--danger, #b91c1c);
+  box-shadow: 0 0 0 3px rgb(185 28 28 / 15%);
+}
+
+/* Progressive disclosure - details/summary */
+.form-options {
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.form-options-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-secondary);
+  transition: background 0.2s;
+  list-style: none;
+}
+
+.form-options-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.form-options-toggle:hover {
+  background: var(--bg);
+}
+
+.form-options-toggle .options-hint {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.form-options[open] .form-options-toggle span:first-child {
+  content: "";
+}
+
+.form-options-content {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Ensure the primary form area has good spacing */
+.form-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 textarea {
@@ -3168,13 +3248,15 @@ footer {
   margin-top: 10px;
 }
 
-.subtask-input-wrapper {
+.subtask-input-wrapper,
+.subtask-input-row {
   display: flex;
   gap: 10px;
   margin-bottom: 15px;
 }
 
-.subtask-input {
+.subtask-input,
+.subtask-input-row input[type="text"] {
   flex: 1;
   padding: 10px 14px;
   border: 2px solid var(--border);
@@ -3183,19 +3265,22 @@ footer {
   transition: all 0.3s ease;
 }
 
-.subtask-input:focus {
+.subtask-input:focus,
+.subtask-input-row input[type="text"]:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(27, 94, 63, 0.1);
+  box-shadow: 0 0 0 3px rgb(27 94 63 / 10%);
 }
 
-[data-theme="dark"] .subtask-input {
+[data-theme="dark"] .subtask-input,
+[data-theme="dark"] .subtask-input-row input[type="text"] {
   background: #2a2a2a;
   border-color: #444;
   color: var(--text-light);
 }
 
-[data-theme="dark"] .subtask-input:focus {
+[data-theme="dark"] .subtask-input:focus,
+[data-theme="dark"] .subtask-input-row input[type="text"]:focus {
   background: #2a2a2a;
   border-color: var(--primary);
 }
@@ -3216,7 +3301,7 @@ footer {
 .btn-add-subtask:hover {
   background: #145a3f;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(27, 94, 63, 0.3);
+  box-shadow: 0 4px 8px rgb(27 94 63 / 30%);
 }
 
 [data-theme="dark"] .btn-add-subtask {
