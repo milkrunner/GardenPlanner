@@ -39,7 +39,7 @@
 :focus-visible {
   outline: 3px solid var(--primary);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 button:focus-visible,
@@ -61,13 +61,55 @@ textarea:focus-visible {
 }
 
 :root {
+  /* ==========================================
+     Design Tokens
+     ========================================== */
+
+  /* Spacing Scale (4px base) */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows (Elevation) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.3);
+
+  /* Status Colors */
+  --success: #16a34a;
+  --success-light: #bbf7d0;
+  --warning: #ea580c;
+  --warning-light: #fed7aa;
+  --error: #dc2626;
+  --error-light: #fecaca;
+  --info: #2563eb;
+  --info-light: #bfdbfe;
+
   --primary: #1b5e3f;
   --primary-light: #2d6a4f;
   --primary-dark: #0f3725;
   --accent: #2d6a4f;
   --danger: #b91c1c;
-  --warning: #ea580c;
-  --info: #1e40af;
   --text: #0a0a0a;
   --text-light: #525252;
   --bg: #f5f5f5;
@@ -78,15 +120,25 @@ textarea:focus-visible {
 }
 
 [data-theme="dark"] {
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.7);
+
+  --success: #4ade80;
+  --success-light: #14532d;
+  --warning: #fb923c;
+  --warning-light: #431407;
+  --error: #f87171;
+  --error-light: #450a0a;
+  --info: #60a5fa;
+  --info-light: #172554;
+
   --primary: #4ade80;
   --primary-light: #6ee7a0;
   --primary-dark: #22c55e;
   --accent: #4ade80;
-  --success: #4ade80;
-  --success-light: rgba(74, 222, 128, 0.15);
   --danger: #f87171;
-  --warning: #fb923c;
-  --info: #60a5fa;
   --text: #f5f5f5;
   --text-light: #a3a3a3;
   --bg: #0f0f0f;
@@ -231,7 +283,7 @@ header h1 {
   text-decoration: none;
   color: var(--text-light);
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   transition: all 0.2s;
   border-bottom: 3px solid transparent;
 }
@@ -268,7 +320,7 @@ main {
   animation: fadeIn 0.5s ease-out;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.5rem;
+  gap: var(--space-lg);
 }
 
 /* Spezielle Styles für index.html - volle Breite */
@@ -292,7 +344,7 @@ body:has(.add-task-section) .container {
       "weather tasks"
       "data data";
     padding: 2rem 2.5rem;
-    gap: 1.5rem;
+    gap: var(--space-lg);
     align-items: start;
   }
 
@@ -373,7 +425,7 @@ section {
 section h2 {
   color: var(--primary-dark);
   margin-bottom: 1.5rem;
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   letter-spacing: -0.01em;
   border-left: 4px solid var(--primary);
@@ -400,7 +452,7 @@ section h2 {
 
 .add-task-section .form-row-two-cols {
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: var(--space-xl);
 }
 
 .add-task-section .form-group {
@@ -424,7 +476,7 @@ section h2 {
 }
 
 #add-task-heading {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   background: linear-gradient(135deg, var(--primary) 0%, #16a34a 100%);
   -webkit-background-clip: text;
@@ -458,7 +510,7 @@ section h2 {
 @media (min-width: 1200px) {
   #filter-heading,
   #tasksHeaderTitle {
-    font-size: 1rem;
+    font-size: var(--text-base);
     margin-bottom: 1rem;
   }
 }
@@ -467,7 +519,7 @@ section h2 {
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-lg);
   margin-bottom: 1rem;
   width: 100%;
 }
@@ -491,7 +543,7 @@ section h2 {
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 [data-theme="dark"] .form-group label {
@@ -503,8 +555,8 @@ section h2 {
 .form-group textarea {
   padding: 0.85rem 1rem;
   border: 2px solid var(--border);
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   transition: all 0.3s;
   background: var(--bg-secondary);
   color: var(--text);
@@ -558,8 +610,8 @@ textarea {
 .btn {
   padding: 0.85rem 1.75rem;
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -652,7 +704,7 @@ textarea {
     rgba(173, 216, 230, 0.04) 50%,
     transparent 100%
   );
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   border: 2px solid var(--border);
   position: relative;
   overflow: hidden;
@@ -683,13 +735,13 @@ textarea {
   flex-direction: column;
   align-items: flex-start;
   margin-bottom: 0.75rem;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   position: relative;
   z-index: 1;
 }
 
 .weather-header h3 {
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--text);
   margin: 0;
   font-weight: 700;
@@ -705,7 +757,7 @@ textarea {
   gap: 0.375rem;
   background: rgba(255, 255, 255, 0.9);
   padding: 0.375rem 0.625rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(27, 94, 63, 0.2);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(10px);
@@ -729,7 +781,7 @@ textarea {
 }
 
 .weather-location-name {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text);
   font-weight: 600;
   flex: 1;
@@ -747,7 +799,7 @@ textarea {
   display: flex;
   align-items: center;
   transition: all 0.2s ease;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   width: 24px;
   height: 24px;
   justify-content: center;
@@ -767,7 +819,7 @@ textarea {
 .weather-forecast {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   margin-top: 0.75rem;
   position: relative;
   z-index: 1;
@@ -776,11 +828,11 @@ textarea {
 .weather-day-card {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(27, 94, 63, 0.15);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.5rem;
   display: grid;
   grid-template-columns: 2.5rem 1fr;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   align-items: center;
   text-align: left;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -880,7 +932,7 @@ textarea {
 }
 
 .weather-icon {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   margin: 0;
   display: block;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
@@ -893,7 +945,7 @@ textarea {
 }
 
 .weather-temp {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 800;
   color: var(--text);
   margin: 0;
@@ -933,7 +985,7 @@ textarea {
   padding: 3rem 2rem;
   color: var(--text-light);
   background: rgba(244, 67, 54, 0.05);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 2px dashed var(--danger);
 }
 
@@ -1078,7 +1130,7 @@ textarea {
   margin-top: 0.25rem;
   padding: 2px 6px;
   background: var(--bg-secondary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 
@@ -1086,13 +1138,13 @@ textarea {
   grid-column: 1 / -1;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
   margin-top: 0.5rem;
 }
 
 .weather-reminders h3 {
-  font-size: 1rem;
+  font-size: var(--text-base);
   margin: 0 0 0.5rem 0;
   color: var(--text);
 }
@@ -1107,7 +1159,7 @@ textarea {
 }
 
 .reminder-list li {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--text);
   line-height: 1.4;
 }
@@ -1136,11 +1188,11 @@ textarea {
   .weather-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
+    gap: var(--space-md);
   }
 
   .weather-header h3 {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
 
   .weather-location {
@@ -1149,7 +1201,7 @@ textarea {
 
   .weather-forecast {
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 1rem;
+    gap: var(--space-md);
   }
 
   .weather-day-card {
@@ -1185,7 +1237,7 @@ textarea {
   }
 
   .weather-header h3 {
-    font-size: 1.25rem;
+    font-size: var(--text-xl);
   }
 
   .weather-forecast {
@@ -1195,15 +1247,15 @@ textarea {
 
   .weather-day-card {
     padding: 0.75rem 0.5rem;
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
   }
 
   .weather-day-name {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
   }
 
   .weather-icon {
-    font-size: 2rem;
+    font-size: var(--text-3xl);
   }
 
   .weather-temp {
@@ -1224,7 +1276,7 @@ textarea {
   }
 
   .weather-garden-tip {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     padding: 0.5rem;
   }
 }
@@ -1257,8 +1309,8 @@ textarea {
   width: 100%;
   padding: 14px 48px 14px 48px;
   border: 2px solid var(--border);
-  border-radius: 12px;
-  font-size: 1rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-base);
   background: var(--bg-secondary);
   color: var(--text);
   font-weight: 500;
@@ -1310,7 +1362,7 @@ textarea {
   color: var(--text-light);
   cursor: pointer;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1330,8 +1382,8 @@ textarea {
   margin-top: 12px;
   padding: 12px 16px;
   background: var(--bg);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
   color: var(--text-light);
   display: flex;
   align-items: center;
@@ -1347,14 +1399,14 @@ textarea {
 #searchResultCount {
   color: var(--primary);
   font-weight: 700;
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 
 /* Filters */
 .filters {
   display: flex;
   flex-direction: row;
-  gap: 1.5rem;
+  gap: var(--space-lg);
   margin-bottom: 0;
   flex-wrap: wrap;
 }
@@ -1379,7 +1431,7 @@ textarea {
   width: 100%;
   padding: 10px;
   border: 2px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1em;
   background: var(--bg-secondary);
   color: var(--text);
@@ -1419,7 +1471,7 @@ textarea {
 .stats-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  gap: var(--space-lg);
   background: transparent;
   padding: 0;
   margin-bottom: 0;
@@ -1428,7 +1480,7 @@ textarea {
 .stat-card {
   background: var(--bg-secondary);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 2px solid var(--border);
   border-top: 4px solid var(--primary);
   transition: all 0.3s ease;
@@ -1459,7 +1511,7 @@ textarea {
 
 .stat-card h3 {
   color: var(--text-light);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   margin-bottom: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -1488,7 +1540,7 @@ textarea {
   width: 100%;
   height: 10px;
   background: var(--bg);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin: 0.75rem 0;
   border: 1px solid var(--border);
@@ -1502,7 +1554,7 @@ textarea {
 .progress-fill {
   height: 100%;
   background: var(--primary);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   transition: width 0.5s ease;
   box-shadow: 0 0 8px rgba(27, 94, 63, 0.4);
 }
@@ -1547,7 +1599,7 @@ textarea {
 .charts-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: var(--space-xl);
   margin-bottom: 0;
 }
 
@@ -1564,7 +1616,7 @@ textarea {
     rgba(255, 255, 255, 0.5) 100%
   );
   padding: 2rem;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 2px solid var(--border);
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -1649,7 +1701,7 @@ textarea {
 .chart-bar-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-md);
   animation: slideInLeft 0.5s ease-out backwards;
 }
 
@@ -1698,7 +1750,7 @@ textarea {
   flex: 1;
   height: 36px;
   background: rgba(0, 0, 0, 0.03);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
   border: 1px solid rgba(34, 197, 94, 0.1);
@@ -1712,7 +1764,7 @@ textarea {
 .chart-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--primary) 0%, #16a34a 100%);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
@@ -1748,7 +1800,7 @@ textarea {
 }
 
 .chart-bar-value {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: white;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -1774,7 +1826,7 @@ textarea {
   align-items: flex-end;
   justify-content: space-between;
   height: 200px;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   padding: 1rem 0;
 }
 
@@ -1799,7 +1851,7 @@ textarea {
   bottom: -25px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-light);
   white-space: nowrap;
   font-weight: 500;
@@ -1810,12 +1862,12 @@ textarea {
   top: -20px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text);
   background: var(--bg-secondary);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 
@@ -1839,10 +1891,10 @@ textarea {
 .stats-link-card {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-lg);
   background: linear-gradient(135deg, var(--bg-secondary) 0%, #f8faf9 100%);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 2px solid var(--border);
   border-left: 4px solid var(--primary);
   text-decoration: none;
@@ -1868,7 +1920,7 @@ textarea {
 
 .stats-link-content h3 {
   color: var(--primary-dark);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   margin-bottom: 0.5rem;
 }
@@ -1880,7 +1932,7 @@ textarea {
 }
 
 .stats-link-arrow {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   color: var(--primary);
   font-weight: 600;
   transition: transform 0.3s ease;
@@ -1892,7 +1944,7 @@ textarea {
 
 /* Section Titles für Statistikseite */
 main > section > h2 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   margin-bottom: 2.5rem;
   background: linear-gradient(
@@ -1931,7 +1983,7 @@ main > section > h2::after {
 }
 
 .additional-stats h2 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   margin-bottom: 2.5rem;
   background: linear-gradient(
@@ -1967,7 +2019,7 @@ main > section > h2::after {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 2rem;
+  gap: var(--space-xl);
 }
 
 @media (max-width: 1200px) {
@@ -1989,11 +2041,11 @@ main > section > h2::after {
     rgba(255, 255, 255, 0.5) 100%
   );
   padding: 2rem;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 2px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: var(--space-lg);
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   position: relative;
@@ -2066,7 +2118,7 @@ main > section > h2::after {
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   background: linear-gradient(135deg, var(--primary) 0%, #16a34a 100%);
   -webkit-background-clip: text;
@@ -2090,7 +2142,7 @@ main > section > h2::after {
 }
 
 .quick-actions h2 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   margin-bottom: 2.5rem;
   background: linear-gradient(
@@ -2125,7 +2177,7 @@ main > section > h2::after {
 
 .quick-actions .btn-group {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--space-lg);
   flex-wrap: wrap;
 }
 
@@ -2133,7 +2185,7 @@ main > section > h2::after {
   flex: 1;
   min-width: 200px;
   padding: 1rem 2rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
@@ -2145,7 +2197,7 @@ main > section > h2::after {
     rgba(255, 255, 255, 0.8) 100%
   );
   padding: 2.5rem;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin-top: 3rem;
   border: 2px solid var(--border);
@@ -2158,7 +2210,7 @@ main > section > h2::after {
 }
 
 .history-section h2 {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   font-weight: 700;
   margin-bottom: 1rem;
   background: linear-gradient(
@@ -2194,13 +2246,13 @@ main > section > h2::after {
 .history-section .subtitle {
   color: var(--text-light);
   margin-bottom: 2.5rem;
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 
 .history-timeline {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-md);
   position: relative;
   padding-left: 2rem;
 }
@@ -2217,12 +2269,12 @@ main > section > h2::after {
 
 .history-item {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-md);
   align-items: flex-start;
   position: relative;
   padding: 1rem;
   background: var(--bg-secondary);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   transition: all 0.3s ease;
 }
 
@@ -2253,7 +2305,7 @@ main > section > h2::after {
 .history-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   margin-bottom: 0.5rem;
   flex-wrap: wrap;
 }
@@ -2270,7 +2322,7 @@ main > section > h2::after {
 
 .history-meta {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-md);
   font-size: 0.9em;
   color: var(--text-light);
   margin-bottom: 0.5rem;
@@ -2305,7 +2357,7 @@ main > section > h2::after {
   margin-top: 0.5rem;
   padding: 0.5rem 1rem;
   background: white;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border-left: 3px solid var(--primary);
 }
 
@@ -2347,7 +2399,7 @@ main > section > h2::after {
   border: 2px solid var(--primary-color);
   background: white;
   color: var(--primary-color);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 600;
@@ -2386,7 +2438,7 @@ main > section > h2::after {
 .bulk-toolbar {
   background: var(--light);
   padding: 15px 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
@@ -2455,7 +2507,7 @@ main > section > h2::after {
 .task-card {
   background: var(--bg-secondary);
   padding: 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 2px solid var(--border);
   border-left: 4px solid var(--primary);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2463,7 +2515,7 @@ main > section > h2::after {
   justify-content: space-between;
   align-items: center;
   cursor: move;
-  gap: 1rem;
+  gap: var(--space-md);
   margin-bottom: 0.75rem;
   animation: slideInFromRight 0.4s ease-out;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
@@ -2545,7 +2597,7 @@ main > section > h2::after {
   background: #95a5a6;
   color: white;
   padding: 3px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   font-size: 0.85em;
   margin-left: 10px;
 }
@@ -2649,7 +2701,7 @@ main > section > h2::after {
   user-select: none;
   transition: all 0.2s ease;
   padding: 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2716,7 +2768,7 @@ main > section > h2::after {
 .task-btn {
   padding: 8px 15px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-size: 0.9em;
   font-weight: 600;
@@ -2745,7 +2797,7 @@ main > section > h2::after {
   width: 44px;
   height: 44px;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   gap: 0;
 }
 
@@ -2831,7 +2883,7 @@ main > section > h2::after {
 .tasks-calendar {
   background: white;
   padding: 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 
 #calendarView {
@@ -2842,7 +2894,7 @@ main > section > h2::after {
 
 .calendar-day {
   border: 2px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px;
   min-height: 120px;
 }
@@ -2858,7 +2910,7 @@ main > section > h2::after {
   color: white;
   padding: 5px;
   margin-bottom: 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.85em;
 }
 
@@ -2868,7 +2920,7 @@ main > section > h2::after {
   padding: 80px 40px;
   color: #7f8c8d;
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 15px;
+  border-radius: var(--radius-xl);
   margin: 20px 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
@@ -2908,7 +2960,7 @@ main > section > h2::after {
   margin-top: 10px;
   text-decoration: none;
   padding: 12px 30px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   transition: all 0.3s;
 }
@@ -2922,7 +2974,7 @@ main > section > h2::after {
 .dashboard-link-section {
   background: linear-gradient(135deg, var(--info-color), #2980b9);
   padding: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   text-align: center;
 }
 
@@ -2960,7 +3012,7 @@ footer {
   text-align: center;
   padding: 2rem;
   border-top: 1px solid var(--border);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 
 /* Edit Modal */
@@ -2985,7 +3037,7 @@ footer {
 
 .modal-content {
   background-color: var(--bg-secondary);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   max-width: 600px;
   width: 90%;
@@ -3093,7 +3145,7 @@ footer {
   flex: 1;
   padding: 10px 14px;
   border: 2px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.95em;
   transition: all 0.3s ease;
 }
@@ -3120,7 +3172,7 @@ footer {
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -3150,7 +3202,7 @@ footer {
   overflow-y: auto;
   padding: 10px;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 [data-theme="dark"] .subtasks-list {
@@ -3170,7 +3222,7 @@ footer {
   gap: 10px;
   padding: 10px;
   background: white;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   transition: all 0.3s ease;
 }
 
@@ -3223,7 +3275,7 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: all 0.3s ease;
   opacity: 0.6;
 }
@@ -3239,7 +3291,7 @@ footer {
   margin-top: 12px;
   padding: 10px;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 [data-theme="dark"] .subtasks-progress {
@@ -3269,7 +3321,7 @@ footer {
 .subtasks-progress-bar {
   height: 6px;
   background: #e0e0e0;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -3280,7 +3332,7 @@ footer {
 .subtasks-progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--primary), #27ae60);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   transition: width 0.5s ease;
 }
 
@@ -3334,16 +3386,6 @@ footer {
   font-size: 4em;
   margin-bottom: 20px;
   animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
 }
 
 .confirm-modal-body p {
@@ -3409,7 +3451,7 @@ footer {
   }
 
   .task-title {
-    font-size: 1rem;
+    font-size: var(--text-base);
     word-break: break-word;
   }
 
@@ -3418,7 +3460,7 @@ footer {
     align-items: flex-start;
     gap: 8px;
     width: 100%;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
   }
 
   .task-meta span {
@@ -3426,7 +3468,7 @@ footer {
   }
 
   .task-description {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     width: 100%;
   }
 
@@ -3444,7 +3486,7 @@ footer {
   .task-btn {
     justify-content: center;
     padding: 10px 12px;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   .task-btn-icon {
@@ -3536,7 +3578,7 @@ footer {
   main {
     padding: 1.5rem;
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: var(--space-lg);
   }
 
   .weather-forecast {
@@ -3577,7 +3619,7 @@ footer {
   }
 
   header .subtitle {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   /* Stats-Section mobil */
@@ -3591,11 +3633,11 @@ footer {
   }
 
   .stat-card h3 {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   .stat-number {
-    font-size: 2rem;
+    font-size: var(--text-3xl);
   }
 
   /* Filter Section mobil */
@@ -3608,18 +3650,18 @@ footer {
   }
 
   .filter-group label {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   .filter-group select,
   .filter-group input {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
     padding: 10px 12px;
   }
 
   /* Section Headers mobil */
   .section-header h2 {
-    font-size: 1.25rem;
+    font-size: var(--text-xl);
   }
 
   .section-actions {
@@ -3629,7 +3671,7 @@ footer {
   .section-actions .btn {
     width: 100%;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   /* Modal mobil optimiert */
@@ -3642,12 +3684,12 @@ footer {
   }
 
   .modal h2 {
-    font-size: 1.25rem;
+    font-size: var(--text-xl);
   }
 
   /* Archived Badge mobil */
   .archived-badge {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     padding: 4px 8px;
   }
 
@@ -3686,7 +3728,7 @@ footer {
   main {
     padding: 1rem;
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: var(--space-lg);
   }
 
   /* Form mobil optimiert */
@@ -3700,7 +3742,7 @@ footer {
 /* Sehr kleine Geräte (Smartphones im Portrait-Modus) */
 @media (max-width: 480px) {
   header h1 {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
 
   .stat-number {
@@ -3713,12 +3755,12 @@ footer {
 
   .task-btn {
     padding: 8px 10px;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
   }
 
   .nav-link {
     padding: 10px 12px;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   .modal-content {
@@ -3727,7 +3769,7 @@ footer {
   }
 
   .chart-bar-label {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     min-width: 60px;
   }
 }
@@ -3850,7 +3892,7 @@ footer {
   background: #333;
   color: white;
   padding: 12px 20px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
   z-index: 10001;
   display: flex;
@@ -3906,9 +3948,9 @@ footer {
   color: var(--primary, #4ade80);
   border: 1px solid var(--primary, #4ade80);
   padding: 6px 16px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
@@ -3933,7 +3975,7 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: color 0.2s;
 }
 
@@ -4241,7 +4283,7 @@ footer {
   padding: 0.75rem 1.25rem;
   border-radius: 25px;
   border: 2px solid var(--border);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-light);
   z-index: 999;
@@ -4273,7 +4315,7 @@ footer {
   right: 2rem;
   background: white;
   padding: 1rem 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border-left: 4px solid var(--primary);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   font-size: 0.95rem;
@@ -4353,16 +4395,6 @@ footer {
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.6);
 }
 
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 /* ========================================
    ERROR BOUNDARIES & ERROR HANDLING
    ======================================== */
@@ -4375,7 +4407,7 @@ footer {
   max-width: 400px;
   background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
   border: 2px solid #ef4444;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
   padding: 1.5rem;
   z-index: 10000;
@@ -4385,11 +4417,11 @@ footer {
 .error-toast-content {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--space-md);
 }
 
 .error-toast-icon {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
   flex-shrink: 0;
   animation: errorPulse 2s infinite;
 }
@@ -4401,13 +4433,13 @@ footer {
 .error-toast-text strong {
   display: block;
   color: #dc2626;
-  font-size: 1rem;
+  font-size: var(--text-base);
   margin-bottom: 0.5rem;
 }
 
 .error-toast-text p {
   color: #991b1b;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   margin: 0;
   line-height: 1.5;
 }
@@ -4416,7 +4448,7 @@ footer {
   background: none;
   border: none;
   color: #dc2626;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   cursor: pointer;
   padding: 0;
   width: 24px;
@@ -4424,7 +4456,7 @@ footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   transition: background-color 0.2s;
 }
 
@@ -4538,12 +4570,12 @@ footer {
   right: 20px;
   background: white;
   border: 2px solid #e0e0e0;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 1rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 250px;
   z-index: 9999;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .storage-info-widget.collapsed {
@@ -4573,7 +4605,7 @@ footer {
 .storage-info-progress {
   height: 20px;
   background: #f0f0f0;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 0.5rem;
   position: relative;
@@ -4589,7 +4621,7 @@ footer {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: bold;
 }
 
@@ -4616,7 +4648,7 @@ footer {
 .storage-info-actions {
   margin-top: 0.75rem;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-sm);
 }
 
 .storage-info-btn {
@@ -4624,9 +4656,9 @@ footer {
   padding: 0.5rem;
   border: 1px solid #e0e0e0;
   background: white;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   transition: all 0.2s;
 }
 
@@ -4738,13 +4770,13 @@ footer {
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
   z-index: 9998;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-sm);
   animation: badgeSlideIn 0.3s ease-out;
 }
 
@@ -4759,12 +4791,12 @@ footer {
 }
 
 .rate-limit-badge-title {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   opacity: 0.9;
 }
 
 .rate-limit-badge-time {
-  font-size: 1rem;
+  font-size: var(--text-base);
 }
 
 @keyframes badgeSlideIn {
@@ -4812,7 +4844,7 @@ footer {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   opacity: 0.5;
 }
 
@@ -4822,15 +4854,15 @@ footer {
     bottom: 60px;
     right: 10px;
     padding: 0.4rem 0.8rem;
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
   }
 
   .rate-limit-badge-icon {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 
   .rate-limit-badge-time {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
   }
 }
 
@@ -4852,7 +4884,7 @@ footer {
 }
 
 .error-boundary-title {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   color: #dc2626;
   margin-bottom: 1rem;
 }
@@ -4865,14 +4897,14 @@ footer {
 
 .error-boundary-actions {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-md);
 }
 
 .error-boundary-btn {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -4922,16 +4954,16 @@ footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-md);
   padding: 2rem;
   background: #fef2f2;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin: 1rem 0;
 }
 
 .loading-error-icon {
-  font-size: 2rem;
+  font-size: var(--text-3xl);
 }
 
 .loading-error-text {
