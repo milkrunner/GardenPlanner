@@ -2,7 +2,7 @@ const request = require('supertest');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches } = require('../server');
+const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches } = require('../src/server/app');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
