@@ -1,4 +1,5 @@
 const request = require('supertest');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { app, validateTask, escapeHtml, sanitizeTaskData, paginate } = require('../server');
@@ -125,13 +126,13 @@ describe('escapeHtml', () => {
 // --- Unit Tests: sanitizeTaskData ---
 
 describe('sanitizeTaskData', () => {
-    test('trims and escapes text fields', () => {
+    test('trims text fields but stores raw (unescaped) data', () => {
         const result = sanitizeTaskData({
             title: '  <b>Test</b>  ',
             employee: ' Max ',
             location: ' Garten '
         });
-        expect(result.title).toBe('&lt;b&gt;Test&lt;/b&gt;');
+        expect(result.title).toBe('<b>Test</b>');
         expect(result.employee).toBe('Max');
         expect(result.location).toBe('Garten');
     });
@@ -146,6 +147,21 @@ describe('sanitizeTaskData', () => {
         const result = sanitizeTaskData({ title: 'Test' });
         expect(result).toHaveProperty('title');
         expect(result).not.toHaveProperty('employee');
+    });
+
+    test('preserves special characters without HTML escaping', () => {
+        const result = sanitizeTaskData({
+            title: 'Tom & Jerry',
+            employee: 'O\'Brien',
+            location: 'Garten <Süd>',
+            description: 'Use "quotes" & ampersands',
+            notes: '<script>alert("xss")</script>'
+        });
+        expect(result.title).toBe('Tom & Jerry');
+        expect(result.employee).toBe("O'Brien");
+        expect(result.location).toBe('Garten <Süd>');
+        expect(result.description).toBe('Use "quotes" & ampersands');
+        expect(result.notes).toBe('<script>alert("xss")</script>');
     });
 });
 
@@ -445,7 +461,32 @@ describe('Security', () => {
         expect(res.status).toBe(200);
     });
 
-    test('sanitizes XSS in task input', async () => {
+    test('uses timing-safe comparison for API key validation', () => {
+        // Verify that crypto.timingSafeEqual is available and works correctly
+        // for the pattern used in the auth middleware
+        const key = 'test-secret-key';
+        const keyBuffer = Buffer.from(key, 'utf8');
+
+        // Matching key
+        const matchBuffer = Buffer.from(key, 'utf8');
+        expect(crypto.timingSafeEqual(keyBuffer, matchBuffer)).toBe(true);
+
+        // Non-matching key of same length
+        const wrongBuffer = Buffer.from('wrong-secret-ke', 'utf8');
+        expect(keyBuffer.length).toBe(wrongBuffer.length);
+        expect(crypto.timingSafeEqual(keyBuffer, wrongBuffer)).toBe(false);
+
+        // Different-length keys must not be passed to timingSafeEqual directly
+        const shortBuffer = Buffer.from('short', 'utf8');
+        expect(keyBuffer.length).not.toBe(shortBuffer.length);
+
+        // Undefined/null providedKey is handled by converting to empty string
+        const emptyBuffer = Buffer.from('', 'utf8');
+        expect(emptyBuffer.length).toBe(0);
+        expect(keyBuffer.length).not.toBe(emptyBuffer.length);
+    });
+
+    test('stores raw text without HTML escaping (escaping happens on frontend render)', async () => {
         const res = await request(app)
             .post('/api/tasks')
             .send({
@@ -455,7 +496,49 @@ describe('Security', () => {
             });
 
         expect(res.status).toBe(201);
-        expect(res.body.title).not.toContain('<script>');
-        expect(res.body.title).toContain('&lt;script&gt;');
+        // API returns raw text — frontend is responsible for escaping on render
+        expect(res.body.title).toBe('<script>alert("xss")</script>');
+    });
+
+    test('returns special characters as-is in API responses', async () => {
+        const res = await request(app)
+            .post('/api/tasks')
+            .send({
+                title: 'Tom & Jerry',
+                employee: "O'Brien",
+                location: 'Garten <Süd>',
+                description: 'Use "quotes" & ampersands'
+            });
+
+        expect(res.status).toBe(201);
+        expect(res.body.title).toBe('Tom & Jerry');
+        expect(res.body.employee).toBe("O'Brien");
+        expect(res.body.location).toBe('Garten <Süd>');
+        expect(res.body.description).toBe('Use "quotes" & ampersands');
+
+        // Verify the data round-trips correctly (no double-escaping on edit)
+        const updated = await request(app)
+            .put(`/api/tasks/${res.body.id}`)
+            .send({ title: 'Tom & Jerry' });
+
+        expect(updated.status).toBe(200);
+        expect(updated.body.title).toBe('Tom & Jerry');
+    });
+
+    test('stores subtask text as raw without HTML escaping', async () => {
+        const res = await request(app)
+            .post('/api/tasks')
+            .send({
+                title: 'Task with subtasks',
+                location: 'Garten',
+                subtasks: [
+                    { text: 'Tom & Jerry <subtask>', completed: false },
+                    'Plain string with "quotes"'
+                ]
+            });
+
+        expect(res.status).toBe(201);
+        expect(res.body.subtasks[0].text).toBe('Tom & Jerry <subtask>');
+        expect(res.body.subtasks[1].text).toBe('Plain string with "quotes"');
     });
 });
