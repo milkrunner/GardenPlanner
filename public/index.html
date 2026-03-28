@@ -1,20 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gartenplaner - Dashboard</title>
-    <meta name="description" content="Gartenplaner - Verwaltung von Gartenaufgaben und Mitarbeitern">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
-    <link rel="stylesheet" href="../src/css/styles.css">
-</head>
-<body>
+    <meta
+      name="description"
+      content="Gartenplaner - Verwaltung von Gartenaufgaben und Mitarbeitern"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
+    />
+    <link rel="stylesheet" href="../src/css/styles.css" />
+  </head>
+  <body>
     <div class="container">
-        <header role="banner">
-            <h1>🌱 Gartenplaner</h1>
-            <p class="subtitle">Neue Aufgabe erstellen und verwalten</p>
-        </header>
+      <header role="banner">
+        <h1>🌱 Gartenplaner</h1>
+        <p class="subtitle">Neue Aufgabe erstellen und verwalten</p>
+      </header>
 
+<<<<<<< Updated upstream
         <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
             <a href="/index" class="nav-link active" aria-current="page">➕ Neue Aufgabe</a>
             <a href="/dashboard" class="nav-link">📋 Dashboard</a>
@@ -22,106 +29,221 @@
             <a href="/plants" class="nav-link">🌱 Pflanzen</a>
             <a href="/logs" class="nav-link">📊 Logs</a>
         </nav>
+=======
+      <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+        <a href="/index" class="nav-link active" aria-current="page"
+          >➕ Neue Aufgabe</a
+        >
+        <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+        <a href="/statistics" class="nav-link">📊 Statistiken</a>
+        <a href="/logs" class="nav-link">📊 Logs</a>
+      </nav>
+>>>>>>> Stashed changes
 
-        <main role="main">
-            <!-- Aufgabe hinzufügen -->
-            <section class="add-task-section" aria-labelledby="add-task-heading">
-                <h2 id="add-task-heading">Neue Aufgabe erstellen</h2>
-                <form id="taskForm" class="task-form" novalidate aria-label="Formular für neue Aufgabe">
-                    <!-- Primary fields (always visible) -->
-                    <div class="form-primary">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="taskTitle">Aufgabe <span class="required-indicator" aria-hidden="true">*</span></label>
-                                <input type="text" id="taskTitle" placeholder="z.B. Tomaten pflanzen" required aria-required="true">
-                                <span class="field-error" id="taskTitleError" role="alert"></span>
-                            </div>
-                            <div class="form-group">
-                                <label for="taskLocation">Standort <span class="required-indicator" aria-hidden="true">*</span></label>
-                                <input type="text" id="taskLocation" placeholder="z.B. Gewächshaus 1" required aria-required="true">
-                                <span class="field-error" id="taskLocationError" role="alert"></span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="taskDescription">Beschreibung <span class="optional-label">(optional)</span></label>
-                            <textarea id="taskDescription" rows="3" placeholder="Weitere Details zur Aufgabe..."></textarea>
-                        </div>
+      <main role="main">
+        <!-- Aufgabe hinzufügen -->
+        <section class="add-task-section" aria-labelledby="add-task-heading">
+          <h2 id="add-task-heading">Neue Aufgabe erstellen</h2>
+          <form
+            id="taskForm"
+            class="task-form"
+            novalidate
+            aria-label="Formular für neue Aufgabe"
+          >
+            <!-- Primary fields (always visible) -->
+            <div class="form-primary">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="taskTitle"
+                    >Aufgabe
+                    <span class="required-indicator" aria-hidden="true"
+                      >*</span
+                    ></label
+                  >
+                  <input
+                    type="text"
+                    id="taskTitle"
+                    placeholder="z.B. Tomaten pflanzen"
+                    required
+                    aria-required="true"
+                  />
+                  <span
+                    class="field-error"
+                    id="taskTitleError"
+                    role="alert"
+                  ></span>
+                </div>
+                <div class="form-group">
+                  <label for="taskLocation"
+                    >Standort
+                    <span class="required-indicator" aria-hidden="true"
+                      >*</span
+                    ></label
+                  >
+                  <input
+                    type="text"
+                    id="taskLocation"
+                    placeholder="z.B. Gewächshaus 1"
+                    required
+                    aria-required="true"
+                  />
+                  <span
+                    class="field-error"
+                    id="taskLocationError"
+                    role="alert"
+                  ></span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="taskDescription"
+                  >Beschreibung
+                  <span class="optional-label">(optional)</span></label
+                >
+                <textarea
+                  id="taskDescription"
+                  rows="3"
+                  placeholder="Weitere Details zur Aufgabe..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Collapsible optional section -->
+            <details class="form-options" id="formOptions">
+              <summary class="form-options-toggle">
+                <span>&#9656; Weitere Optionen</span>
+                <span class="options-hint"
+                  >Mitarbeiter, Wiederholung, Teilaufgaben</span
+                >
+              </summary>
+              <div class="form-options-content">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="taskEmployee"
+                      >Mitarbeiter
+                      <span class="optional-label">(optional)</span></label
+                    >
+                    <input
+                      type="text"
+                      id="taskEmployee"
+                      placeholder="z.B. Max Mustermann"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="taskRecurrence">Wiederholung</label>
+                    <select id="taskRecurrence">
+                      <option value="none">Keine Wiederholung</option>
+                      <option value="daily">Täglich</option>
+                      <option value="weekly">Wöchentlich</option>
+                      <option value="monthly">Monatlich</option>
+                    </select>
+                  </div>
+                </div>
+                <!-- Subtasks Section -->
+                <div class="form-group">
+                  <label
+                    >Teilaufgaben
+                    <span class="optional-label">(optional)</span></label
+                  >
+                  <div class="subtask-manager" id="subtaskManagerCreate">
+                    <div class="subtask-input-row">
+                      <input
+                        type="text"
+                        id="newSubtaskInputCreate"
+                        placeholder="Neue Teilaufgabe hinzufügen..."
+                        aria-label="Neue Teilaufgabe"
+                      />
+                      <button
+                        type="button"
+                        id="addSubtaskBtnCreate"
+                        class="btn-add-subtask"
+                        aria-label="Teilaufgabe hinzufügen"
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.5"
+                        >
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                      </button>
                     </div>
-
-                    <!-- Collapsible optional section -->
-                    <details class="form-options" id="formOptions">
-                        <summary class="form-options-toggle">
-                            <span>&#9656; Weitere Optionen</span>
-                            <span class="options-hint">Mitarbeiter, Wiederholung, Teilaufgaben</span>
-                        </summary>
-                        <div class="form-options-content">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="taskEmployee">Mitarbeiter <span class="optional-label">(optional)</span></label>
-                                    <input type="text" id="taskEmployee" placeholder="z.B. Max Mustermann">
-                                </div>
-                                <div class="form-group">
-                                    <label for="taskRecurrence">Wiederholung</label>
-                                    <select id="taskRecurrence">
-                                        <option value="none">Keine Wiederholung</option>
-                                        <option value="daily">Täglich</option>
-                                        <option value="weekly">Wöchentlich</option>
-                                        <option value="monthly">Monatlich</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <!-- Subtasks Section -->
-                            <div class="form-group">
-                                <label>Teilaufgaben <span class="optional-label">(optional)</span></label>
-                                <div class="subtask-manager" id="subtaskManagerCreate">
-                                    <div class="subtask-input-row">
-                                        <input type="text" id="newSubtaskInputCreate" placeholder="Neue Teilaufgabe hinzufügen..." aria-label="Neue Teilaufgabe">
-                                        <button type="button" id="addSubtaskBtnCreate" class="btn-add-subtask" aria-label="Teilaufgabe hinzufügen">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        </button>
-                                    </div>
-                                    <div id="subtasksListCreate" class="subtasks-list">
-                                        <span class="no-subtasks">Keine Teilaufgaben vorhanden</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <button type="submit" class="btn btn-primary" aria-label="Neue Aufgabe hinzufügen">Aufgabe hinzufügen</button>
-                </form>
-            </section>
-
-            <!-- Schnellübersicht -->
-            <section class="stats-section" aria-labelledby="stats-heading">
-                <h2 id="stats-heading" class="sr-only">Statistiken</h2>
-                <div class="stat-card" role="region" aria-label="Offene Aufgaben">
-                    <h3>Offene Aufgaben</h3>
-                    <p class="stat-number" id="statPending" aria-live="polite">0</p>
+                    <div id="subtasksListCreate" class="subtasks-list">
+                      <span class="no-subtasks"
+                        >Keine Teilaufgaben vorhanden</span
+                      >
+                    </div>
+                  </div>
                 </div>
-                <div class="stat-card" role="region" aria-label="Erledigte Aufgaben">
-                    <h3>Erledigte Aufgaben</h3>
-                    <p class="stat-number" id="statCompleted" aria-live="polite">0</p>
-                </div>
-                <div class="stat-card" role="region" aria-label="Aktive Mitarbeiter">
-                    <h3>Aktive Mitarbeiter</h3>
-                    <p class="stat-number" id="statEmployees" aria-live="polite">0</p>
-                </div>
-            </section>
-        </main>
+              </div>
+            </details>
 
-        <footer role="contentinfo">
-            <p>© 2025 Gartenplaner | Alle Änderungen werden automatisch gespeichert</p>
-        </footer>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              aria-label="Neue Aufgabe hinzufügen"
+            >
+              Aufgabe hinzufügen
+            </button>
+          </form>
+        </section>
+
+        <!-- Schnellübersicht -->
+        <section class="stats-section" aria-labelledby="stats-heading">
+          <h2 id="stats-heading" class="sr-only">Statistiken</h2>
+          <div class="stat-card" role="region" aria-label="Offene Aufgaben">
+            <h3>Offene Aufgaben</h3>
+            <p class="stat-number" id="statPending" aria-live="polite">0</p>
+          </div>
+          <div class="stat-card" role="region" aria-label="Erledigte Aufgaben">
+            <h3>Erledigte Aufgaben</h3>
+            <p class="stat-number" id="statCompleted" aria-live="polite">0</p>
+          </div>
+          <div class="stat-card" role="region" aria-label="Aktive Mitarbeiter">
+            <h3>Aktive Mitarbeiter</h3>
+            <p class="stat-number" id="statEmployees" aria-live="polite">0</p>
+          </div>
+        </section>
+      </main>
+
+      <footer role="contentinfo">
+        <p>
+          © 2025 Gartenplaner | Alle Änderungen werden automatisch gespeichert
+        </p>
+      </footer>
     </div>
 
     <!-- Dark Mode Toggle -->
     <div class="theme-toggle" role="complementary">
-        <button id="themeToggle" class="theme-toggle-btn" aria-label="Dark Mode umschalten" aria-pressed="false" title="Dark Mode umschalten">
-            <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
+      <button
+        id="themeToggle"
+        class="theme-toggle-btn"
+        aria-label="Dark Mode umschalten"
+        aria-pressed="false"
+        title="Dark Mode umschalten"
+      >
+        <svg
+          id="themeIcon"
+          class="theme-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
+          <path
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
     </div>
 
     <script src="../src/js/config.js"></script>
@@ -140,50 +262,62 @@
 
     <!-- Inline validation for progressive disclosure form -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener("DOMContentLoaded", function () {
         // Inline validation for required fields
         var requiredFields = [
-            { input: 'taskTitle', error: 'taskTitleError', message: 'Bitte geben Sie eine Aufgabe ein.' },
-            { input: 'taskLocation', error: 'taskLocationError', message: 'Bitte geben Sie einen Standort ein.' }
+          {
+            input: "taskTitle",
+            error: "taskTitleError",
+            message: "Bitte geben Sie eine Aufgabe ein.",
+          },
+          {
+            input: "taskLocation",
+            error: "taskLocationError",
+            message: "Bitte geben Sie einen Standort ein.",
+          },
         ];
 
-        requiredFields.forEach(function(field) {
-            var input = document.getElementById(field.input);
-            var errorEl = document.getElementById(field.error);
-            if (!input || !errorEl) return;
+        requiredFields.forEach(function (field) {
+          var input = document.getElementById(field.input);
+          var errorEl = document.getElementById(field.error);
+          if (!input || !errorEl) return;
 
-            input.addEventListener('blur', function() {
-                if (!input.value.trim()) {
-                    input.classList.add('invalid');
-                    errorEl.textContent = field.message;
-                    errorEl.classList.add('visible');
-                } else {
-                    input.classList.remove('invalid');
-                    errorEl.textContent = '';
-                    errorEl.classList.remove('visible');
-                }
-            });
+          input.addEventListener("blur", function () {
+            if (!input.value.trim()) {
+              input.classList.add("invalid");
+              errorEl.textContent = field.message;
+              errorEl.classList.add("visible");
+            } else {
+              input.classList.remove("invalid");
+              errorEl.textContent = "";
+              errorEl.classList.remove("visible");
+            }
+          });
 
-            input.addEventListener('input', function() {
-                if (input.value.trim()) {
-                    input.classList.remove('invalid');
-                    errorEl.textContent = '';
-                    errorEl.classList.remove('visible');
-                }
-            });
+          input.addEventListener("input", function () {
+            if (input.value.trim()) {
+              input.classList.remove("invalid");
+              errorEl.textContent = "";
+              errorEl.classList.remove("visible");
+            }
+          });
         });
 
         // Update toggle arrow when details opens/closes
-        var formOptions = document.getElementById('formOptions');
+        var formOptions = document.getElementById("formOptions");
         if (formOptions) {
-            formOptions.addEventListener('toggle', function() {
-                var arrow = this.querySelector('.form-options-toggle span:first-child');
-                if (arrow) {
-                    arrow.textContent = this.open ? '\u25BE Weitere Optionen' : '\u25B8 Weitere Optionen';
-                }
-            });
+          formOptions.addEventListener("toggle", function () {
+            var arrow = this.querySelector(
+              ".form-options-toggle span:first-child",
+            );
+            if (arrow) {
+              arrow.textContent = this.open
+                ? "\u25BE Weitere Optionen"
+                : "\u25B8 Weitere Optionen";
+            }
+          });
         }
-    });
+      });
     </script>
-</body>
+  </body>
 </html>
