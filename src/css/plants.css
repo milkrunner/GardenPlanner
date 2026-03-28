@@ -107,14 +107,14 @@
     display: inline-block;
     font-size: 0.8rem;
     color: var(--text-light);
-    background: rgba(27, 94, 63, 0.08);
+    background: rgb(27 94 63 / 8%);
     padding: 0.15rem 0.5rem;
     border-radius: 4px;
     margin-bottom: 0.5rem;
 }
 
 [data-theme="dark"] .plant-card-category {
-    background: rgba(74, 222, 128, 0.1);
+    background: rgb(74 222 128 / 10%);
 }
 
 .plant-card-tags {
@@ -151,28 +151,28 @@
 }
 
 [data-theme="dark"] .plant-tag.difficulty-easy {
-    background: rgba(22, 163, 74, 0.2);
+    background: rgb(22 163 74 / 20%);
     color: #4ade80;
-    border-color: rgba(22, 163, 74, 0.3);
+    border-color: rgb(22 163 74 / 30%);
 }
 
 [data-theme="dark"] .plant-tag.difficulty-medium {
-    background: rgba(202, 138, 4, 0.2);
+    background: rgb(202 138 4 / 20%);
     color: #facc15;
-    border-color: rgba(202, 138, 4, 0.3);
+    border-color: rgb(202 138 4 / 30%);
 }
 
 [data-theme="dark"] .plant-tag.difficulty-hard {
-    background: rgba(220, 38, 38, 0.2);
+    background: rgb(220 38 38 / 20%);
     color: #f87171;
-    border-color: rgba(220, 38, 38, 0.3);
+    border-color: rgb(220 38 38 / 30%);
 }
 
 /* Plant Detail Modal */
 .plant-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgb(0 0 0 / 50%);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -189,7 +189,7 @@
     max-height: 85vh;
     overflow-y: auto;
     position: relative;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
 }
 
 .plant-modal-close {
@@ -297,12 +297,12 @@
 }
 
 [data-theme="dark"] .companion-tag.good {
-    background: rgba(22, 163, 74, 0.2);
+    background: rgb(22 163 74 / 20%);
     color: #4ade80;
 }
 
 [data-theme="dark"] .companion-tag.bad {
-    background: rgba(220, 38, 38, 0.2);
+    background: rgb(220 38 38 / 20%);
     color: #f87171;
 }
 
@@ -359,7 +359,7 @@
 
 [data-theme="dark"] .search-box input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+    box-shadow: 0 0 0 3px rgb(74 222 128 / 20%);
 }
 
 [data-theme="dark"] .category-btn {
@@ -382,12 +382,12 @@
 [data-theme="dark"] .plant-card {
     background: var(--bg-secondary);
     border-color: var(--border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
 }
 
 [data-theme="dark"] .plant-card:hover {
     border-color: var(--primary);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 40%);
 }
 
 [data-theme="dark"] .plant-card-body {
@@ -404,13 +404,13 @@
 
 /* Plant modal dark mode */
 [data-theme="dark"] .plant-modal {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgb(0 0 0 / 80%);
 }
 
 [data-theme="dark"] .plant-modal-content {
     background: var(--bg-secondary);
     border-color: var(--border);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 20px 60px rgb(0 0 0 / 70%);
     color: var(--text);
 }
 
