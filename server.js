@@ -287,6 +287,15 @@ app.use('/api', (req, res, next) => {
     next();
 });
 
+// UUID validation middleware for :id parameters
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function validateIdParam(req, res, next) {
+    if (!UUID_REGEX.test(req.params.id)) {
+        return res.status(400).json({ error: 'Invalid ID format. Expected a valid UUID.' });
+    }
+    next();
+}
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -365,7 +374,7 @@ app.post('/api/tasks/search', (req, res) => {
 });
 
 // GET /api/tasks/:id - Get single task
-app.get('/api/tasks/:id', (req, res) => {
+app.get('/api/tasks/:id', validateIdParam, (req, res) => {
     const tasks = readTasks();
     const task = tasks.find(t => String(t.id) === String(req.params.id));
     if (!task) return res.status(404).json({ error: 'Task not found' });
@@ -418,7 +427,7 @@ app.post('/api/tasks', async (req, res) => {
 });
 
 // PUT /api/tasks/:id - Update a task
-app.put('/api/tasks/:id', async (req, res) => {
+app.put('/api/tasks/:id', validateIdParam, async (req, res) => {
     const validation = validateTask(req.body, true);
     if (!validation.valid) {
         return res.status(400).json({ errors: validation.errors });
@@ -497,7 +506,7 @@ app.put('/api/tasks/:id', async (req, res) => {
 });
 
 // DELETE /api/tasks/:id - Delete a task
-app.delete('/api/tasks/:id', async (req, res) => {
+app.delete('/api/tasks/:id', validateIdParam, async (req, res) => {
     const result = await withLockedTasks((tasks) => {
         const index = tasks.findIndex(t => String(t.id) === String(req.params.id));
         if (index === -1) return { tasks: undefined, notFound: true };
@@ -512,7 +521,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
 });
 
 // POST /api/tasks/:id/archive - Archive a task
-app.post('/api/tasks/:id/archive', async (req, res) => {
+app.post('/api/tasks/:id/archive', validateIdParam, async (req, res) => {
     await acquireLock(TASKS_FILE);
     await acquireLock(ARCHIVED_FILE);
     try {
@@ -545,7 +554,7 @@ app.post('/api/tasks/:id/archive', async (req, res) => {
 });
 
 // POST /api/tasks/:id/unarchive - Restore a task from archive
-app.post('/api/tasks/:id/unarchive', async (req, res) => {
+app.post('/api/tasks/:id/unarchive', validateIdParam, async (req, res) => {
     await acquireLock(ARCHIVED_FILE);
     await acquireLock(TASKS_FILE);
     try {
@@ -583,7 +592,7 @@ app.get('/api/archived-tasks', (req, res) => {
 });
 
 // DELETE /api/archived-tasks/:id - Delete an archived task permanently
-app.delete('/api/archived-tasks/:id', async (req, res) => {
+app.delete('/api/archived-tasks/:id', validateIdParam, async (req, res) => {
     const result = await withLockedArchive((archived) => {
         const index = archived.findIndex(t => String(t.id) === String(req.params.id));
         if (index === -1) return { tasks: undefined, notFound: true };
