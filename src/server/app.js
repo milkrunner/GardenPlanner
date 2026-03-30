@@ -46,15 +46,15 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false
 });
-app.use(limiter);
+app.use('/api', limiter);
 
 // --- Static file serving (replaces nginx) ---
 
-app.use('/public', express.static(path.join(PROJECT_ROOT, 'public')));
-app.use('/src', express.static(path.join(PROJECT_ROOT, 'src')));
+app.use('/public', express.static(path.join(PROJECT_ROOT, 'public'), { maxAge: '1d' }));
 
-// #7: /tests/ and /docs/ only in development
+// #115: /src only in development (like /tests and /docs)
 if (process.env.NODE_ENV !== 'production') {
+    app.use('/src', express.static(path.join(PROJECT_ROOT, 'src'), { maxAge: '1d' }));
     app.use('/tests', express.static(path.join(PROJECT_ROOT, 'tests')));
     app.use('/docs', express.static(path.join(PROJECT_ROOT, 'docs')));
 }
@@ -62,16 +62,16 @@ if (process.env.NODE_ENV !== 'production') {
 // HTML page routes (with and without .html extension)
 const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];
 pages.forEach(page => {
-    app.get(`/${page}`, limiter, (req, res) => {
+    app.get(`/${page}`, (req, res) => {
         res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
     });
-    app.get(`/${page}.html`, limiter, (req, res) => {
+    app.get(`/${page}.html`, (req, res) => {
         res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
     });
 });
 
 // Root -> index.html
-app.get('/', limiter, (req, res) => {
+app.get('/', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'public', 'index.html'));
 });
 
