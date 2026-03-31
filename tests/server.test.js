@@ -720,12 +720,13 @@ describe('Security', () => {
         expect(nonce1).not.toBe(nonce2);
     });
 
-    test('HTML pages contain nonce in style tags', async () => {
+    test('logs page has no inline style tags after CSS extraction', async () => {
         const res = await request(app).get('/logs');
-        const csp = res.headers['content-security-policy'];
-        const nonce = csp.match(/nonce-([A-Za-z0-9+/=]+)/)[1];
-        expect(res.text).toContain(`nonce="${nonce}"`);
+        expect(res.text).not.toContain('<style');
         expect(res.text).not.toContain('__CSP_NONCE__');
+        // CSP header should still be present with a nonce
+        const csp = res.headers['content-security-policy'];
+        expect(csp).toMatch(/nonce-[A-Za-z0-9+/=]+/);
     });
 
     test('stores subtask text as raw without HTML escaping', async () => {
