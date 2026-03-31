@@ -54,13 +54,17 @@ app.use(requestLogger);
 
 // Auth status endpoint (always accessible, before auth middleware)
 app.use('/api/auth', authRouter);
+app.use('/api/v1/auth', authRouter);
 
 // API key authentication for /api/* routes
 app.use('/api', apiKeyAuth);
+app.use('/api/v1', apiKeyAuth);
 
 // Rate limiting — tiered
 app.use('/api/auth', authLimiter);
+app.use('/api/v1/auth', authLimiter);
 app.use('/api', generalLimiter);
+app.use('/api/v1', generalLimiter);
 
 // --- Static file serving (replaces nginx) ---
 
@@ -98,6 +102,12 @@ app.delete('/api/tasks/:id', writeLimiter);
 app.post('/api/tasks/:id/archive', writeLimiter);
 app.post('/api/tasks/:id/unarchive', writeLimiter);
 app.delete('/api/archived-tasks/:id', writeLimiter);
+app.post('/api/v1/tasks', writeLimiter);
+app.put('/api/v1/tasks/:id', writeLimiter);
+app.delete('/api/v1/tasks/:id', writeLimiter);
+app.post('/api/v1/tasks/:id/archive', writeLimiter);
+app.post('/api/v1/tasks/:id/unarchive', writeLimiter);
+app.delete('/api/v1/archived-tasks/:id', writeLimiter);
 
 // --- API Routes ---
 
@@ -107,6 +117,17 @@ app.use('/api/plants', plantsRouter);
 
 // GET /api/plant-categories - List unique categories
 app.get('/api/plant-categories', (req, res) => {
+    res.json(listCategories());
+});
+
+// --- Versioned API Routes (/api/v1) — canonical, same handlers ---
+
+app.use('/api/v1/tasks', tasksRouter);
+app.use('/api/v1', archiveRouter);
+app.use('/api/v1/plants', plantsRouter);
+
+// GET /api/v1/plant-categories - List unique categories (versioned)
+app.get('/api/v1/plant-categories', (req, res) => {
     res.json(listCategories());
 });
 
