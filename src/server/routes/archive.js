@@ -12,7 +12,7 @@ const {
 router.post('/tasks/:id/archive', validateIdParam, async (req, res) => {
     const result = await archiveTask(req.params.id);
     if (result.error) {
-        return res.status(result.status).json({ error: result.message });
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.json(result.task);
 });
@@ -21,7 +21,7 @@ router.post('/tasks/:id/archive', validateIdParam, async (req, res) => {
 router.post('/tasks/:id/unarchive', validateIdParam, async (req, res) => {
     const result = await unarchiveTask(req.params.id);
     if (result.error) {
-        return res.status(result.status).json({ error: result.message });
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.json(result.task);
 });
@@ -35,7 +35,7 @@ router.get('/archived-tasks', (req, res) => {
 router.delete('/archived-tasks/:id', validateIdParam, async (req, res) => {
     const result = await deleteArchivedTask(req.params.id);
     if (result.error) {
-        return res.status(result.status).json({ error: result.message });
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.status(204).send();
 });

@@ -1,13 +1,41 @@
 const { logger } = require('../logger');
 
-// --- Global error handler ---
+const GENERIC_MESSAGES = {
+    400: 'Bad request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not found',
+    409: 'Conflict',
+    413: 'Request too large',
+    429: 'Too many requests'
+};
+
 function errorHandler(err, req, res, next) {
-    // Let Express-generated HTTP errors (e.g., 413 Payload Too Large) pass through with their status
-    if (err.status && err.status < 500) {
-        return res.status(err.status).json({ error: err.message });
+    const status = err.status || 500;
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Always log server errors with full context
+    if (status >= 500) {
+        logger.error({
+            err: err.message,
+            stack: err.stack,
+            url: req.originalUrl,
+            method: req.method,
+            ip: req.ip
+        }, 'unhandled error');
     }
-    logger.error({ err: err.message, url: req.originalUrl, method: req.method }, 'unhandled error');
-    res.status(500).json({ error: 'Internal server error' });
+
+    // In production, use generic messages for all errors
+    // In development/test, pass through the original message for 4xx
+    const message = (isProduction || status >= 500)
+        ? (GENERIC_MESSAGES[status] || 'Internal server error')
+        : (err.message || GENERIC_MESSAGES[status] || 'Internal server error');
+
+    res.status(status).json({
+        error: true,
+        status,
+        message
+    });
 }
 
 module.exports = { errorHandler };
