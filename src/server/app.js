@@ -1,12 +1,12 @@
 const express = require('express');
 const compression = require('compression');
-const rateLimit = require('express-rate-limit');
 const path = require('path');
 
 const { requestLogger } = require('./logger');
 const { securityHeaders } = require('./middleware/security');
 const { apiKeyAuth } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/error-handler');
+const { generalLimiter, writeLimiter, authLimiter, resetRateLimitStores } = require('./middleware/rate-limit');
 const { validateTask, escapeHtml, sanitizeTaskData } = require('./validation/task-validator');
 const { paginate } = require('./services/task-service');
 const { resetCaches } = require('./storage/json-store');
@@ -39,14 +39,9 @@ app.use('/api/auth', authRouter);
 // API key authentication for /api/* routes
 app.use('/api', apiKeyAuth);
 
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false
-});
-app.use('/api', limiter);
+// Rate limiting — tiered
+app.use('/api/auth', authLimiter);
+app.use('/api', generalLimiter);
 
 // --- Static file serving (replaces nginx) ---
 
@@ -75,6 +70,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'public', 'index.html'));
 });
 
+// Stricter rate limit on write operations
+app.post('/api/tasks', writeLimiter);
+app.put('/api/tasks/:id', writeLimiter);
+app.delete('/api/tasks/:id', writeLimiter);
+app.post('/api/tasks/:id/archive', writeLimiter);
+app.post('/api/tasks/:id/unarchive', writeLimiter);
+app.delete('/api/archived-tasks/:id', writeLimiter);
+
 // --- API Routes ---
 
 app.use('/api/tasks', tasksRouter);
@@ -96,4 +99,4 @@ if (process.env.NODE_ENV === 'test') {
 // --- Global error handler (AFTER all routes) ---
 app.use(errorHandler);
 
-module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches };
+module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches, resetRateLimitStores };
