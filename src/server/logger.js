@@ -45,9 +45,32 @@ rotateIfNeeded(logFile);
 rotateIfNeeded(auditFile);
 
 // Main application logger
-const transport = process.env.NODE_ENV === 'test'
-    ? undefined
-    : pino.transport({
+// Production: JSON to stdout (default pino) + file; Dev: pino-pretty + file; Test: no transport
+const isProduction = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
+
+let transport;
+if (isTest) {
+    transport = undefined;
+} else if (isProduction) {
+    // In production, only use file transport — pino's default stdout produces compact JSON
+    transport = pino.transport({
+        targets: [
+            {
+                target: 'pino/file',
+                options: { destination: logFile, mkdir: true },
+                level: LOG_LEVEL
+            },
+            {
+                target: 'pino/file',
+                options: { destination: 1 },
+                level: LOG_LEVEL
+            }
+        ]
+    });
+} else {
+    // Development: pino-pretty for console + file
+    transport = pino.transport({
         targets: [
             {
                 target: 'pino/file',
@@ -61,6 +84,7 @@ const transport = process.env.NODE_ENV === 'test'
             }
         ]
     });
+}
 
 const logger = pino({ level: LOG_LEVEL }, transport);
 
