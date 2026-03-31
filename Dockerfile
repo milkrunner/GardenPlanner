@@ -15,8 +15,10 @@ RUN apk update && apk upgrade --no-cache || true
 
 # Dependencies installieren
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev \
-    && npm audit --audit-level=moderate || true
+RUN npm config set strict-ssl false \
+    && npm config set registry http://repo.inform-software.com/artifactory/api/npm/npmjs/ \
+    && npm install --omit=dev \
+    && (npm audit --audit-level=moderate || true)
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
 COPY server.js ./
@@ -25,7 +27,7 @@ COPY src/ ./src/
 COPY README.md ./
 
 # Datenverzeichnis erstellen und Rechte setzen
-RUN mkdir -p /app/data && chown -R node:node /app
+RUN mkdir -p /app/data /app/data/logs && chown -R node:node /app
 
 # Non-root User verwenden
 USER node
