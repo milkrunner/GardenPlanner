@@ -78,8 +78,8 @@ class GartenPlaner {
 			}
 
 			const cached = this.getCachedWeather();
-			if (cached) {
-				this.renderWeather(cached);
+			if (cached && !cached.stale) {
+				this.renderWeather(cached.weather);
 				return;
 			}
 
@@ -115,7 +115,7 @@ class GartenPlaner {
 		localStorage.setItem("weather_location", btoa(JSON.stringify(location)));
 	}
 
-	getCachedWeather() {
+	getCachedWeather(ignoreMaxAge = false) {
 		const cached = localStorage.getItem("weather_cache");
 		if (!cached) return null;
 
@@ -124,8 +124,8 @@ class GartenPlaner {
 			const age = Date.now() - data.timestamp;
 			const maxAge = 60 * 60 * 1000;
 
-			if (age < maxAge) {
-				return data.weather;
+			if (ignoreMaxAge || age < maxAge) {
+				return { weather: data.weather, timestamp: data.timestamp, stale: age >= maxAge };
 			}
 		} catch {
 			localStorage.removeItem("weather_cache");
@@ -153,7 +153,11 @@ class GartenPlaner {
 		const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationName.trim())}&count=1&language=de&format=json`;
 
 		try {
-			const response = await fetch(geocodeUrl);
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+			const response = await fetch(geocodeUrl, { signal: controller.signal });
+			clearTimeout(timeoutId);
 			const data = await response.json();
 
 			if (!data.results || data.results.length === 0) {
@@ -197,7 +201,11 @@ class GartenPlaner {
 		const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe/Berlin&forecast_days=7`;
 
 		try {
-			const response = await fetch(url);
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+			const response = await fetch(url, { signal: controller.signal });
+			clearTimeout(timeoutId);
 			const data = await response.json();
 
 			const weather = {
@@ -219,11 +227,18 @@ class GartenPlaner {
 					timestamp: new Date().toISOString()
 				});
 			}
-			this.showWeatherError("Fehler beim Laden der Wetterdaten");
+
+			// Offline fallback: try to show stale cached data
+			const staleCache = this.getCachedWeather(true);
+			if (staleCache) {
+				this.renderWeather(staleCache.weather, staleCache.timestamp);
+			} else {
+				this.showWeatherUnavailable();
+			}
 		}
 	}
 
-	renderWeather(weather) {
+	renderWeather(weather, cachedTimestamp) {
 		const weatherLocationName = document.getElementById("weatherLocationName");
 		const weatherForecast = document.getElementById("weatherForecast");
 
@@ -231,6 +246,18 @@ class GartenPlaner {
 
 		if (weatherLocationName) {
 			weatherLocationName.textContent = `${weather.location.name}, ${weather.location.country}`;
+		}
+
+		let staleBanner = "";
+		if (cachedTimestamp) {
+			const lastUpdated = new Date(cachedTimestamp).toLocaleString("de-DE", {
+				day: "2-digit",
+				month: "2-digit",
+				year: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
+			});
+			staleBanner = `<div class="weather-stale-notice" role="status">Offline-Daten — zuletzt aktualisiert: ${lastUpdated}</div>`;
 		}
 
 		const days = weather.daily.time.slice(0, 7);
@@ -267,7 +294,7 @@ class GartenPlaner {
 			.join("");
 
 		const reminders = this.getWeatherReminders(weather);
-		weatherForecast.innerHTML = cardsHtml + reminders;
+		weatherForecast.innerHTML = staleBanner + cardsHtml + reminders;
 	}
 
 	getDayName(dateString, index) {
@@ -397,6 +424,23 @@ class GartenPlaner {
                     </svg>
                     <p>${message}</p>
                     <button class="btn btn-secondary" onclick="window.gartenPlaner.promptLocation()">Standort eingeben</button>
+                </div>
+            `;
+		}
+	}
+
+	showWeatherUnavailable() {
+		const weatherForecast = document.getElementById("weatherForecast");
+		if (weatherForecast) {
+			weatherForecast.innerHTML = `
+                <div class="weather-unavailable" role="status">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18.5 10c-.2-3.1-2.7-5.5-5.8-5.5-2.3 0-4.3 1.3-5.3 3.3C5.1 8.2 3 10.5 3 13.3 3 16.4 5.6 19 8.7 19H18.5c2.5 0 4.5-2 4.5-4.5S21 10 18.5 10z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <p>Wetterdaten sind derzeit nicht verfuegbar.</p>
+                    <p class="weather-unavailable-hint">Die Daten werden automatisch geladen, sobald eine Verbindung besteht.</p>
+                    <button class="btn btn-secondary" onclick="window.gartenPlaner.loadWeather()">Erneut versuchen</button>
                 </div>
             `;
 		}
