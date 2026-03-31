@@ -1,3 +1,9 @@
+/**
+ * @module routes/archive
+ * Express router for task archiving endpoints.
+ * Supports archiving, unarchiving, listing, and permanently deleting archived tasks.
+ */
+
 const express = require('express');
 const router = express.Router();
 const { validateIdParam } = require('../validation/task-validator');

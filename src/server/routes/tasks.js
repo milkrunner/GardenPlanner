@@ -1,3 +1,9 @@
+/**
+ * @module routes/tasks
+ * Express router for task CRUD endpoints under /api/tasks.
+ * Supports listing, searching, creating, updating, and deleting tasks.
+ */
+
 const express = require('express');
 const router = express.Router();
 const { validateIdParam } = require('../validation/task-validator');

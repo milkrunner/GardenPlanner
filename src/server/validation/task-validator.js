@@ -1,9 +1,26 @@
-// --- Validation ---
+/**
+ * @module validation/task-validator
+ * Input validation and sanitization for task data.
+ */
+
+/**
+ * @typedef {Object} ValidationResult
+ * @property {boolean} valid - Whether validation passed
+ * @property {string[]} errors - Array of validation error messages (empty if valid)
+ */
 
 const { FIELD_LIMITS } = require('../config');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/**
+ * Express middleware that validates req.params.id is a valid UUID v4.
+ * Responds with 400 if the format is invalid.
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {void}
+ */
 function validateIdParam(req, res, next) {
     if (!UUID_REGEX.test(req.params.id)) {
         return res.status(400).json({ error: true, status: 400, message: 'Invalid ID format' });
@@ -11,6 +28,12 @@ function validateIdParam(req, res, next) {
     next();
 }
 
+/**
+ * Validate task data against field limits and allowed values.
+ * @param {Object} taskData - Task data to validate
+ * @param {boolean} [partial=false] - If true, only validates fields that are present (for updates)
+ * @returns {ValidationResult} Validation result with errors array
+ */
 function validateTask(taskData, partial = false) {
     const errors = [];
 
@@ -88,12 +111,13 @@ function validateTask(taskData, partial = false) {
     return { valid: errors.length === 0, errors };
 }
 
-// Canonical server-side escapeHtml implementation.
-// Note: The client-side version in src/js/security.js also escapes forward slashes
-// (/ -> &#x2F;) for additional DOM context safety. This server version does not,
-// because server-side escaping is only used for logging/audit contexts.
-// Do NOT attempt to share a single module between server (CommonJS) and browser
-// (global scripts) without a build system.
+/**
+ * Escape HTML special characters for safe output in logging/audit contexts.
+ * Note: The client-side version in src/js/security.js also escapes forward slashes
+ * for additional DOM context safety. This server version does not.
+ * @param {string|null|undefined} str - String to escape
+ * @returns {string} HTML-escaped string, or empty string if input is null/undefined
+ */
 function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -104,6 +128,11 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+/**
+ * Sanitize task data by trimming string fields. Does not validate.
+ * @param {Object} data - Raw task data from request body
+ * @returns {Object} Sanitized copy with trimmed string fields
+ */
 function sanitizeTaskData(data) {
     const sanitized = {};
     if (data.title !== undefined) sanitized.title = data.title.trim();

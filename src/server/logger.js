@@ -98,7 +98,12 @@ const auditTransport = process.env.NODE_ENV === 'test'
 
 const auditLogger = pino({ level: 'info' }, auditTransport);
 
-// Structured audit log entry
+/**
+ * Write a structured audit log entry to the audit log file.
+ * @param {string} event - Audit event name (e.g. 'task_created', 'auth_failure')
+ * @param {Object} [details={}] - Additional context for the event
+ * @returns {void}
+ */
 function audit(event, details = {}) {
     auditLogger.info({
         event,
@@ -107,7 +112,13 @@ function audit(event, details = {}) {
     });
 }
 
-// Express request logging middleware
+/**
+ * Express middleware that logs each request with method, URL, status, duration, and IP.
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {void}
+ */
 function requestLogger(req, res, next) {
     const start = Date.now();
 
