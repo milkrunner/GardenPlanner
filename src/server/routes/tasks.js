@@ -23,7 +23,7 @@ router.post('/search', (req, res) => {
 // GET /api/tasks/:id - Get single task
 router.get('/:id', validateIdParam, (req, res) => {
     const task = getTask(req.params.id);
-    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!task) return res.status(404).json({ error: true, status: 404, message: 'Task not found' });
     res.json(task);
 });
 
@@ -31,7 +31,7 @@ router.get('/:id', validateIdParam, (req, res) => {
 router.post('/', async (req, res) => {
     const result = await createTask(req.body);
     if (result.error) {
-        return res.status(result.status).json({ errors: result.errors });
+        return res.status(result.status).json({ error: true, status: result.status, message: 'Validation failed', errors: result.errors });
     }
     res.status(201).json(result.task);
 });
@@ -40,8 +40,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', validateIdParam, async (req, res) => {
     const result = await updateTask(req.params.id, req.body);
     if (result.error) {
-        if (result.status === 400) return res.status(400).json({ errors: result.errors });
-        return res.status(result.status).json({ error: result.message });
+        if (result.status === 400) return res.status(400).json({ error: true, status: 400, message: 'Validation failed', errors: result.errors });
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.json(result.task);
 });
@@ -50,7 +50,7 @@ router.put('/:id', validateIdParam, async (req, res) => {
 router.delete('/:id', validateIdParam, async (req, res) => {
     const result = await deleteTask(req.params.id);
     if (result.error) {
-        return res.status(result.status).json({ error: result.message });
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.status(204).send();
 });

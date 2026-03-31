@@ -257,6 +257,8 @@ describe('API Endpoints', () => {
                 .send({ title: '' });
 
             expect(res.status).toBe(400);
+            expect(res.body.error).toBe(true);
+            expect(res.body.status).toBe(400);
             expect(res.body).toHaveProperty('errors');
         });
     });
@@ -292,7 +294,8 @@ describe('API Endpoints', () => {
         test('returns 400 for invalid ID format', async () => {
             const res = await request(app).get('/api/tasks/nonexistent');
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
@@ -317,7 +320,8 @@ describe('API Endpoints', () => {
                 .put('/api/tasks/nonexistent')
                 .send({ title: 'Test' });
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
@@ -385,7 +389,8 @@ describe('API Endpoints', () => {
         test('returns 400 for invalid ID format', async () => {
             const res = await request(app).delete('/api/tasks/nonexistent');
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
@@ -572,7 +577,8 @@ describe('UUID validation for :id parameters', () => {
             if (body) req.send(body);
             const res = await req;
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
     });
 
@@ -585,12 +591,27 @@ describe('UUID validation for :id parameters', () => {
 // --- Error Handler Tests ---
 
 describe('Global error handler', () => {
-    test('returns 500 with generic message and no stack trace', async () => {
+    test('returns consistent error format for 500 errors', async () => {
         const res = await request(app).get('/api/test-error');
         expect(res.status).toBe(500);
-        expect(res.body).toEqual({ error: 'Internal server error' });
+        expect(res.body).toEqual({
+            error: true,
+            status: 500,
+            message: 'Internal server error'
+        });
         expect(res.body.stack).toBeUndefined();
-        expect(res.body.message).toBeUndefined();
+    });
+
+    test('returns consistent error format for 413 payload too large', async () => {
+        const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
+        const res = await request(app)
+            .post('/api/tasks')
+            .send(largeBody);
+
+        expect(res.status).toBe(413);
+        expect(res.body.error).toBe(true);
+        expect(res.body.status).toBe(413);
+        expect(res.body).toHaveProperty('message');
     });
 });
 
@@ -711,5 +732,6 @@ describe('JSON body size limit', () => {
             .send(largeBody);
 
         expect(res.status).toBe(413);
+        expect(res.body.error).toBe(true);
     });
 });

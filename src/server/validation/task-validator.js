@@ -4,7 +4,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9
 
 function validateIdParam(req, res, next) {
     if (!UUID_REGEX.test(req.params.id)) {
-        return res.status(400).json({ error: 'Invalid ID format. Expected a valid UUID.' });
+        return res.status(400).json({ error: true, status: 400, message: 'Invalid ID format' });
     }
     next();
 }
