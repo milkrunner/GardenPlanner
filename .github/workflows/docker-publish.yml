@@ -34,11 +34,11 @@ jobs:
         run: |
           IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/gardenplanner"
           VERSION="${{ steps.pkg.outputs.version }}"
-          SHA_SHORT="$(echo ${{ github.sha }} | cut -c1-7)"
+          BUILD="${{ github.run_number }}"
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "tags=${IMAGE}:latest,${IMAGE}:${VERSION}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.ref_name }}" = "develop" ]; then
-            echo "tags=${IMAGE}:beta,${IMAGE}:${VERSION}-beta,${IMAGE}:${VERSION}-beta.${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+            echo "tags=${IMAGE}:beta,${IMAGE}:${VERSION}-beta,${IMAGE}:${VERSION}-beta.${BUILD}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push Docker image
