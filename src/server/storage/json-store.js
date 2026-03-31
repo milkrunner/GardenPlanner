@@ -1,6 +1,7 @@
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
+const { STORAGE } = require('../config');
 
 const DATA_DIR = path.join(__dirname, '..', '..', '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
@@ -21,7 +22,7 @@ if (!fs.existsSync(ARCHIVED_FILE)) {
 
 const locks = new Map();
 
-function acquireLock(file, timeout = 5000) {
+function acquireLock(file, timeout = STORAGE.LOCK_TIMEOUT_MS) {
     return new Promise((resolve, reject) => {
         const start = Date.now();
         (function tryLock() {
@@ -32,7 +33,7 @@ function acquireLock(file, timeout = 5000) {
             if (Date.now() - start > timeout) {
                 return reject(new Error(`Lock timeout for ${path.basename(file)}`));
             }
-            setTimeout(tryLock, 10);
+            setTimeout(tryLock, STORAGE.LOCK_POLL_INTERVAL_MS);
         })();
     });
 }
@@ -61,13 +62,13 @@ async function writeJSON(file, data) {
     cache.set(file, data);
     const tmp = file + '.tmp';
     await fsp.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8');
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < STORAGE.WRITE_MAX_RETRIES; attempt++) {
         try {
             await fsp.rename(tmp, file);
             return;
         } catch (err) {
-            if (attempt === 2 || err.code !== 'EPERM') throw err;
-            await new Promise(resolve => setTimeout(resolve, 50));
+            if (attempt === STORAGE.WRITE_MAX_RETRIES - 1 || err.code !== 'EPERM') throw err;
+            await new Promise(resolve => setTimeout(resolve, STORAGE.WRITE_RETRY_DELAY_MS));
         }
     }
 }

@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const { audit } = require('../logger');
+const { PAGINATION } = require('../config');
 const { validateTask, sanitizeTaskData } = require('../validation/task-validator');
 const {
     readTasks,
@@ -24,7 +25,7 @@ function paginate(tasks, query) {
     if (!page && !limit) return null;
 
     const safePage = (Number.isInteger(page) && page > 0) ? page : 1;
-    const safeLimit = (Number.isInteger(limit) && limit > 0 && limit <= 200) ? limit : 50;
+    const safeLimit = (Number.isInteger(limit) && limit > 0 && limit <= PAGINATION.MAX_LIMIT) ? limit : PAGINATION.DEFAULT_LIMIT;
     const total = tasks.length;
     const pages = Math.ceil(total / safeLimit);
     const start = (safePage - 1) * safeLimit;

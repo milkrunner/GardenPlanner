@@ -1,6 +1,9 @@
 // Sicherheits-Modul für XSS-Schutz und Input-Validierung
 const Security = {
     // HTML-Zeichen escapen
+    // Note: This client-side version also escapes forward slashes (/ -> &#x2F;)
+    // for additional DOM context safety. The server-side canonical version in
+    // src/server/validation/task-validator.js does not escape slashes.
     escapeHtml(unsafe) {
         if (unsafe === null || unsafe === undefined) {
             return '';
