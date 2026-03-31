@@ -1,6 +1,6 @@
 // API Client for Gartenplaner REST API
 const TaskAPI = {
-	baseUrl: "/api",
+	baseUrl: "/api/v1",
 
 	getApiKey() {
 		try {
