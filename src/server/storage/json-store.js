@@ -1,3 +1,8 @@
+/**
+ * @module storage/json-store
+ * JSON file-based storage with in-memory caching, file locking, and atomic writes.
+ */
+
 const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
@@ -22,6 +27,13 @@ if (!fs.existsSync(ARCHIVED_FILE)) {
 
 const locks = new Map();
 
+/**
+ * Acquire an in-memory lock for a given file path. Polls until the lock is available or times out.
+ * @param {string} file - Absolute file path to lock on
+ * @param {number} [timeout=STORAGE.LOCK_TIMEOUT_MS] - Max wait time in milliseconds
+ * @returns {Promise<void>} Resolves when lock is acquired
+ * @throws {Error} If lock acquisition times out
+ */
 function acquireLock(file, timeout = STORAGE.LOCK_TIMEOUT_MS) {
     return new Promise((resolve, reject) => {
         const start = Date.now();
@@ -38,6 +50,11 @@ function acquireLock(file, timeout = STORAGE.LOCK_TIMEOUT_MS) {
     });
 }
 
+/**
+ * Release an in-memory lock for a given file path.
+ * @param {string} file - Absolute file path to unlock
+ * @returns {void}
+ */
 function releaseLock(file) {
     locks.delete(file);
 }
@@ -45,6 +62,11 @@ function releaseLock(file) {
 // --- In-memory cache ---
 const cache = new Map();
 
+/**
+ * Read and parse a JSON file, returning cached data if available.
+ * @param {string} file - Absolute file path
+ * @returns {Array|Object} Parsed JSON data, or empty array on read/parse error
+ */
 function readJSON(file) {
     const cached = cache.get(file);
     if (cached !== undefined) return cached;
@@ -58,6 +80,13 @@ function readJSON(file) {
     }
 }
 
+/**
+ * Atomically write data to a JSON file (write to .tmp then rename). Updates cache.
+ * @param {string} file - Absolute file path
+ * @param {Array|Object} data - Data to serialize as JSON
+ * @returns {Promise<void>}
+ * @throws {Error} If write or rename fails after retries
+ */
 async function writeJSON(file, data) {
     cache.set(file, data);
     const tmp = file + '.tmp';
@@ -73,15 +102,37 @@ async function writeJSON(file, data) {
     }
 }
 
+/**
+ * Clear all in-memory caches. Useful for test isolation.
+ * @returns {void}
+ */
 function resetCaches() {
     cache.clear();
 }
 
+/** @returns {Array} Active tasks array */
 function readTasks() { return readJSON(TASKS_FILE); }
+
+/**
+ * @param {Array} tasks - Tasks array to persist
+ * @returns {Promise<void>}
+ */
 async function writeTasks(tasks) { await writeJSON(TASKS_FILE, tasks); }
+
+/** @returns {Array} Archived tasks array */
 function readArchivedTasks() { return readJSON(ARCHIVED_FILE); }
+
+/**
+ * @param {Array} tasks - Archived tasks array to persist
+ * @returns {Promise<void>}
+ */
 async function writeArchivedTasks(tasks) { await writeJSON(ARCHIVED_FILE, tasks); }
 
+/**
+ * Execute a function with exclusive lock on the tasks file. Automatically reads, writes, and unlocks.
+ * @param {function(Array): {tasks: Array|undefined, [key: string]: *}} fn - Callback receiving current tasks; return {tasks} to persist changes
+ * @returns {Promise<Object>} The result object returned by fn
+ */
 async function withLockedTasks(fn) {
     await acquireLock(TASKS_FILE);
     try {
@@ -94,6 +145,11 @@ async function withLockedTasks(fn) {
     }
 }
 
+/**
+ * Execute a function with exclusive lock on the archived tasks file. Automatically reads, writes, and unlocks.
+ * @param {function(Array): {tasks: Array|undefined, [key: string]: *}} fn - Callback receiving current archived tasks; return {tasks} to persist changes
+ * @returns {Promise<Object>} The result object returned by fn
+ */
 async function withLockedArchive(fn) {
     await acquireLock(ARCHIVED_FILE);
     try {

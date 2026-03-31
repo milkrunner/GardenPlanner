@@ -1,3 +1,45 @@
+/**
+ * @module services/task-service
+ * Business logic for task CRUD, search, pagination, and archiving.
+ */
+
+/**
+ * @typedef {Object} Task
+ * @property {string} id - UUID v4 identifier
+ * @property {string} title - Task title
+ * @property {string} employee - Assigned employee name
+ * @property {string} location - Task location
+ * @property {string} description - Detailed description
+ * @property {string} notes - Additional notes
+ * @property {'pending'|'in-progress'|'completed'} status - Current status
+ * @property {'low'|'medium'|'high'} priority - Priority level
+ * @property {'none'|'daily'|'weekly'|'monthly'} recurrence - Recurrence pattern
+ * @property {string} createdAt - ISO 8601 creation timestamp
+ * @property {string} [completedAt] - ISO 8601 completion timestamp
+ * @property {string} [archivedAt] - ISO 8601 archive timestamp
+ * @property {Array<{timestamp: string, action: string, details: Object}>} history - Change history
+ * @property {Array<{id: number, text: string, completed: boolean}>} subtasks - Subtask list
+ * @property {number} sortOrder - Numeric sort order (epoch ms)
+ */
+
+/**
+ * @typedef {Object} PaginatedResult
+ * @property {Task[]} data - Page of tasks
+ * @property {number} total - Total number of matching tasks
+ * @property {number} page - Current page number
+ * @property {number} limit - Items per page
+ * @property {number} pages - Total number of pages
+ */
+
+/**
+ * @typedef {Object} TaskOperationResult
+ * @property {boolean} error - Whether the operation failed
+ * @property {number} [status] - HTTP status code (on error)
+ * @property {string} [message] - Error message (on error)
+ * @property {string[]} [errors] - Validation error messages (on validation failure)
+ * @property {Task} [task] - The resulting task (on success)
+ */
+
 const { v4: uuidv4 } = require('uuid');
 const { audit } = require('../logger');
 const { PAGINATION } = require('../config');
@@ -17,6 +59,15 @@ const {
 
 // --- Pagination helper ---
 
+/**
+ * Paginate an array of tasks based on query parameters.
+ * Returns null if no pagination params are provided (backwards-compatible).
+ * @param {Task[]} tasks - Full array of tasks to paginate
+ * @param {Object} query - Query parameters
+ * @param {string|number} [query.page] - Page number (1-based)
+ * @param {string|number} [query.limit] - Items per page
+ * @returns {PaginatedResult|null} Paginated result or null if no pagination requested
+ */
 function paginate(tasks, query) {
     const page = parseInt(query.page, 10);
     const limit = parseInt(query.limit, 10);
@@ -36,6 +87,14 @@ function paginate(tasks, query) {
 
 // --- Task CRUD operations ---
 
+/**
+ * List tasks with optional status filter and pagination.
+ * @param {Object} query - Query parameters
+ * @param {string} [query.status] - Filter by status ('pending'|'in-progress'|'completed')
+ * @param {string|number} [query.page] - Page number
+ * @param {string|number} [query.limit] - Items per page
+ * @returns {Task[]|PaginatedResult} Array of tasks or paginated result
+ */
 function listTasks(query) {
     let tasks = readTasks();
 
@@ -52,6 +111,16 @@ function listTasks(query) {
     return paginated || tasks;
 }
 
+/**
+ * Search tasks by status, employee, and/or location with optional pagination.
+ * @param {Object} body - Search criteria from request body
+ * @param {string} [body.status] - Filter by status
+ * @param {string} [body.employee] - Filter by employee name (exact match)
+ * @param {string} [body.location] - Filter by location (exact match)
+ * @param {string|number} [body.page] - Page number
+ * @param {string|number} [body.limit] - Items per page
+ * @returns {Task[]|PaginatedResult} Array of tasks or paginated result
+ */
 function searchTasks(body) {
     let tasks = readTasks();
     const { status, employee, location, page, limit } = body;
@@ -73,11 +142,21 @@ function searchTasks(body) {
     return paginated || tasks;
 }
 
+/**
+ * Get a single task by ID.
+ * @param {string} id - Task UUID
+ * @returns {Task|null} The task or null if not found
+ */
 function getTask(id) {
     const tasks = readTasks();
     return tasks.find(t => String(t.id) === String(id)) || null;
 }
 
+/**
+ * Create a new task. Validates and sanitizes input, generates UUID, and persists.
+ * @param {Object} body - Task data from request body
+ * @returns {Promise<TaskOperationResult>} Result with the created task or validation errors
+ */
 async function createTask(body) {
     const validation = validateTask(body);
     if (!validation.valid) {
@@ -122,6 +201,12 @@ async function createTask(body) {
     return { error: false, task };
 }
 
+/**
+ * Update an existing task by ID. Validates input, tracks changes in history.
+ * @param {string} id - Task UUID
+ * @param {Object} body - Partial task data to update
+ * @returns {Promise<TaskOperationResult>} Result with the updated task or error
+ */
 async function updateTask(id, body) {
     const validation = validateTask(body, true);
     if (!validation.valid) {
@@ -200,6 +285,11 @@ async function updateTask(id, body) {
     return { error: false, task: result.task };
 }
 
+/**
+ * Delete a task by ID.
+ * @param {string} id - Task UUID
+ * @returns {Promise<TaskOperationResult>} Result indicating success or not-found error
+ */
 async function deleteTask(id) {
     const result = await withLockedTasks((tasks) => {
         const index = tasks.findIndex(t => String(t.id) === String(id));
@@ -214,6 +304,11 @@ async function deleteTask(id) {
     return { error: false };
 }
 
+/**
+ * Archive a task by moving it from the active tasks store to the archive.
+ * @param {string} id - Task UUID
+ * @returns {Promise<TaskOperationResult>} Result with the archived task or not-found error
+ */
 async function archiveTask(id) {
     await acquireLock(TASKS_FILE);
     await acquireLock(ARCHIVED_FILE);
@@ -246,6 +341,11 @@ async function archiveTask(id) {
     }
 }
 
+/**
+ * Restore an archived task back to the active tasks store.
+ * @param {string} id - Archived task UUID
+ * @returns {Promise<TaskOperationResult>} Result with the restored task or not-found error
+ */
 async function unarchiveTask(id) {
     await acquireLock(ARCHIVED_FILE);
     await acquireLock(TASKS_FILE);
@@ -278,10 +378,19 @@ async function unarchiveTask(id) {
     }
 }
 
+/**
+ * List all archived tasks.
+ * @returns {Task[]} Array of archived tasks
+ */
 function listArchivedTasks() {
     return readArchivedTasks();
 }
 
+/**
+ * Permanently delete an archived task.
+ * @param {string} id - Archived task UUID
+ * @returns {Promise<TaskOperationResult>} Result indicating success or not-found error
+ */
 async function deleteArchivedTask(id) {
     const result = await withLockedArchive((archived) => {
         const index = archived.findIndex(t => String(t.id) === String(id));

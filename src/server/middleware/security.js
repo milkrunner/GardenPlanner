@@ -1,5 +1,13 @@
 const crypto = require('crypto');
 
+/**
+ * Express middleware that sets security headers (CSP, HSTS, X-Frame-Options, etc.).
+ * Generates a unique CSP nonce per request stored in res.locals.cspNonce.
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {void}
+ */
 function securityHeaders(req, res, next) {
     // Generate unique nonce per request
     const nonce = crypto.randomBytes(16).toString('base64');

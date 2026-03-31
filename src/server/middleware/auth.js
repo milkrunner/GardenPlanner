@@ -3,7 +3,14 @@ const { audit } = require('../logger');
 
 const API_KEY = process.env.API_KEY || '';
 
-// API key authentication for /api/* routes
+/**
+ * Express middleware for API key authentication on /api/* routes.
+ * Uses timing-safe comparison. Skips auth for /auth/status and when no API_KEY is configured.
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {void}
+ */
 function apiKeyAuth(req, res, next) {
     // Auth status endpoint is always accessible
     if (req.path === '/auth/status') {

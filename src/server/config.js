@@ -1,11 +1,33 @@
-// --- Central configuration constants ---
-// Replaces magic numbers scattered across server modules (#145)
+/**
+ * @module config
+ * Central configuration constants for the GardenPlanner server.
+ * Replaces magic numbers scattered across server modules (#145).
+ */
 
+/**
+ * @typedef {Object} PaginationConfig
+ * @property {number} MAX_LIMIT - Maximum items per page (200)
+ * @property {number} DEFAULT_LIMIT - Default items per page (50)
+ */
+
+/** @type {PaginationConfig} */
 const PAGINATION = {
     MAX_LIMIT: 200,
     DEFAULT_LIMIT: 50,
 };
 
+/**
+ * @typedef {Object} FieldLimitsConfig
+ * @property {number} TITLE_MAX - Max characters for task title
+ * @property {number} EMPLOYEE_MAX - Max characters for employee name
+ * @property {number} LOCATION_MAX - Max characters for location
+ * @property {number} DESCRIPTION_MAX - Max characters for description
+ * @property {number} NOTES_MAX - Max characters for notes
+ * @property {number} MAX_SUBTASKS - Max number of subtasks per task
+ * @property {number} SUBTASK_TEXT_MAX - Max characters for subtask text
+ */
+
+/** @type {FieldLimitsConfig} */
 const FIELD_LIMITS = {
     TITLE_MAX: 200,
     EMPLOYEE_MAX: 100,
@@ -16,6 +38,15 @@ const FIELD_LIMITS = {
     SUBTASK_TEXT_MAX: 500,
 };
 
+/**
+ * @typedef {Object} StorageConfig
+ * @property {number} LOCK_TIMEOUT_MS - Max wait time for file lock acquisition
+ * @property {number} LOCK_POLL_INTERVAL_MS - Interval between lock retry attempts
+ * @property {number} WRITE_MAX_RETRIES - Max retries for atomic file rename
+ * @property {number} WRITE_RETRY_DELAY_MS - Delay between write retries
+ */
+
+/** @type {StorageConfig} */
 const STORAGE = {
     LOCK_TIMEOUT_MS: 5000,
     LOCK_POLL_INTERVAL_MS: 10,

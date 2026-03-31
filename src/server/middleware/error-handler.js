@@ -10,6 +10,15 @@ const GENERIC_MESSAGES = {
     429: 'Too many requests'
 };
 
+/**
+ * Express error-handling middleware. Logs 5xx errors and returns JSON error responses.
+ * In production, uses generic messages for all errors; in dev/test, passes through 4xx messages.
+ * @param {Error & {status?: number}} err - Error object, optionally with an HTTP status
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next function
+ * @returns {void}
+ */
 function errorHandler(err, req, res, next) {
     const status = err.status || 500;
     const isProduction = process.env.NODE_ENV === 'production';
