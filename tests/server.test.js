@@ -705,6 +705,29 @@ describe('Security', () => {
         expect(updated.body.title).toBe('Tom & Jerry');
     });
 
+    test('CSP header contains nonce instead of unsafe-inline', async () => {
+        const res = await request(app).get('/');
+        const csp = res.headers['content-security-policy'];
+        expect(csp).not.toContain('unsafe-inline');
+        expect(csp).toMatch(/style-src 'self' 'nonce-[A-Za-z0-9+/=]+'/);
+    });
+
+    test('each request gets a unique CSP nonce', async () => {
+        const res1 = await request(app).get('/');
+        const res2 = await request(app).get('/');
+        const nonce1 = res1.headers['content-security-policy'].match(/nonce-([A-Za-z0-9+/=]+)/)[1];
+        const nonce2 = res2.headers['content-security-policy'].match(/nonce-([A-Za-z0-9+/=]+)/)[1];
+        expect(nonce1).not.toBe(nonce2);
+    });
+
+    test('HTML pages contain nonce in style tags', async () => {
+        const res = await request(app).get('/logs');
+        const csp = res.headers['content-security-policy'];
+        const nonce = csp.match(/nonce-([A-Za-z0-9+/=]+)/)[1];
+        expect(res.text).toContain(`nonce="${nonce}"`);
+        expect(res.text).not.toContain('__CSP_NONCE__');
+    });
+
     test('stores subtask text as raw without HTML escaping', async () => {
         const res = await request(app)
             .post('/api/tasks')

@@ -1,5 +1,6 @@
 const express = require('express');
 const compression = require('compression');
+const fs = require('fs');
 const path = require('path');
 
 const { requestLogger } = require('./logger');
@@ -29,6 +30,24 @@ app.use(express.json({ limit: '100kb' }));
 
 // Security headers
 app.use(securityHeaders);
+
+// Inject CSP nonce into HTML responses
+app.use((req, res, next) => {
+    const originalSendFile = res.sendFile.bind(res);
+    res.sendFile = function(filePath, options, callback) {
+        if (filePath.endsWith('.html')) {
+            fs.readFile(filePath, 'utf8', (err, html) => {
+                if (err) return next(err);
+                html = html.replace(/__CSP_NONCE__/g, res.locals.cspNonce);
+                res.set('Content-Type', 'text/html');
+                res.send(html);
+            });
+        } else {
+            originalSendFile(filePath, options, callback);
+        }
+    };
+    next();
+});
 
 // Request logging
 app.use(requestLogger);

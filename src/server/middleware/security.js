@@ -1,5 +1,10 @@
-// Security headers (#2 CORS removed - same-origin, #8 CSP added)
+const crypto = require('crypto');
+
 function securityHeaders(req, res, next) {
+    // Generate unique nonce per request
+    const nonce = crypto.randomBytes(16).toString('base64');
+    res.locals.cspNonce = nonce;
+
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -9,7 +14,7 @@ function securityHeaders(req, res, next) {
     res.setHeader('Content-Security-Policy', [
         "default-src 'self'",
         "script-src 'self' https://cdnjs.cloudflare.com",
-        "style-src 'self' 'unsafe-inline'",
+        `style-src 'self' 'nonce-${nonce}'`,
         "img-src 'self' data:",
         "font-src 'self'",
         "connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com",
