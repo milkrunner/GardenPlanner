@@ -17,8 +17,8 @@ RUN apk update && apk upgrade --no-cache || true
 COPY package.json package-lock.json* ./
 RUN npm config set strict-ssl false \
     && npm config set registry http://repo.inform-software.com/artifactory/api/npm/npmjs/ \
-    && npm install --omit=dev \
-    && (npm audit --audit-level=moderate || true)
+    && npm ci --omit=dev
+RUN npm audit --audit-level=high
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
 COPY server.js ./
