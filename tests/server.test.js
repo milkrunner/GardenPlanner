@@ -2,17 +2,18 @@ const request = require('supertest');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches } = require('../src/server/app');
+const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches, resetRateLimitStores } = require('../src/server/app');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
 
-// Reset data files and caches before each test
+// Reset data files, caches, and rate limiters before each test
 beforeEach(() => {
     fs.writeFileSync(TASKS_FILE, '[]', 'utf8');
     fs.writeFileSync(ARCHIVED_FILE, '[]', 'utf8');
     resetCaches();
+    resetRateLimitStores();
 });
 
 // --- Unit Tests: validateTask ---
@@ -719,6 +720,28 @@ describe('Security', () => {
         expect(res.status).toBe(201);
         expect(res.body.subtasks[0].text).toBe('Tom & Jerry <subtask>');
         expect(res.body.subtasks[1].text).toBe('Plain string with "quotes"');
+    });
+});
+
+// --- Rate Limiting Tests ---
+
+describe('Rate limiting', () => {
+    test('returns rate limit headers on API responses', async () => {
+        const res = await request(app).get('/api/tasks');
+        expect(res.headers).toHaveProperty('ratelimit-limit');
+        expect(res.headers).toHaveProperty('ratelimit-remaining');
+    });
+
+    test('write endpoints have stricter limits than read endpoints', async () => {
+        const readRes = await request(app).get('/api/tasks');
+        const writeRes = await request(app)
+            .post('/api/tasks')
+            .send({ title: 'Test', location: 'Garten' });
+
+        const readLimit = parseInt(readRes.headers['ratelimit-limit'], 10);
+        const writeLimit = parseInt(writeRes.headers['ratelimit-limit'], 10);
+
+        expect(readLimit).toBeGreaterThan(writeLimit);
     });
 });
 
