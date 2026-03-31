@@ -66,9 +66,11 @@ app.use('/api', generalLimiter);
 
 app.use('/public', express.static(path.join(PROJECT_ROOT, 'public'), { maxAge: '1d' }));
 
-// #115: /src only in development (like /tests and /docs)
+// Serve /src (CSS/JS needed in production since HTML references ../src/)
+app.use('/src', express.static(path.join(PROJECT_ROOT, 'src'), { maxAge: '1d' }));
+
+// #115: /tests and /docs only in development
 if (process.env.NODE_ENV !== 'production') {
-    app.use('/src', express.static(path.join(PROJECT_ROOT, 'src'), { maxAge: '1d' }));
     app.use('/tests', express.static(path.join(PROJECT_ROOT, 'tests')));
     app.use('/docs', express.static(path.join(PROJECT_ROOT, 'docs')));
 }
