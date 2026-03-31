@@ -11,6 +11,12 @@ GartenPlaner.prototype.setupEventListeners = function () {
 			e.preventDefault();
 			this.addTask();
 		});
+		// Clear tempSubtasks when the form is reset (e.g. via browser reset)
+		taskForm.addEventListener("reset", () => {
+			this.tempSubtasks = [];
+			// Defer rendering so the native reset completes first
+			setTimeout(() => this.renderCreateSubtasksList(), 0);
+		});
 	}
 
 	// Filter (nur wenn vorhanden)

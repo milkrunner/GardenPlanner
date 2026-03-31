@@ -92,13 +92,7 @@ GartenPlaner.prototype.addTask = async function () {
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
 
-		const taskForm = document.getElementById("taskForm");
-		if (taskForm) {
-			taskForm.reset();
-		}
-
-		this.tempSubtasks = [];
-		this.renderCreateSubtasksList();
+		this.resetCreateForm();
 
 		setTimeout(() => {
 			const newTaskElement = document.querySelector(
@@ -150,6 +144,18 @@ GartenPlaner.prototype.addTask = async function () {
 		);
 	} finally {
 		this.setButtonLoading(submitBtn, false);
+	}
+};
+
+// Centralized cleanup for the create-task form and tempSubtasks state.
+// Prevents memory leaks by ensuring tempSubtasks is always cleared
+// when the form is reset, submitted, or when all data is cleared.
+GartenPlaner.prototype.resetCreateForm = function () {
+	this.tempSubtasks = [];
+	this.renderCreateSubtasksList();
+	const taskForm = document.getElementById("taskForm");
+	if (taskForm) {
+		taskForm.reset();
 	}
 };
 
@@ -707,6 +713,7 @@ GartenPlaner.prototype.clearAllData = async function () {
 				this.updateStatistics();
 				this.updateEmployeeFilter();
 				this.updateLocationFilter();
+				this.resetCreateForm();
 				this.showNotification("\ud83d\uddd1\ufe0f Alle Daten gel\u00f6scht");
 			}
 		}
