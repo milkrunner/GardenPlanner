@@ -14,9 +14,13 @@ WORKDIR /app
 RUN apk update && apk upgrade --no-cache || true
 
 # Dependencies installieren
+# NPM_REGISTRY defaults to public npm; override for internal builds:
+#   docker build --build-arg NPM_REGISTRY=http://repo.inform-software.com/artifactory/api/npm/npmjs/ .
+ARG NPM_REGISTRY=https://registry.npmjs.org/
+ARG NPM_STRICT_SSL=true
 COPY package.json package-lock.json* ./
-RUN npm config set strict-ssl false \
-    && npm config set registry http://repo.inform-software.com/artifactory/api/npm/npmjs/ \
+RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
+    && npm config set registry ${NPM_REGISTRY} \
     && npm ci --omit=dev
 RUN npm audit --audit-level=high
 

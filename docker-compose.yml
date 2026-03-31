@@ -1,6 +1,10 @@
 services:
   gartenplaner:
-    build: .
+    build:
+      context: .
+      args:
+        NPM_REGISTRY: http://repo.inform-software.com/artifactory/api/npm/npmjs/
+        NPM_STRICT_SSL: "false"
     container_name: gartenplaner
     ports:
       - "8080:3000"
