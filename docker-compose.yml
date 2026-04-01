@@ -8,8 +8,8 @@ services:
     environment:
       - TZ=Europe/Berlin
       - NODE_ENV=production
-      - DATABASE_URL=postgres://gartenplaner:${DB_PASSWORD:-gartenplaner}@db:5432/gartenplaner
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - DATABASE_URL=postgres://gartenplaner:gartenplaner@db:5432/gartenplaner
+      - JWT_SECRET=gartenplaner-jwt-secret-2026
     depends_on:
       db:
         condition: service_healthy
@@ -31,7 +31,7 @@ services:
     environment:
       - POSTGRES_DB=gartenplaner
       - POSTGRES_USER=gartenplaner
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-gartenplaner}
+      - POSTGRES_PASSWORD=gartenplaner
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
