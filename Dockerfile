@@ -9,9 +9,8 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 
 WORKDIR /app
 
-# Update Alpine packages to fix known vulnerabilities
-# Allow failure for transient TLS/network errors in CI
-RUN apk update && apk upgrade --no-cache || true
+# Update Alpine packages to fix known vulnerabilities (CVE-2025-60876)
+RUN apk update && apk upgrade --no-cache
 
 # Dependencies installieren
 # NPM_REGISTRY defaults to public npm; override for internal builds:
