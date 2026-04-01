@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="../src/css/styles.css" />
   </head>
   <body>
-    <script>
+    <script nonce="__CSP_NONCE__">
         fetch('/api/v1/auth/status', { credentials: 'same-origin' })
             .then(r => r.json())
             .then(data => {
@@ -89,7 +89,7 @@
               <div
                 class="progress-fill"
                 id="progressPending"
-                style="width: 0%"
+
               ></div>
             </div>
             <p class="progress-label">
@@ -107,7 +107,7 @@
               <div
                 class="progress-fill completed"
                 id="progressCompleted"
-                style="width: 0%"
+
               ></div>
             </div>
             <p class="progress-label">
@@ -125,7 +125,7 @@
               <div
                 class="progress-fill employees"
                 id="progressEmployees"
-                style="width: 0%"
+
               ></div>
             </div>
             <p class="progress-label">

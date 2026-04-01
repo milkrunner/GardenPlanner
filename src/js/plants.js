@@ -41,7 +41,9 @@
     async function loadCategories() {
         try {
             const res = await fetch(`${API_BASE}/plant-categories`);
+            if (!res.ok) return;
             const categories = await res.json();
+            if (!Array.isArray(categories)) return;
             const container = document.getElementById('categoryFilters');
             if (!container) return;
 
@@ -60,7 +62,9 @@
             const qs = params.toString();
 
             const res = await fetch(`${API_BASE}/plants${qs ? '?' + qs : ''}`);
-            allPlants = await res.json();
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            allPlants = Array.isArray(data) ? data : [];
             applyClientFiltersAndRender();
         } catch (err) {
             console.error('Fehler beim Laden der Pflanzen:', err);

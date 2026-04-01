@@ -506,9 +506,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	window.themeManager = new ThemeManager();
 	window.GP.themeManager = window.themeManager;
 
-	window.gartenPlaner = new GartenPlaner();
-	window.GP.gartenPlaner = window.gartenPlaner;
-	window.gartenPlaner.setupBulkActionListeners();
+	if (typeof GartenPlaner.prototype.loadTasks === "function") {
+		window.gartenPlaner = new GartenPlaner();
+		window.GP.gartenPlaner = window.gartenPlaner;
+		window.gartenPlaner.setupBulkActionListeners();
+	}
 
 	const container = document.querySelector(".container");
 	if (container) {
