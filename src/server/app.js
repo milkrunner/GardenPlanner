@@ -28,6 +28,7 @@ const PROJECT_ROOT = path.join(__dirname, '..', '..');
 
 app.use(compression());
 app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: false, limit: '100kb' }));
 
 // Security headers
 app.use(securityHeaders);
@@ -53,13 +54,13 @@ app.use((req, res, next) => {
 // Request logging
 app.use(requestLogger);
 
-// Auth status endpoint (always accessible, before auth middleware)
-app.use('/api/auth', authRouter);
-app.use('/api/v1/auth', authRouter);
-
-// JWT authentication for /api/* routes
+// JWT authentication for /api/* routes (populates req.user; public auth paths pass through)
 app.use('/api', jwtAuth);
 app.use('/api/v1', jwtAuth);
+
+// Auth routes (after jwtAuth so req.user is populated on /status)
+app.use('/api/auth', authRouter);
+app.use('/api/v1/auth', authRouter);
 
 // Rate limiting — tiered
 app.use('/api/auth', authLimiter);

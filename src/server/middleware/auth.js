@@ -15,26 +15,30 @@ function parseCookies(cookieHeader) {
 }
 
 function jwtAuth(req, res, next) {
-    if (req.path === '/auth/status' || req.path === '/auth/login') {
-        return next();
-    }
     if (!JWT_SECRET) {
         return next();
     }
+
+    const isPublicAuth = req.path === '/auth/status' || req.path === '/auth/login' || req.path === '/auth/logout';
     const cookies = parseCookies(req.headers.cookie);
     const token = cookies.token;
-    if (!token) {
+
+    if (token) {
+        try {
+            const payload = jwt.verify(token, JWT_SECRET);
+            req.user = { id: payload.sub, username: payload.username, role: payload.role };
+        } catch (err) {
+            if (!isPublicAuth) {
+                audit('auth_failure', { ip: req.ip, path: req.originalUrl, reason: err.message });
+                return res.status(401).json({ error: true, status: 401, message: 'Invalid or expired token' });
+            }
+        }
+    } else if (!isPublicAuth) {
         audit('auth_failure', { ip: req.ip, path: req.originalUrl, reason: 'no token' });
         return res.status(401).json({ error: true, status: 401, message: 'Authentication required' });
     }
-    try {
-        const payload = jwt.verify(token, JWT_SECRET);
-        req.user = { id: payload.sub, username: payload.username, role: payload.role };
-        next();
-    } catch (err) {
-        audit('auth_failure', { ip: req.ip, path: req.originalUrl, reason: err.message });
-        return res.status(401).json({ error: true, status: 401, message: 'Invalid or expired token' });
-    }
+
+    next();
 }
 
 function signToken(user) {

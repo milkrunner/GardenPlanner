@@ -21,7 +21,7 @@
           <h1>Gartenplaner</h1>
           <p class="subtitle">Bitte melden Sie sich an</p>
         </div>
-        <form id="loginForm" class="login-form" novalidate>
+        <form id="loginForm" class="login-form" method="POST" action="/api/v1/auth/login" novalidate>
           <div class="form-group">
             <label for="username">Benutzername</label>
             <input
@@ -83,6 +83,13 @@
     <script src="../src/js/app.js"></script>
     <script nonce="__CSP_NONCE__">
       (function() {
+        // Show error message if redirected back from failed non-JS form login
+        if (new URLSearchParams(window.location.search).has('error')) {
+          var errEl = document.getElementById('loginError');
+          errEl.textContent = 'Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.';
+          errEl.hidden = false;
+        }
+
         // Check if already logged in
         fetch('/api/v1/auth/status', { credentials: 'same-origin' })
           .then(function(r) { return r.json(); })
