@@ -275,6 +275,7 @@
             </div>
         `;
 
+        modal.removeAttribute('hidden');
         modal.classList.add('active');
 
         content.querySelector('.plant-modal-close').addEventListener('click', () => { modal.classList.remove('active'); });
