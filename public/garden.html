@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gartenplaner - Garten gestalten</title>
+    <meta
+      name="description"
+      content="Interaktiver Gartenplaner zum Gestalten von Gartenanlagen"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../src/css/styles.css" />
+    <link rel="stylesheet" href="../src/css/garden.css" />
+  </head>
+  <body>
+    <script>
+        fetch('/api/v1/auth/status', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.authRequired && !data.user) window.location.href = '/login';
+                if (data.user) {
+                    window.__user = data.user;
+                    const nav = document.querySelector('nav ul') || document.querySelector('.main-nav');
+                    if (nav && data.user.role === 'admin') {
+                        const adminLink = document.createElement('a');
+                        adminLink.href = '/admin';
+                        adminLink.className = 'nav-link';
+                        adminLink.textContent = 'Admin';
+                        nav.appendChild(adminLink);
+                    }
+                    if (nav) {
+                        const logoutLink = document.createElement('a');
+                        logoutLink.href = '#';
+                        logoutLink.className = 'nav-link';
+                        logoutLink.textContent = 'Logout';
+                        logoutLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (window.TaskAPI) TaskAPI.logout();
+                            else fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin' }).then(function() { window.location.href = '/login'; });
+                        });
+                        nav.appendChild(logoutLink);
+                    }
+                }
+            });
+    </script>
+    <div class="garden-container">
+      <header role="banner">
+        <h1>🌻 Gartenplaner</h1>
+        <p class="subtitle">Gestalte deinen Garten interaktiv</p>
+      </header>
+
+      <div class="nav-container">
+        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+          <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+          <a href="/statistics" class="nav-link">📊 Statistiken</a>
+          <a href="/plants" class="nav-link">🌱 Pflanzen</a>
+          <a href="/garden" class="nav-link active" aria-current="page">🌻 Garten</a>
+          <a href="/logs" class="nav-link">📜 Logs</a>
+        </nav>
+        <a href="/index" class="btn btn-primary nav-action-btn">➕ Neue Aufgabe</a>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="garden-toolbar">
+        <div class="toolbar-group">
+          <label for="gridSizeSelect">Raster:</label>
+          <select id="gridSizeSelect"></select>
+        </div>
+
+        <div class="toolbar-separator"></div>
+
+        <div class="toolbar-group">
+          <button type="button" class="toolbar-btn toolbar-btn--primary" id="gardenSaveBtn">💾 Speichern</button>
+          <button type="button" class="toolbar-btn" id="gardenLoadBtn">📂 Laden</button>
+          <button type="button" class="toolbar-btn toolbar-btn--danger" id="gardenClearBtn">🗑️ Leeren</button>
+        </div>
+
+        <div class="toolbar-separator"></div>
+
+        <div class="toolbar-group zoom-controls">
+          <button type="button" class="zoom-btn" id="zoomOut" title="Verkleinern">−</button>
+          <span class="zoom-level" id="zoomLevel">100%</span>
+          <button type="button" class="zoom-btn" id="zoomIn" title="Vergrößern">+</button>
+        </div>
+      </div>
+
+      <!-- Main content: sidebar + grid -->
+      <div class="garden-main">
+        <!-- Palette sidebar -->
+        <aside class="garden-palette" id="gardenPalette" aria-label="Elemente-Palette">
+          <!-- Filled dynamically by JS -->
+        </aside>
+
+        <!-- Grid area -->
+        <div class="garden-grid-area">
+          <div class="garden-grid-wrapper" id="gardenGridWrapper">
+            <div class="garden-grid" id="gardenGrid">
+              <!-- Cells rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info bar -->
+      <div class="garden-info">
+        <span class="garden-info-text" id="gardenInfoText">
+          <strong>Wähle ein Element aus der Seitenleiste und klicke auf das Raster zum Platzieren.</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- Save Dialog -->
+    <div class="garden-save-dialog" id="gardenSaveDialog" hidden>
+      <div class="garden-save-content">
+        <h3>Garten speichern</h3>
+        <input type="text" id="gardenNameInput" placeholder="Name des Gartens" maxlength="100" />
+        <div class="garden-save-actions">
+          <button type="button" class="toolbar-btn" id="gardenSaveCancel">Abbrechen</button>
+          <button type="button" class="toolbar-btn toolbar-btn--primary" id="gardenSaveConfirm">Speichern</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load Dialog -->
+    <div class="garden-save-dialog" id="gardenLoadDialog" hidden>
+      <div class="garden-save-content">
+        <h3>Garten laden</h3>
+        <div class="garden-load-list" id="gardenLoadList">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="garden-save-actions">
+          <button type="button" class="toolbar-btn" id="gardenLoadClose">Schließen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+      <button
+        id="themeToggle"
+        class="theme-toggle-btn"
+        aria-label="Theme umschalten"
+        title="Dark Mode umschalten"
+      >
+        <svg
+          id="themeIcon"
+          class="theme-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <script src="../src/js/garden-planner.js"></script>
+  </body>
+</html>
