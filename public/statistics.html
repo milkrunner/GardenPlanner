@@ -33,11 +33,27 @@
       </div>
 
       <main>
+        <!-- Time Range Selector & Export -->
+        <section class="stats-toolbar">
+          <div class="time-range-selector" role="group" aria-label="Zeitraum auswählen">
+            <button class="time-range-btn" data-range="0" type="button">Heute</button>
+            <button class="time-range-btn" data-range="7" type="button">7 Tage</button>
+            <button class="time-range-btn active" data-range="30" type="button">30 Tage</button>
+            <button class="time-range-btn" data-range="all" type="button">Alle</button>
+          </div>
+          <button class="btn btn-secondary stats-export-btn" id="exportCsvBtn" type="button">
+            📥 Export CSV
+          </button>
+        </section>
+
         <!-- Statistiken mit Fortschrittsbalken -->
         <section class="stats-section">
-          <div class="stat-card">
+          <div class="stat-card" data-stat-tooltip id="cardPending">
             <h3>Offene Aufgaben</h3>
-            <p class="stat-number" id="statPending">0</p>
+            <div class="stat-number-row">
+              <p class="stat-number" id="statPending">0</p>
+              <span class="trend-indicator" id="trendPending"></span>
+            </div>
             <div class="progress-bar">
               <div
                 class="progress-fill"
@@ -48,10 +64,14 @@
             <p class="progress-label">
               von insgesamt <span id="totalTasks">0</span>
             </p>
+            <div class="stat-tooltip" id="tooltipPending" role="tooltip"></div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" data-stat-tooltip id="cardCompleted">
             <h3>Erledigte Aufgaben</h3>
-            <p class="stat-number" id="statCompleted">0</p>
+            <div class="stat-number-row">
+              <p class="stat-number" id="statCompleted">0</p>
+              <span class="trend-indicator" id="trendCompleted"></span>
+            </div>
             <div class="progress-bar">
               <div
                 class="progress-fill completed"
@@ -62,10 +82,14 @@
             <p class="progress-label">
               <span id="completionRate">0</span>% erledigt
             </p>
+            <div class="stat-tooltip" id="tooltipCompleted" role="tooltip"></div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" data-stat-tooltip id="cardEmployees">
             <h3>Aktive Mitarbeiter</h3>
-            <p class="stat-number" id="statEmployees">0</p>
+            <div class="stat-number-row">
+              <p class="stat-number" id="statEmployees">0</p>
+              <span class="trend-indicator" id="trendEmployees"></span>
+            </div>
             <div class="progress-bar">
               <div
                 class="progress-fill employees"
@@ -76,6 +100,7 @@
             <p class="progress-label">
               Durchschn. <span id="avgTasksPerEmployee">0</span> Aufgaben/MA
             </p>
+            <div class="stat-tooltip" id="tooltipEmployees" role="tooltip"></div>
           </div>
         </section>
 
@@ -214,6 +239,7 @@
     <script src="../src/js/task-renderer.js"></script>
     <script src="../src/js/task-events.js"></script>
     <script src="../src/js/task-export.js"></script>
+    <script src="../src/js/statistics-interactive.js"></script>
     <script src="../src/js/statistics-init.js"></script>
   </body>
 </html>
