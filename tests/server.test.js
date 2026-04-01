@@ -570,7 +570,7 @@ describeWithDB('POST /api/tasks/search with pagination', () => {
 
 // --- UUID Validation Tests ---
 
-describe('UUID validation for :id parameters', () => {
+describeWithDB('UUID validation for :id parameters', () => {
     const invalidIds = ['nonexistent', '123', 'not-a-uuid', '../etc/passwd'];
     const routes = [
         { method: 'get', path: '/api/tasks/' },
@@ -631,7 +631,7 @@ describeWithDB('Global error handler', () => {
 
 // --- Security Tests ---
 
-describe('Security', () => {
+describeWithDB('Security', () => {
     test('sets security headers', async () => {
         const res = await request(app).get('/api/tasks');
         expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
