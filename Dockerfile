@@ -26,6 +26,7 @@ RUN npm audit --audit-level=high
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
 COPY server.js ./
+COPY scripts/ ./scripts/
 COPY public/ ./public/
 COPY src/ ./src/
 COPY README.md ./
