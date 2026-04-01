@@ -17,18 +17,18 @@ const {
 } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
-router.get('/', (req, res) => {
-    res.json(listTasks(req.query));
+router.get('/', async (req, res) => {
+    res.json(await listTasks(req.query));
 });
 
 // POST /api/tasks/search - Filter tasks with sensitive criteria via request body
-router.post('/search', (req, res) => {
-    res.json(searchTasks(req.body));
+router.post('/search', async (req, res) => {
+    res.json(await searchTasks(req.body));
 });
 
 // GET /api/tasks/:id - Get single task
-router.get('/:id', validateIdParam, (req, res) => {
-    const task = getTask(req.params.id);
+router.get('/:id', validateIdParam, async (req, res) => {
+    const task = await getTask(req.params.id);
     if (!task) return res.status(404).json({ error: true, status: 404, message: 'Task not found' });
     res.json(task);
 });

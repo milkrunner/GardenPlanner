@@ -10,7 +10,6 @@ const { errorHandler } = require('./middleware/error-handler');
 const { generalLimiter, writeLimiter, authLimiter, resetRateLimitStores } = require('./middleware/rate-limit');
 const { validateTask, escapeHtml, sanitizeTaskData } = require('./validation/task-validator');
 const { paginate } = require('./services/task-service');
-const { resetCaches } = require('./storage/json-store');
 const { listCategories } = require('./services/plant-service');
 
 const tasksRouter = require('./routes/tasks');
@@ -141,4 +140,4 @@ if (process.env.NODE_ENV === 'test') {
 // --- Global error handler (AFTER all routes) ---
 app.use(errorHandler);
 
-module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches, resetRateLimitStores };
+module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetRateLimitStores };

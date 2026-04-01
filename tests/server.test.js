@@ -2,7 +2,7 @@ const request = require('supertest');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches, resetRateLimitStores } = require('../src/server/app');
+const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetRateLimitStores } = require('../src/server/app');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
@@ -12,7 +12,6 @@ const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
 beforeEach(() => {
     fs.writeFileSync(TASKS_FILE, '[]', 'utf8');
     fs.writeFileSync(ARCHIVED_FILE, '[]', 'utf8');
-    resetCaches();
     resetRateLimitStores();
 });
 

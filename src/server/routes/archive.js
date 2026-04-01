@@ -33,8 +33,8 @@ router.post('/tasks/:id/unarchive', validateIdParam, async (req, res) => {
 });
 
 // GET /api/archived-tasks - List archived tasks
-router.get('/archived-tasks', (req, res) => {
-    res.json(listArchivedTasks());
+router.get('/archived-tasks', async (req, res) => {
+    res.json(await listArchivedTasks());
 });
 
 // DELETE /api/archived-tasks/:id - Delete an archived task permanently
