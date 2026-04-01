@@ -63,6 +63,98 @@
   border-color: var(--primary);
 }
 
+/* === Plant Library Enhancements === */
+
+/* Sort dropdown */
+.plant-sort-box select {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  background: var(--bg-secondary);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: auto;
+}
+
+.plant-sort-box select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(54, 94, 61, 0.1);
+}
+
+/* Favorites toggle button */
+.favorites-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 8px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-light);
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.favorites-toggle-btn:hover {
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.favorites-toggle-btn.active {
+  background: #FEF2F2;
+  border-color: #F87171;
+  color: #DC2626;
+}
+
+/* Result count */
+.plant-result-count {
+  padding: 0 3rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+/* Favorite button on plant card */
+.plant-favorite-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 1;
+  opacity: 0.5;
+}
+
+.plant-card:hover .plant-favorite-btn {
+  opacity: 1;
+}
+
+.plant-favorite-btn.active {
+  color: #DC2626;
+  opacity: 1;
+}
+
+.plant-favorite-btn:hover {
+  color: #DC2626;
+  opacity: 1;
+  transform: scale(1.15);
+}
+
 /* Plant Grid */
 .plant-grid {
   display: grid;
@@ -72,6 +164,7 @@
 }
 
 .plant-card {
+  position: relative;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -356,6 +449,27 @@
     max-width: 100%;
   }
 
+  .plant-sort-box {
+    width: 100%;
+  }
+
+  .plant-sort-box select {
+    width: 100%;
+  }
+
+  .plant-favorites-toggle {
+    width: 100%;
+  }
+
+  .favorites-toggle-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .plant-result-count {
+    padding: 0 1.5rem;
+  }
+
   .plant-grid {
     padding: 1rem 1.5rem;
     grid-template-columns: 1fr;
@@ -486,4 +600,49 @@
 
 [data-theme="dark"] .plant-modal-content::-webkit-scrollbar-thumb:hover {
   background: var(--text-light);
+}
+
+/* Dark Mode - Plant Library Enhancements */
+[data-theme="dark"] .plant-sort-box select {
+  background: var(--bg-tertiary, #262626);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .plant-sort-box select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(168, 213, 186, 0.2);
+}
+
+[data-theme="dark"] .favorites-toggle-btn {
+  background: var(--bg-tertiary, #262626);
+  border-color: var(--border);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .favorites-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+[data-theme="dark"] .favorites-toggle-btn.active {
+  background: rgb(220 38 38 / 15%);
+  border-color: #F87171;
+  color: #F87171;
+}
+
+[data-theme="dark"] .plant-result-count {
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .plant-favorite-btn {
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .plant-favorite-btn.active {
+  color: #F87171;
+}
+
+[data-theme="dark"] .plant-favorite-btn:hover {
+  color: #F87171;
 }
