@@ -5,7 +5,7 @@ const path = require('path');
 
 const { requestLogger } = require('./logger');
 const { securityHeaders } = require('./middleware/security');
-const { apiKeyAuth } = require('./middleware/auth');
+const { jwtAuth } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/error-handler');
 const { generalLimiter, writeLimiter, authLimiter, resetRateLimitStores } = require('./middleware/rate-limit');
 const { validateTask, escapeHtml, sanitizeTaskData } = require('./validation/task-validator');
@@ -55,9 +55,9 @@ app.use(requestLogger);
 app.use('/api/auth', authRouter);
 app.use('/api/v1/auth', authRouter);
 
-// API key authentication for /api/* routes
-app.use('/api', apiKeyAuth);
-app.use('/api/v1', apiKeyAuth);
+// JWT authentication for /api/* routes
+app.use('/api', jwtAuth);
+app.use('/api/v1', jwtAuth);
 
 // Rate limiting — tiered
 app.use('/api/auth', authLimiter);
