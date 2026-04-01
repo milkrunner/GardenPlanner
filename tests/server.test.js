@@ -1,19 +1,30 @@
 const request = require('supertest');
 const crypto = require('node:crypto');
-const fs = require('node:fs');
-const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetRateLimitStores } = require('../src/server/app');
+const { app, resetRateLimitStores } = require('../src/server/app');
+const { validateTask, escapeHtml, sanitizeTaskData } = require('../src/server/validation/task-validator');
+const { paginate } = require('../src/server/services/task-service');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
-const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
+const hasDB = !!process.env.DATABASE_URL;
+const describeWithDB = hasDB ? describe : describe.skip;
 
-// Reset data files, caches, and rate limiters before each test
-beforeEach(() => {
-    fs.writeFileSync(TASKS_FILE, '[]', 'utf8');
-    fs.writeFileSync(ARCHIVED_FILE, '[]', 'utf8');
-    resetRateLimitStores();
-});
+if (hasDB) {
+    const { query } = require('../src/server/storage/db');
+    const { migrate } = require('../scripts/migrate');
+
+    beforeAll(async () => {
+        await migrate();
+    });
+
+    beforeEach(async () => {
+        await query('DELETE FROM tasks');
+        await query('DELETE FROM users');
+        resetRateLimitStores();
+    });
+} else {
+    beforeEach(() => {
+        resetRateLimitStores();
+    });
+}
 
 // --- Unit Tests: validateTask ---
 
@@ -229,9 +240,9 @@ describe('sanitizeTaskData', () => {
     });
 });
 
-// --- Integration Tests: API Endpoints ---
+// --- Integration Tests: API Endpoints (require PostgreSQL) ---
 
-describe('API Endpoints', () => {
+describeWithDB('API Endpoints', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -495,7 +506,7 @@ describe('paginate', () => {
     });
 });
 
-describe('GET /api/tasks with pagination', () => {
+describeWithDB('GET /api/tasks with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -531,7 +542,7 @@ describe('GET /api/tasks with pagination', () => {
     });
 });
 
-describe('POST /api/tasks/search with pagination', () => {
+describeWithDB('POST /api/tasks/search with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -584,13 +595,16 @@ describe('UUID validation for :id parameters', () => {
 
     test('accepts valid UUID v4 format', async () => {
         const res = await request(app).get('/api/tasks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
-        expect(res.status).toBe(404); // valid format, just doesn't exist
+        // Without DB this may error, but with DB it should be 404 (valid format, doesn't exist)
+        if (hasDB) {
+            expect(res.status).toBe(404);
+        }
     });
 });
 
 // --- Error Handler Tests ---
 
-describe('Global error handler', () => {
+describeWithDB('Global error handler', () => {
     test('returns consistent error format for 500 errors', async () => {
         const res = await request(app).get('/api/test-error');
         expect(res.status).toBe(500);
@@ -631,9 +645,6 @@ describe('Security', () => {
     });
 
     test('does not bypass auth via sec-fetch-site header', async () => {
-        // This verifies the sec-fetch-site bypass has been removed.
-        // Since API_KEY is not set in tests, all requests are allowed,
-        // but the header should have no special effect on auth logic.
         const res = await request(app)
             .get('/api/tasks')
             .set('sec-fetch-site', 'same-origin');
@@ -642,7 +653,6 @@ describe('Security', () => {
 
     test('uses timing-safe comparison for API key validation', () => {
         // Verify that crypto.timingSafeEqual is available and works correctly
-        // for the pattern used in the auth middleware
         const key = 'test-secret-key';
         const keyBuffer = Buffer.from(key, 'utf8');
 
@@ -665,45 +675,6 @@ describe('Security', () => {
         expect(keyBuffer.length).not.toBe(emptyBuffer.length);
     });
 
-    test('stores raw text without HTML escaping (escaping happens on frontend render)', async () => {
-        const res = await request(app)
-            .post('/api/tasks')
-            .send({
-                title: '<script>alert("xss")</script>',
-                employee: 'Max',
-                location: 'Garten'
-            });
-
-        expect(res.status).toBe(201);
-        // API returns raw text — frontend is responsible for escaping on render
-        expect(res.body.title).toBe('<script>alert("xss")</script>');
-    });
-
-    test('returns special characters as-is in API responses', async () => {
-        const res = await request(app)
-            .post('/api/tasks')
-            .send({
-                title: 'Tom & Jerry',
-                employee: "O'Brien",
-                location: 'Garten <Süd>',
-                description: 'Use "quotes" & ampersands'
-            });
-
-        expect(res.status).toBe(201);
-        expect(res.body.title).toBe('Tom & Jerry');
-        expect(res.body.employee).toBe("O'Brien");
-        expect(res.body.location).toBe('Garten <Süd>');
-        expect(res.body.description).toBe('Use "quotes" & ampersands');
-
-        // Verify the data round-trips correctly (no double-escaping on edit)
-        const updated = await request(app)
-            .put(`/api/tasks/${res.body.id}`)
-            .send({ title: 'Tom & Jerry' });
-
-        expect(updated.status).toBe(200);
-        expect(updated.body.title).toBe('Tom & Jerry');
-    });
-
     test('CSP header contains nonce instead of unsafe-inline', async () => {
         const res = await request(app).get('/');
         const csp = res.headers['content-security-policy'];
@@ -723,9 +694,53 @@ describe('Security', () => {
         const res = await request(app).get('/logs');
         expect(res.text).not.toContain('<style');
         expect(res.text).not.toContain('__CSP_NONCE__');
-        // CSP header should still be present with a nonce
         const csp = res.headers['content-security-policy'];
         expect(csp).toMatch(/nonce-[A-Za-z0-9+/=]+/);
+    });
+});
+
+describeWithDB('Security (DB-dependent)', () => {
+    const validTask = {
+        title: 'Rasen mähen',
+        employee: 'Max',
+        location: 'Garten'
+    };
+
+    test('stores raw text without HTML escaping (escaping happens on frontend render)', async () => {
+        const res = await request(app)
+            .post('/api/tasks')
+            .send({
+                title: '<script>alert("xss")</script>',
+                employee: 'Max',
+                location: 'Garten'
+            });
+
+        expect(res.status).toBe(201);
+        expect(res.body.title).toBe('<script>alert("xss")</script>');
+    });
+
+    test('returns special characters as-is in API responses', async () => {
+        const res = await request(app)
+            .post('/api/tasks')
+            .send({
+                title: 'Tom & Jerry',
+                employee: "O'Brien",
+                location: 'Garten <Süd>',
+                description: 'Use "quotes" & ampersands'
+            });
+
+        expect(res.status).toBe(201);
+        expect(res.body.title).toBe('Tom & Jerry');
+        expect(res.body.employee).toBe("O'Brien");
+        expect(res.body.location).toBe('Garten <Süd>');
+        expect(res.body.description).toBe('Use "quotes" & ampersands');
+
+        const updated = await request(app)
+            .put(`/api/tasks/${res.body.id}`)
+            .send({ title: 'Tom & Jerry' });
+
+        expect(updated.status).toBe(200);
+        expect(updated.body.title).toBe('Tom & Jerry');
     });
 
     test('stores subtask text as raw without HTML escaping', async () => {
@@ -748,7 +763,7 @@ describe('Security', () => {
 
 // --- Rate Limiting Tests ---
 
-describe('Rate limiting', () => {
+describeWithDB('Rate limiting', () => {
     test('returns rate limit headers on API responses', async () => {
         const res = await request(app).get('/api/tasks');
         expect(res.headers).toHaveProperty('ratelimit-limit');
