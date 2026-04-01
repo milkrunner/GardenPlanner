@@ -650,3 +650,91 @@
 [data-theme="dark"] .plant-favorite-btn:hover {
   color: #F87171;
 }
+
+/* === Care Guide === */
+
+.care-guide {
+  margin-bottom: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.care-guide h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.care-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.care-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.care-item:hover {
+  border-color: var(--primary-light);
+}
+
+.care-icon {
+  font-size: 1.25rem;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.care-item strong {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.care-item p {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  margin: 0;
+}
+
+@media (width <= 768px) {
+  .care-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark Mode - Care Guide */
+[data-theme="dark"] .care-guide {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .care-guide h3 {
+  color: var(--primary);
+}
+
+[data-theme="dark"] .care-item {
+  background: var(--bg-tertiary, #262626);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .care-item:hover {
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .care-item strong {
+  color: var(--text);
+}
+
+[data-theme="dark"] .care-item p {
+  color: var(--text-light);
+}
