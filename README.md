@@ -103,6 +103,40 @@ curl -X POST http://localhost:8080/api/tasks \
   }
   ```
 
+## Backup & Restore
+
+Die PostgreSQL-Datenbank wird automatisch gesichert.
+
+### Automatisches Backup
+
+- Der `backup`-Service erstellt **täglich um 2:00 Uhr** ein komprimiertes Backup (`pg_dump | gzip`)
+- Es werden maximal **7 Backups** aufbewahrt, ältere werden automatisch gelöscht
+- Backups werden im Docker Volume `backup-data` unter `/backups/` gespeichert
+
+### Manuelles Backup
+
+```bash
+docker exec gartenplaner-backup /scripts/backup.sh
+```
+
+### Restore
+
+```bash
+# Verfügbare Backups anzeigen
+docker exec gartenplaner-backup /scripts/restore.sh
+
+# Bestimmtes Backup wiederherstellen
+docker exec gartenplaner-backup /scripts/restore.sh /backups/<dateiname>.sql.gz
+```
+
+### Backup-Speicherort
+
+Die Backups liegen im Docker Volume `backup-data`. Um sie lokal zu kopieren:
+
+```bash
+docker cp gartenplaner-backup:/backups/ ./local-backups/
+```
+
 ## Konfiguration
 
 Umgebungsvariablen (siehe `.env.example`):

@@ -40,6 +40,23 @@ services:
       timeout: 3s
       retries: 5
 
+  backup:
+    image: postgres:16-alpine
+    container_name: gartenplaner-backup
+    environment:
+      - PGPASSWORD=gartenplaner
+    volumes:
+      - ./scripts:/scripts:ro
+      - backup-data:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "echo '0 2 * * * /scripts/backup.sh >> /var/log/backup.log 2>&1' | crontab - && crond -f -l 2"
+    restart: unless-stopped
+
 volumes:
   gartenplaner-data:
   db-data:
+  backup-data:
