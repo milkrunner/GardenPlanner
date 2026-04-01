@@ -2,8 +2,8 @@
   {
     "id": "tomato",
     "name": "Tomate",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83c\udf45",
+    "category": "Gemüse",
+    "icon": "🍅",
     "difficulty": "easy",
     "sun": "full",
     "water": "medium",
@@ -13,13 +13,22 @@
     "harvest": "60-85 Tage",
     "companions": ["Basilikum", "Karotte", "Petersilie"],
     "avoid": ["Fenchel", "Kartoffel"],
-    "tips": "Regelm\u00e4\u00dfig ausgeizen. Vor Regen sch\u00fctzen um Braunf\u00e4ule zu vermeiden. Tief pflanzen f\u00fcr kr\u00e4ftige Wurzeln."
+    "tips": "Regelmäßig ausgeizen. Vor Regen schützen um Braunfäule zu vermeiden. Tief pflanzen für kräftige Wurzeln.",
+    "careGuide": {
+      "watering": "Regelmäßig gießen, Staunässe vermeiden. 2-3x pro Woche, bei Hitze täglich. Immer von unten gießen, Blätter trocken halten.",
+      "fertilizing": "Alle 2 Wochen mit Tomatendünger. Ab Fruchtbildung wöchentlich. Vor dem Pflanzen Kompost einarbeiten.",
+      "pruning": "Geiztriebe regelmäßig ausbrechen. Unterste Blätter entfernen für bessere Luftzirkulation. Ab August Spitze kappen.",
+      "location": "Sonnig, windgeschützt. Mindestens 6h direkte Sonne. Ideal an einer Südwand oder im Gewächshaus.",
+      "soil": "Humusreich, locker, leicht sauer (pH 6.0-6.8). Tiefgründig und nährstoffreich.",
+      "pests": "Braunfäule, Blattläuse, Weiße Fliege. Vorbeugend: gute Luftzirkulation, Regenschutz, Basilikum als Nachbar.",
+      "harvestTips": "Reif ernten wenn gleichmäßig gefärbt. Regelmäßig pflücken fördert Nachreife. Grüne Tomaten am Fenster nachreifen lassen."
+    }
   },
   {
     "id": "carrot",
     "name": "Karotte",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\udd55",
+    "category": "Gemüse",
+    "icon": "🥕",
     "difficulty": "easy",
     "sun": "full",
     "water": "low",
@@ -29,13 +38,21 @@
     "harvest": "70-80 Tage",
     "companions": ["Tomate", "Zwiebel", "Lauch"],
     "avoid": ["Dill"],
-    "tips": "Boden gut lockern f\u00fcr gerade Wurzeln. Nicht frisch d\u00fcngen. Gleichm\u00e4\u00dfig feucht halten."
+    "tips": "Boden gut lockern für gerade Wurzeln. Nicht frisch düngen. Gleichmäßig feucht halten.",
+    "careGuide": {
+      "watering": "Gleichmäßig feucht halten, aber nicht nass. Bei Trockenheit splittern die Wurzeln. 1-2x pro Woche gründlich gießen.",
+      "fertilizing": "Wenig düngen — zu viel Stickstoff fördert Laubwuchs statt Wurzelbildung. Kompost vor der Aussaat einarbeiten.",
+      "location": "Sonnig bis halbschattig. Verträgt leichten Schatten am Nachmittag.",
+      "soil": "Tiefgründig gelockert, sandig-lehmig, steinfrei. pH 6.0-7.0. Keine frische organische Düngung.",
+      "pests": "Möhrenfliege ist der Hauptschädling. Vorbeugend: Kulturschutznetz, Mischkultur mit Zwiebeln.",
+      "harvestTips": "Ernten wenn die Köpfe 2-3cm aus der Erde ragen. Vorsichtig mit der Grabegabel lockern. Lagerkarotten nach dem ersten Frost ernten."
+    }
   },
   {
     "id": "basil",
     "name": "Basilikum",
-    "category": "Kr\u00e4uter",
-    "icon": "\ud83c\udf3f",
+    "category": "Kräuter",
+    "icon": "🌿",
     "difficulty": "easy",
     "sun": "full",
     "water": "medium",
@@ -45,13 +62,21 @@
     "harvest": "21-30 Tage",
     "companions": ["Tomate", "Paprika"],
     "avoid": ["Salbei"],
-    "tips": "Regelm\u00e4\u00dfig ernten f\u00f6rdert buschigen Wuchs. Bl\u00fcten abknipsen. Frostempfindlich."
+    "tips": "Regelmäßig ernten fördert buschigen Wuchs. Blüten abknipsen. Frostempfindlich.",
+    "careGuide": {
+      "watering": "Regelmäßig gießen, Erde gleichmäßig feucht halten. Morgens gießen, nie über die Blätter. Staunässe unbedingt vermeiden.",
+      "fertilizing": "Alle 3-4 Wochen leicht mit organischem Flüssigdünger. Nicht überdüngen — mindert das Aroma.",
+      "pruning": "Regelmäßig Triebspitzen ernten für buschigen Wuchs. Blütenansätze sofort abknipsen, sonst wird die Pflanze bitter.",
+      "location": "Vollsonnig, warm und windgeschützt. Mindestens 6h Sonne. Ideal auf der Fensterbank oder geschützter Terrasse.",
+      "soil": "Humusreich, durchlässig, nährstoffreich. pH 6.0-7.0. Gute Drainage ist wichtig.",
+      "harvestTips": "Immer ganze Triebspitzen ernten, nicht einzelne Blätter abzupfen. Morgens ernten für bestes Aroma."
+    }
   },
   {
     "id": "strawberry",
     "name": "Erdbeere",
     "category": "Obst",
-    "icon": "\ud83c\udf53",
+    "icon": "🍓",
     "difficulty": "easy",
     "sun": "full",
     "water": "medium",
@@ -61,13 +86,22 @@
     "harvest": "60-90 Tage",
     "companions": ["Knoblauch", "Zwiebel", "Salat"],
     "avoid": ["Kartoffel"],
-    "tips": "Stroh unterlegen gegen F\u00e4ulnis. Ausl\u00e4ufer entfernen f\u00fcr gr\u00f6\u00dfere Fr\u00fcchte. Nach 3 Jahren Standort wechseln."
+    "tips": "Stroh unterlegen gegen Fäulnis. Ausläufer entfernen für größere Früchte. Nach 3 Jahren Standort wechseln.",
+    "careGuide": {
+      "watering": "Regelmäßig gießen, besonders während Blüte und Fruchtbildung. Tropfbewässerung ideal. Früchte nicht nass machen.",
+      "fertilizing": "Im Frühjahr mit Beerendünger versorgen. Nach der Ernte nochmals düngen für die Blütenanlage im nächsten Jahr.",
+      "pruning": "Ausläufer regelmäßig entfernen, außer zur Vermehrung. Nach der Ernte altes Laub abschneiden.",
+      "location": "Sonnig, windgeschützt. Mindestens 6h direkte Sonne für süße Früchte.",
+      "soil": "Humusreich, leicht sauer (pH 5.5-6.5). Gut durchlässig. Keine Staunässe.",
+      "pests": "Grauschimmel, Erdbeermilbe, Schnecken. Vorbeugend: Stroh unterlegen, gute Luftzirkulation, Schneckenschutz.",
+      "harvestTips": "Vollreif ernten wenn gleichmäßig rot. Morgens pflücken für längere Haltbarkeit. Mit Kelch ernten."
+    }
   },
   {
     "id": "lettuce",
     "name": "Salat",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\udd6c",
+    "category": "Gemüse",
+    "icon": "🥬",
     "difficulty": "easy",
     "sun": "partial",
     "water": "medium",
@@ -77,13 +111,21 @@
     "harvest": "45-60 Tage",
     "companions": ["Karotte", "Radieschen", "Erdbeere"],
     "avoid": [],
-    "tips": "Staffelweise auss\u00e4en f\u00fcr durchgehende Ernte. Bei Hitze schie\u00dft er schnell. Morgens gie\u00dfen."
+    "tips": "Staffelweise aussäen für durchgehende Ernte. Bei Hitze schießt er schnell. Morgens gießen.",
+    "careGuide": {
+      "watering": "Gleichmäßig feucht halten, aber nicht nass. Bei Hitze morgens und abends leicht gießen. Tropfbewässerung ideal.",
+      "fertilizing": "Schwachzehrer — wenig Dünger nötig. Etwas Kompost vor der Pflanzung reicht. Bei Bedarf verdünnten Brennnesselsud.",
+      "location": "Halbschattig bis sonnig. Im Sommer Schatten am Nachmittag bevorzugt, sonst schießt er schnell.",
+      "soil": "Humusreich, locker, gleichmäßig feucht. pH 6.0-7.0. Gute Wasserspeicherfähigkeit.",
+      "pests": "Schnecken sind der Hauptfeind. Vorbeugend: Schneckenkragen, Bierfallen, abends nicht gießen.",
+      "harvestTips": "Morgens ernten für maximale Frische. Pflücksalate blattweise ernten, Kopfsalat komplett. Vor der Blüte ernten."
+    }
   },
   {
     "id": "potato",
     "name": "Kartoffel",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\udd54",
+    "category": "Gemüse",
+    "icon": "🥔",
     "difficulty": "easy",
     "sun": "full",
     "water": "medium",
@@ -93,13 +135,22 @@
     "harvest": "90-120 Tage",
     "companions": ["Bohne", "Mais", "Spinat"],
     "avoid": ["Tomate", "Sonnenblume"],
-    "tips": "Regelm\u00e4\u00dfig anh\u00e4ufeln. Ernte wenn Kraut welkt. Nicht neben Tomaten pflanzen (Krautf\u00e4ule)."
+    "tips": "Regelmäßig anhäufeln. Ernte wenn Kraut welkt. Nicht neben Tomaten pflanzen (Krautfäule).",
+    "careGuide": {
+      "watering": "Mäßig gießen, besonders während der Blüte. Zu viel Wasser fördert Fäulnis. Bei Trockenheit 1-2x pro Woche.",
+      "fertilizing": "Mittelzehrer — Kompost oder Hornspäne vor dem Pflanzen einarbeiten. Während der Wachstumsphase nicht nachdüngen.",
+      "pruning": "Regelmäßig anhäufeln sobald das Kraut 15-20cm hoch ist. Fördert die Knollenbildung und verhindert Ergrünung.",
+      "location": "Sonnig, offene Lage. Nicht am gleichen Standort wie im Vorjahr pflanzen (Fruchtfolge beachten).",
+      "soil": "Locker, sandig-lehmig, humusreich. pH 5.5-6.5. Staunässe unbedingt vermeiden.",
+      "pests": "Kartoffelkäfer, Krautfäule, Drahtwurm. Vorbeugend: Fruchtfolge einhalten, nicht neben Tomaten pflanzen.",
+      "harvestTips": "Frühkartoffeln ab Juni, Lagerkartoffeln nach Absterben des Krauts. 2 Wochen vor Ernte nicht mehr gießen. Bei trockenem Wetter ernten."
+    }
   },
   {
     "id": "zucchini",
     "name": "Zucchini",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\udd52",
+    "category": "Gemüse",
+    "icon": "🥒",
     "difficulty": "easy",
     "sun": "full",
     "water": "high",
@@ -109,13 +160,21 @@
     "harvest": "50-60 Tage",
     "companions": ["Mais", "Bohne", "Kapuzinerkresse"],
     "avoid": ["Kartoffel"],
-    "tips": "Braucht viel Platz. Jung ernten f\u00fcr besten Geschmack. Morgens best\u00e4uben bei schlechtem Wetter."
+    "tips": "Braucht viel Platz. Jung ernten für besten Geschmack. Morgens bestäuben bei schlechtem Wetter.",
+    "careGuide": {
+      "watering": "Reichlich gießen, besonders bei Fruchtbildung. 3-4x pro Woche gründlich wässern. Blätter trocken halten.",
+      "fertilizing": "Starkzehrer — alle 2 Wochen mit organischem Dünger oder Brennnesseljauche. Kompost großzügig einarbeiten.",
+      "location": "Vollsonnig, warm, windgeschützt. Braucht viel Platz — mindestens 1m² pro Pflanze.",
+      "soil": "Nährstoffreich, humusreich, feucht aber durchlässig. pH 6.0-7.0. Ideal auf dem Komposthaufen.",
+      "pests": "Mehltau, Blattläuse. Vorbeugend: gute Luftzirkulation, nicht über Blätter gießen, Milch-Wasser-Spray gegen Mehltau.",
+      "harvestTips": "Jung ernten bei 15-20cm Länge für besten Geschmack. Regelmäßig kontrollieren — Zucchini wachsen extrem schnell. Überreife Früchte werden holzig."
+    }
   },
   {
     "id": "sunflower",
     "name": "Sonnenblume",
     "category": "Blumen",
-    "icon": "\ud83c\udf3b",
+    "icon": "🌻",
     "difficulty": "easy",
     "sun": "full",
     "water": "low",
@@ -125,13 +184,20 @@
     "harvest": "80-100 Tage",
     "companions": ["Gurke", "Mais"],
     "avoid": ["Kartoffel"],
-    "tips": "St\u00fctze bei gro\u00dfen Sorten. Lockt Bienen und N\u00fctzlinge an. Kerne im Herbst ernten."
+    "tips": "Stütze bei großen Sorten. Lockt Bienen und Nützlinge an. Kerne im Herbst ernten.",
+    "careGuide": {
+      "watering": "Junge Pflanzen regelmäßig gießen. Etablierte Pflanzen sind recht trockenheitstolerant. Bei großer Hitze 1-2x pro Woche.",
+      "fertilizing": "Wenig Dünger nötig. Etwas Kompost bei der Pflanzung genügt. Zu viel Stickstoff macht die Stängel weich.",
+      "location": "Vollsonnig — namensgebend! Windgeschützt oder mit Stützstab bei hohen Sorten. Süd- oder Westseite ideal.",
+      "soil": "Anspruchslos, tiefgründig, durchlässig. Verträgt die meisten Böden. pH 6.0-7.5.",
+      "pests": "Blattläuse, Schnecken (bei Jungpflanzen), Vögel (bei reifenden Kernen). Vorbeugend: Vlies über Keimlinge, Netz über reife Köpfe."
+    }
   },
   {
     "id": "pepper",
     "name": "Paprika",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83c\udf36\ufe0f",
+    "category": "Gemüse",
+    "icon": "🌶️",
     "difficulty": "medium",
     "sun": "full",
     "water": "medium",
@@ -141,13 +207,22 @@
     "harvest": "70-90 Tage",
     "companions": ["Basilikum", "Tomate", "Karotte"],
     "avoid": ["Fenchel"],
-    "tips": "Erste Bl\u00fcte (K\u00f6nigsbl\u00fcte) ausbrechen f\u00fcr mehr Ertrag. Warm halten, min. 15\u00b0C."
+    "tips": "Erste Blüte (Königsblüte) ausbrechen für mehr Ertrag. Warm halten, min. 15°C.",
+    "careGuide": {
+      "watering": "Regelmäßig und gleichmäßig gießen. Keine Staunässe, aber auch nicht austrocknen lassen. Lauwarmes Wasser bevorzugt.",
+      "fertilizing": "Mittelzehrer — alle 2-3 Wochen mit Gemüsedünger. Ab Fruchtbildung kaliumbetonten Dünger verwenden.",
+      "pruning": "Königsblüte (erste Blüte in der Verzweigung) ausbrechen für mehr Ertrag. Seitentriebe bis zur ersten Verzweigung entfernen.",
+      "location": "Vollsonnig, sehr warm, windgeschützt. Mindesttemperatur 15°C. Ideal im Gewächshaus oder an Südwand.",
+      "soil": "Nährstoffreich, humusreich, warm, durchlässig. pH 6.0-6.8. Mulchen hält den Boden warm.",
+      "pests": "Blattläuse, Spinnmilben, Schnecken. Vorbeugend: regelmäßig kontrollieren, Nützlinge fördern.",
+      "harvestTips": "Grün ernten oder ausreifen lassen für mehr Süße und Vitamine. Mit Stiel abschneiden, nicht abreißen."
+    }
   },
   {
     "id": "radish",
     "name": "Radieschen",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83d\udd34",
+    "category": "Gemüse",
+    "icon": "🔴",
     "difficulty": "easy",
     "sun": "partial",
     "water": "medium",
@@ -157,61 +232,91 @@
     "harvest": "25-35 Tage",
     "companions": ["Karotte", "Salat", "Spinat"],
     "avoid": [],
-    "tips": "Schnellstes Gem\u00fcse im Garten. Ideal als L\u00fcckenf\u00fcller. Bei Hitze werden sie scharf und holzig."
+    "tips": "Schnellstes Gemüse im Garten. Ideal als Lückenfüller. Bei Hitze werden sie scharf und holzig.",
+    "careGuide": {
+      "watering": "Gleichmäßig feucht halten — Schwankungen führen zu Rissen und Pelzigkeit. Täglich leicht gießen bei Trockenheit.",
+      "fertilizing": "Schwachzehrer — keine zusätzliche Düngung nötig. Normaler Gartenboden reicht aus.",
+      "location": "Halbschattig bis sonnig. Im Sommer eher halbschattig, sonst werden sie scharf und schießen.",
+      "soil": "Locker, humusreich, steinfrei. pH 6.0-7.0. Schwere Böden mit Sand verbessern.",
+      "harvestTips": "Rechtzeitig ernten — überreife Radieschen werden holzig und pelzig. Bei 2-3cm Durchmesser ernten. Nicht zu dicht stehen lassen."
+    }
   },
   {
     "id": "lavender",
     "name": "Lavendel",
-    "category": "Kr\u00e4uter",
-    "icon": "\ud83d\udc9c",
+    "category": "Kräuter",
+    "icon": "💜",
     "difficulty": "easy",
     "sun": "full",
     "water": "low",
     "season": ["spring"],
     "spacing": "40cm",
     "germination": "14-28 Tage",
-    "harvest": "mehrj\u00e4hrig",
+    "harvest": "mehrjährig",
     "companions": ["Rose", "Thymian"],
     "avoid": [],
-    "tips": "Liebt trockene, kalkhaltige B\u00f6den. Nach Bl\u00fcte zur\u00fcckschneiden. Vertreibt Blattl\u00e4use."
+    "tips": "Liebt trockene, kalkhaltige Böden. Nach Blüte zurückschneiden. Vertreibt Blattläuse.",
+    "careGuide": {
+      "watering": "Sehr sparsam gießen — Lavendel verträgt Trockenheit besser als Nässe. Etablierte Pflanzen nur bei extremer Hitze gießen.",
+      "fertilizing": "Kaum Dünger nötig. Etwas Kalk im Frühjahr genügt. Zu viel Dünger mindert Duft und Winterhärte.",
+      "pruning": "Nach der Blüte um ein Drittel zurückschneiden. Im Frühjahr leichter Formschnitt. Nie ins alte Holz schneiden!",
+      "location": "Vollsonnig, heiß, trocken. Ideal an Südmauern, Steingärten oder erhöhten Beeten. Gute Luftzirkulation wichtig.",
+      "soil": "Kalkhaltig, mager, sehr durchlässig. pH 7.0-8.0. Schwere Böden mit Kies und Sand verbessern."
+    }
   },
   {
     "id": "rose",
     "name": "Rose",
     "category": "Blumen",
-    "icon": "\ud83c\udf39",
+    "icon": "🌹",
     "difficulty": "medium",
     "sun": "full",
     "water": "medium",
     "season": ["spring", "autumn"],
     "spacing": "50cm",
     "germination": "-",
-    "harvest": "mehrj\u00e4hrig",
+    "harvest": "mehrjährig",
     "companions": ["Lavendel", "Knoblauch"],
     "avoid": [],
-    "tips": "Im Fr\u00fchjahr schneiden. Auf Sternru\u00dftau und Blattl\u00e4use achten. Gut mulchen."
+    "tips": "Im Frühjahr schneiden. Auf Sternrußtau und Blattläuse achten. Gut mulchen.",
+    "careGuide": {
+      "watering": "Regelmäßig gießen, besonders im ersten Jahr. Morgens am Wurzelbereich, nie über Blätter. 2-3x pro Woche gründlich.",
+      "fertilizing": "Im Frühjahr mit Rosendünger versorgen. Zweite Gabe nach der ersten Blüte im Juni. Ab August nicht mehr düngen.",
+      "pruning": "Hauptschnitt im Frühjahr (März/April). Verblühtes regelmäßig ausschneiden. Im Herbst nur leicht einkürzen.",
+      "location": "Sonnig, luftig, nicht zu windexponiert. Mindestens 5h direkte Sonne. Nicht unter Bäume pflanzen.",
+      "soil": "Lehmig-humusreich, tiefgründig, nährstoffreich. pH 6.0-7.0. Gute Drainage wichtig.",
+      "pests": "Sternrußtau, Mehltau, Blattläuse, Rosenrost. Vorbeugend: resistente Sorten, gute Luftzirkulation, Knoblauch als Nachbar."
+    }
   },
   {
     "id": "mint",
     "name": "Minze",
-    "category": "Kr\u00e4uter",
-    "icon": "\ud83c\udf3f",
+    "category": "Kräuter",
+    "icon": "🌿",
     "difficulty": "easy",
     "sun": "partial",
     "water": "high",
     "season": ["spring"],
     "spacing": "30cm",
     "germination": "10-15 Tage",
-    "harvest": "mehrj\u00e4hrig",
+    "harvest": "mehrjährig",
     "companions": ["Tomate", "Kohl"],
     "avoid": [],
-    "tips": "Wuchert stark \u2014 am besten im Topf halten! Regelm\u00e4\u00dfig ernten. Vermehrung \u00fcber Ausl\u00e4ufer."
+    "tips": "Wuchert stark — am besten im Topf halten! Regelmäßig ernten. Vermehrung über Ausläufer.",
+    "careGuide": {
+      "watering": "Feucht halten, verträgt keine Trockenheit. Im Sommer täglich gießen. Mulchschicht hilft gegen Austrocknung.",
+      "fertilizing": "Wenig Dünger nötig. Etwas Kompost im Frühjahr genügt. Zu viel Dünger mindert das Aroma.",
+      "pruning": "Regelmäßig zurückschneiden fördert frischen Austrieb. Blüten abschneiden für besseren Blattgeschmack. Im Herbst bodennah abschneiden.",
+      "location": "Halbschattig bis schattig. Verträgt auch Sonne bei ausreichend Feuchtigkeit. Am besten im Topf wegen Ausbreitungsdrang.",
+      "soil": "Humusreich, feucht, nährstoffreich. pH 6.0-7.0. Verträgt auch schwerere Böden.",
+      "harvestTips": "Vor der Blüte ernten für bestes Aroma. Ganze Triebe schneiden, nicht einzelne Blätter. Morgens ernten."
+    }
   },
   {
     "id": "pumpkin",
-    "name": "K\u00fcrbis",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83c\udf83",
+    "name": "Kürbis",
+    "category": "Gemüse",
+    "icon": "🎃",
     "difficulty": "easy",
     "sun": "full",
     "water": "high",
@@ -221,13 +326,22 @@
     "harvest": "90-120 Tage",
     "companions": ["Mais", "Bohne"],
     "avoid": ["Kartoffel"],
-    "tips": "Braucht sehr viel Platz. Auf Stroh lagern gegen F\u00e4ulnis. Ernte wenn Stiel verholzt."
+    "tips": "Braucht sehr viel Platz. Auf Stroh lagern gegen Fäulnis. Ernte wenn Stiel verholzt.",
+    "careGuide": {
+      "watering": "Reichlich gießen, besonders bei Fruchtbildung. 3-5x pro Woche gründlich wässern. Morgens gießen, Blätter trocken halten.",
+      "fertilizing": "Starkzehrer — großzügig mit Kompost und organischem Dünger versorgen. Alle 2 Wochen mit Brennnesseljauche nachdüngen.",
+      "pruning": "Nach dem 5. Blatt Haupttrieb entspitzen für Seitentriebe. Pro Pflanze nur 2-3 Früchte belassen für gute Größe.",
+      "location": "Vollsonnig, warm, windgeschützt. Braucht sehr viel Platz — 2-3m² pro Pflanze. Ideal am Komposthaufen.",
+      "soil": "Sehr nährstoffreich, humusreich, tiefgründig, feucht. pH 6.0-7.0. Kompost direkt ins Pflanzloch geben.",
+      "pests": "Mehltau, Schnecken (Jungpflanzen). Vorbeugend: Mulch, Schneckenschutz, gute Luftzirkulation.",
+      "harvestTips": "Reif wenn Stiel verholzt und die Schale sich nicht mehr einritzen lässt. Vor dem ersten Frost ernten. Stiel 5-10cm stehen lassen."
+    }
   },
   {
     "id": "garlic",
     "name": "Knoblauch",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\uddc4",
+    "category": "Gemüse",
+    "icon": "🧄",
     "difficulty": "easy",
     "sun": "full",
     "water": "low",
@@ -237,13 +351,21 @@
     "harvest": "90-150 Tage",
     "companions": ["Erdbeere", "Rose", "Tomate"],
     "avoid": ["Bohne", "Erbse"],
-    "tips": "Im Herbst stecken f\u00fcr gr\u00f6\u00dfere Knollen. Ernte wenn untere Bl\u00e4tter gelb werden. Gut trocknen lassen."
+    "tips": "Im Herbst stecken für größere Knollen. Ernte wenn untere Blätter gelb werden. Gut trocknen lassen.",
+    "careGuide": {
+      "watering": "Sparsam gießen — Knoblauch mag es eher trocken. Ab Juni Bewässerung reduzieren für gute Ausreifung.",
+      "fertilizing": "Schwachzehrer — Kompost bei der Pflanzung genügt. Im Frühjahr etwas Kaliumdünger für Knollenbildung.",
+      "location": "Vollsonnig, offen. Gute Luftzirkulation verhindert Pilzkrankheiten. Herbstpflanzung ergibt größere Knollen.",
+      "soil": "Locker, durchlässig, humusreich. pH 6.0-7.0. Staunässe führt zu Fäulnis.",
+      "pests": "Lauchmotte, Knoblauchfliege. Vorbeugend: Kulturschutznetz, Fruchtfolge beachten, nicht neben anderen Lauchgewächsen.",
+      "harvestTips": "Ernten wenn untere Blätter vergilben und umknicken. 2-3 Wochen an luftigem Ort trocknen. Zöpfe flechten zur Lagerung."
+    }
   },
   {
     "id": "bean",
     "name": "Bohne",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\uded8",
+    "category": "Gemüse",
+    "icon": "🫘",
     "difficulty": "easy",
     "sun": "full",
     "water": "medium",
@@ -251,15 +373,23 @@
     "spacing": "10cm",
     "germination": "7-14 Tage",
     "harvest": "50-70 Tage",
-    "companions": ["Mais", "K\u00fcrbis", "Kartoffel"],
+    "companions": ["Mais", "Kürbis", "Kartoffel"],
     "avoid": ["Knoblauch", "Zwiebel"],
-    "tips": "Stangenbohnen brauchen Rankhilfe. Nie roh essen! Regelm\u00e4\u00dfig ernten f\u00f6rdert Nachbl\u00fcte."
+    "tips": "Stangenbohnen brauchen Rankhilfe. Nie roh essen! Regelmäßig ernten fördert Nachblüte.",
+    "careGuide": {
+      "watering": "Regelmäßig gießen, besonders während Blüte und Hülsenbildung. Nicht über die Blätter gießen. 2-3x pro Woche.",
+      "fertilizing": "Schwachzehrer — Bohnen binden Stickstoff aus der Luft! Keine Stickstoffdüngung nötig. Etwas Kalium fördert den Ertrag.",
+      "location": "Sonnig, warm, windgeschützt. Stangenbohnen brauchen stabile Rankhilfen (2-3m hoch). Buschbohnen auch in Kübeln.",
+      "soil": "Locker, humusreich, nicht zu schwer. pH 6.0-7.0. Leicht erwärmbar für schnelle Keimung.",
+      "pests": "Bohnenfliege, Blattläuse, Bohnenrost. Vorbeugend: Saatgut nicht zu früh legen, Mischkultur, Fruchtfolge.",
+      "harvestTips": "Regelmäßig pflücken fördert Nachblüte. Hülsen knackig-jung ernten. Nie roh essen — Bohnen enthalten Phasin!"
+    }
   },
   {
     "id": "cucumber",
     "name": "Gurke",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\udd52",
+    "category": "Gemüse",
+    "icon": "🥒",
     "difficulty": "medium",
     "sun": "full",
     "water": "high",
@@ -269,29 +399,46 @@
     "harvest": "50-70 Tage",
     "companions": ["Bohne", "Erbse", "Sonnenblume"],
     "avoid": ["Tomate", "Kartoffel"],
-    "tips": "W\u00e4rmeliebend, min. 15\u00b0C. Rankhilfe nutzen f\u00fcr Platzersparnis. Regelm\u00e4\u00dfig ernten."
+    "tips": "Wärmeliebend, min. 15°C. Rankhilfe nutzen für Platzersparnis. Regelmäßig ernten.",
+    "careGuide": {
+      "watering": "Reichlich gießen mit lauwarmem Wasser. Kaltes Wasser verursacht Bitterkeit. Täglich bei Hitze, Blätter trocken halten.",
+      "fertilizing": "Starkzehrer — alle 2 Wochen mit organischem Flüssigdünger. Kompost großzügig einarbeiten. Brennnesseljauche ideal.",
+      "pruning": "Seitentriebe nach dem 2. Blatt entspitzen. Rankgitter nutzen für bessere Luftzirkulation und gerade Früchte.",
+      "location": "Vollsonnig, sehr warm, windgeschützt. Mindesttemperatur 15°C, ideal 20-25°C. Gewächshaus oder geschütztes Freiland.",
+      "soil": "Sehr nährstoffreich, humusreich, warm, feucht aber durchlässig. pH 6.0-7.0.",
+      "pests": "Mehltau, Spinnmilben, Gurkenmosaikvirus. Vorbeugend: resistente Sorten, gute Belüftung, nicht über Blätter gießen.",
+      "harvestTips": "Regelmäßig ernten fördert Neubildung. Salatgurken bei 20-25cm, Einlegegurken bei 5-8cm ernten. Nicht zu groß werden lassen."
+    }
   },
   {
     "id": "thyme",
     "name": "Thymian",
-    "category": "Kr\u00e4uter",
-    "icon": "\ud83c\udf31",
+    "category": "Kräuter",
+    "icon": "🌱",
     "difficulty": "easy",
     "sun": "full",
     "water": "low",
     "season": ["spring"],
     "spacing": "20cm",
     "germination": "14-21 Tage",
-    "harvest": "mehrj\u00e4hrig",
+    "harvest": "mehrjährig",
     "companions": ["Lavendel", "Rose", "Kohl"],
     "avoid": [],
-    "tips": "Liebt magere, durchl\u00e4ssige B\u00f6den. Winterhart. Vor der Bl\u00fcte ernten f\u00fcr bestes Aroma."
+    "tips": "Liebt magere, durchlässige Böden. Winterhart. Vor der Blüte ernten für bestes Aroma.",
+    "careGuide": {
+      "watering": "Sehr sparsam gießen — Thymian ist trockenheitsliebend. Nur bei lang anhaltender Trockenheit etwas wässern.",
+      "fertilizing": "Kein Dünger nötig. Zu nährstoffreicher Boden mindert das Aroma. Etwas Kalk im Frühjahr ist hilfreich.",
+      "pruning": "Im Frühjahr leicht zurückschneiden für buschigen Wuchs. Nach der Blüte nochmals schneiden. Nie ins alte Holz.",
+      "location": "Vollsonnig, heiß, trocken. Ideal in Steingärten, Kräuterspiralen oder am Beetrand. Guter Bodendecker.",
+      "soil": "Mager, kalkhaltig, sehr durchlässig. pH 7.0-8.0. Sand oder Kies untermischen bei schweren Böden.",
+      "harvestTips": "Kurz vor der Blüte ernten für bestes Aroma. Ganze Triebe schneiden. Trocknet sehr gut — Aroma bleibt erhalten."
+    }
   },
   {
     "id": "onion",
     "name": "Zwiebel",
-    "category": "Gem\u00fcse",
-    "icon": "\ud83e\uddc5",
+    "category": "Gemüse",
+    "icon": "🧅",
     "difficulty": "easy",
     "sun": "full",
     "water": "low",
@@ -301,22 +448,39 @@
     "harvest": "90-120 Tage",
     "companions": ["Karotte", "Erdbeere", "Salat"],
     "avoid": ["Bohne", "Erbse"],
-    "tips": "Steckzwiebeln sind einfacher als Aussaat. Ernte wenn Laub umknickt. Gut trocknen lassen."
+    "tips": "Steckzwiebeln sind einfacher als Aussaat. Ernte wenn Laub umknickt. Gut trocknen lassen.",
+    "careGuide": {
+      "watering": "Sparsam gießen — Zwiebeln mögen es eher trocken. Ab Juli Bewässerung komplett einstellen für gute Ausreifung.",
+      "fertilizing": "Schwachzehrer — Kompost bei der Beetvorbereitung genügt. Kein frischer Mist, fördert Zwiebelfliege.",
+      "location": "Vollsonnig, offen, luftig. Gute Luftzirkulation verhindert Pilzkrankheiten.",
+      "soil": "Locker, sandig-lehmig, humusreich. pH 6.0-7.0. Gute Drainage wichtig, keine Staunässe.",
+      "pests": "Zwiebelfliege, Falscher Mehltau. Vorbeugend: Kulturschutznetz, Mischkultur mit Karotten, Fruchtfolge.",
+      "harvestTips": "Ernten wenn 2/3 des Laubes umgeknickt sind. Bei trockenem Wetter ernten. 2-3 Wochen trocknen lassen vor der Einlagerung."
+    }
   },
   {
     "id": "apple",
     "name": "Apfelbaum",
     "category": "Obst",
-    "icon": "\ud83c\udf4e",
+    "icon": "🍎",
     "difficulty": "medium",
     "sun": "full",
     "water": "medium",
     "season": ["autumn", "spring"],
     "spacing": "300cm",
     "germination": "-",
-    "harvest": "mehrj\u00e4hrig (ab Jahr 3)",
+    "harvest": "mehrjährig (ab Jahr 3)",
     "companions": ["Kapuzinerkresse", "Knoblauch"],
     "avoid": [],
-    "tips": "Winterschnitt im Februar. Auf Befruchtersorte achten. Fallobst entfernen gegen Sch\u00e4dlinge."
+    "tips": "Winterschnitt im Februar. Auf Befruchtersorte achten. Fallobst entfernen gegen Schädlinge.",
+    "careGuide": {
+      "watering": "Jungbäume regelmäßig gießen (1-2x pro Woche). Etablierte Bäume nur bei lang anhaltender Trockenheit wässern.",
+      "fertilizing": "Im Frühjahr mit Obstbaumdünger oder Kompost versorgen. Mulchschicht im Wurzelbereich hält Feuchtigkeit und liefert Nährstoffe.",
+      "pruning": "Winterschnitt im Februar bei frostfreiem Wetter. Lichtungschnitt für gute Fruchtqualität. Wasserschosse im Sommer entfernen.",
+      "location": "Sonnig, freistehend, luftig. Auf Befruchtersorte in der Nähe achten. Windgeschützt für besseren Fruchtansatz.",
+      "soil": "Tiefgründig, nährstoffreich, lehmig-humusreich. pH 6.0-7.0. Gute Drainage im Wurzelbereich.",
+      "pests": "Apfelschorf, Mehltau, Apfelwickler, Blattläuse. Vorbeugend: Schnitt für Luftzirkulation, Fallobst aufsammeln, Leimringe anbringen.",
+      "harvestTips": "Reif wenn sich der Apfel leicht vom Baum löst. Regelmäßig durchpflücken. Lageräpfel kühl und dunkel aufbewahren."
+    }
   }
 ]

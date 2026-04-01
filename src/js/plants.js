@@ -215,6 +215,36 @@
             spring: 'Frühling', summer: 'Sommer', autumn: 'Herbst', winter: 'Winter'
         }[s] || s)).join(', ');
 
+        // Build care guide HTML if careGuide data exists
+        var careGuideHtml = '';
+        if (plant.careGuide) {
+            var careItems = [
+                { key: 'watering', icon: '\ud83d\udca7', label: 'Gie\u00dfen' },
+                { key: 'fertilizing', icon: '\ud83c\udf3e', label: 'D\u00fcngen' },
+                { key: 'pruning', icon: '\u2702\ufe0f', label: 'Schnitt & Pflege' },
+                { key: 'location', icon: '\u2600\ufe0f', label: 'Standort' },
+                { key: 'soil', icon: '\ud83e\udea8', label: 'Boden' },
+                { key: 'pests', icon: '\ud83d\udc1b', label: 'Sch\u00e4dlinge & Krankheiten' },
+                { key: 'harvestTips', icon: '\ud83c\udf3d', label: 'Erntetipps' }
+            ];
+            var items = careItems
+                .filter(function (item) { return plant.careGuide[item.key]; })
+                .map(function (item) {
+                    return '<div class="care-item">' +
+                        '<span class="care-icon">' + item.icon + '</span>' +
+                        '<strong>' + item.label + '</strong>' +
+                        '<p>' + Security.escapeHtml(plant.careGuide[item.key]) + '</p>' +
+                        '</div>';
+                })
+                .join('');
+            if (items) {
+                careGuideHtml = '<div class="care-guide">' +
+                    '<h3>\ud83c\udf31 Pflegeanleitung</h3>' +
+                    '<div class="care-guide-grid">' + items + '</div>' +
+                    '</div>';
+            }
+        }
+
         content.innerHTML = `
             <button class="plant-modal-close" aria-label="Schließen">&times;</button>
             <div class="plant-detail-header">
@@ -237,6 +267,7 @@
                 <h3>Pflegetipps</h3>
                 <p>${safeTips}</p>
             </div>
+            ${careGuideHtml}
             ${plant.companions.length > 0 ? `<div class="plant-detail-section"><h3>Gute Nachbarn</h3><div class="companion-tags">${plant.companions.map(c => `<span class="companion-tag good">${Security.escapeHtml(c)}</span>`).join('')}</div></div>` : ''}
             ${plant.avoid.length > 0 ? `<div class="plant-detail-section"><h3>Schlechte Nachbarn</h3><div class="companion-tags">${plant.avoid.map(c => `<span class="companion-tag bad">${Security.escapeHtml(c)}</span>`).join('')}</div></div>` : ''}
             <div class="plant-detail-actions">

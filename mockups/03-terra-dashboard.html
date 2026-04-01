@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terra Dashboard — Gartenplaner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #166534;
+  --primary-hover: #14532d;
+  --secondary: #4ADE80;
+  --accent: #0EA5E9;
+  --bg: #F8FAFC;
+  --surface: #FFFFFF;
+  --text: #0F172A;
+  --text-secondary: #64748B;
+  --border: #E2E8F0;
+  --hover-row: #F1F5F9;
+  --success: #22C55E;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --font-main: 'Manrope', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Consolas', monospace;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  --transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-width: 56px;
+  --topbar-height: 56px;
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  --bg: #020617;
+  --surface: #0F172A;
+  --text: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --border: #1E293B;
+  --hover-row: #1E293B;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-main);
+  font-weight: 400;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  z-index: 100;
+  gap: 4px;
+}
+
+.sidebar-logo {
+  width: 32px;
+  height: 32px;
+  background: var(--secondary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.sidebar-item {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  transition: all var(--transition);
+  border: none;
+  background: none;
+  font-size: 18px;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.sidebar-item.active {
+  background: rgba(255,255,255,0.2);
+}
+
+.sidebar-item .tooltip {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--text);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 200;
+}
+
+.sidebar-item .tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-right-color: var(--text);
+}
+
+.sidebar-item:hover .tooltip {
+  opacity: 1;
+}
+
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+}
+
+/* ============================================
+   MAIN LAYOUT
+   ============================================ */
+.main-wrapper {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ============================================
+   TOPBAR
+   ============================================ */
+.topbar {
+  height: var(--topbar-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.topbar-title span {
+  color: var(--primary);
+}
+
+.search-box {
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+  margin-left: 24px;
+}
+
+.search-box input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 36px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: all var(--transition);
+}
+
+.search-box input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-box input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.12);
+}
+
+.search-box .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.search-box .search-kbd {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  font-size: 16px;
+}
+
+.icon-btn:hover {
+  background: var(--hover-row);
+  color: var(--text);
+}
+
+.icon-btn .badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.avatar:hover {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+}
+
+/* ============================================
+   CONTENT AREA
+   ============================================ */
+.content {
+  padding: 24px;
+  flex: 1;
+}
+
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.content-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.content-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  height: 36px;
+  padding: 0 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  height: 36px;
+  padding: 0 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.btn-secondary:hover {
+  background: var(--hover-row);
+  border-color: #CBD5E1;
+}
+
+/* ============================================
+   STAT CARDS
+   ============================================ */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  transition: all var(--transition);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: #CBD5E1;
+}
+
+[data-theme="dark"] .stat-card:hover {
+  border-color: #334155;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.stat-value-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-trend {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.stat-trend.up {
+  color: #166534;
+  background: #DCFCE7;
+}
+
+.stat-trend.down {
+  color: #991B1B;
+  background: #FEE2E2;
+}
+
+[data-theme="dark"] .stat-trend.up {
+  color: #4ADE80;
+  background: rgba(74, 222, 128, 0.12);
+}
+
+[data-theme="dark"] .stat-trend.down {
+  color: #F87171;
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+}
+
+.stat-sub .mono {
+  font-size: 12px;
+}
+
+/* Progress bar in stat card */
+.stat-progress {
+  margin-top: 12px;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stat-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0;
+}
+
+/* ============================================
+   GRID LAYOUT: 2 COLUMNS
+   ============================================ */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.card-body {
+  padding: 16px 20px;
+}
+
+/* ============================================
+   BAR CHART (CSS only)
+   ============================================ */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bar-label {
+  width: 80px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.bar-track {
+  flex: 1;
+  height: 24px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+}
+
+.bar-fill-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.bar-fill.green { background: var(--primary); }
+.bar-fill.lime { background: var(--secondary); }
+.bar-fill.blue { background: var(--accent); }
+.bar-fill.amber { background: var(--warning); }
+.bar-fill.red { background: var(--danger); }
+
+.bar-fill.lime .bar-fill-label { color: var(--primary); }
+
+.bar-count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+}
+
+.tab {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--transition);
+  font-family: var(--font-main);
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.tab .tab-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 6px;
+}
+
+.tab.active .tab-count {
+  background: #DCFCE7;
+  color: var(--primary);
+}
+
+[data-theme="dark"] .tab.active .tab-count {
+  background: rgba(74, 222, 128, 0.12);
+}
+
+/* ============================================
+   TABLE
+   ============================================ */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  transition: color var(--transition);
+}
+
+thead th:hover {
+  color: var(--text);
+}
+
+thead th .sort-icon {
+  display: inline-block;
+  margin-left: 4px;
+  opacity: 0.3;
+  font-size: 10px;
+}
+
+thead th.sorted .sort-icon {
+  opacity: 1;
+  color: var(--primary);
+}
+
+tbody td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  transition: background var(--transition);
+}
+
+tbody tr:hover {
+  background: var(--hover-row);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Priority badge */
+.prio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prio.p1 { background: #FEE2E2; color: #991B1B; }
+.prio.p2 { background: #FEF3C7; color: #92400E; }
+.prio.p3 { background: #DBEAFE; color: #1E40AF; }
+.prio.p4 { background: var(--bg); color: var(--text-secondary); }
+
+[data-theme="dark"] .prio.p1 { background: rgba(248,113,113,0.15); color: #F87171; }
+[data-theme="dark"] .prio.p2 { background: rgba(245,158,11,0.15); color: #FBBF24; }
+[data-theme="dark"] .prio.p3 { background: rgba(14,165,233,0.15); color: #38BDF8; }
+[data-theme="dark"] .prio.p4 { background: rgba(100,116,139,0.15); color: #94A3B8; }
+
+/* Status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-badge.open { background: #DBEAFE; color: #1E40AF; }
+.status-badge.open .dot { background: #3B82F6; }
+.status-badge.progress { background: #FEF3C7; color: #92400E; }
+.status-badge.progress .dot { background: #F59E0B; }
+.status-badge.done { background: #DCFCE7; color: #166534; }
+.status-badge.done .dot { background: #22C55E; }
+.status-badge.review { background: #F3E8FF; color: #6B21A8; }
+.status-badge.review .dot { background: #A855F7; }
+
+[data-theme="dark"] .status-badge.open { background: rgba(59,130,246,0.15); color: #60A5FA; }
+[data-theme="dark"] .status-badge.progress { background: rgba(245,158,11,0.15); color: #FBBF24; }
+[data-theme="dark"] .status-badge.done { background: rgba(34,197,94,0.15); color: #4ADE80; }
+[data-theme="dark"] .status-badge.review { background: rgba(168,85,247,0.15); color: #C084FC; }
+
+/* Table action buttons */
+.table-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.action-btn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Pagination */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.table-footer-info {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.table-footer-info .mono {
+  font-size: 13px;
+}
+
+.pagination {
+  display: flex;
+  gap: 4px;
+}
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.page-btn:hover {
+  background: var(--hover-row);
+}
+
+.page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ============================================
+   WEATHER COMPACT
+   ============================================ */
+.weather-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.weather-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition);
+  cursor: default;
+}
+
+.weather-day:hover {
+  background: var(--hover-row);
+}
+
+.weather-day.today {
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.weather-day-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.weather-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.weather-temp {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.weather-low {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.weather-precip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ============================================
+   LEADERBOARD
+   ============================================ */
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.leader-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.leader-item:last-child {
+  border-bottom: none;
+}
+
+.leader-rank {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  width: 24px;
+  text-align: center;
+}
+
+.leader-rank.gold { color: #F59E0B; }
+.leader-rank.silver { color: #94A3B8; }
+.leader-rank.bronze { color: #D97706; }
+
+.leader-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.leader-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.leader-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.leader-role {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.leader-stat {
+  text-align: right;
+}
+
+.leader-count {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.leader-unit {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   BOTTOM ROW
+   ============================================ */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 16px;
+}
+
+/* Sparkline Chart (CSS only) */
+.sparkline-area {
+  padding: 0;
+}
+
+.sparkline-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 120px;
+  padding: 0 4px;
+}
+
+.spark-bar {
+  flex: 1;
+  background: var(--primary);
+  border-radius: 2px 2px 0 0;
+  min-width: 0;
+  transition: all var(--transition);
+  opacity: 0.6;
+  position: relative;
+  cursor: crosshair;
+}
+
+.spark-bar:hover {
+  opacity: 1;
+  background: var(--secondary);
+}
+
+.spark-bar::after {
+  content: attr(data-value);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1px 4px;
+  border-radius: 3px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+
+.spark-bar:hover::after {
+  opacity: 1;
+}
+
+.sparkline-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 4px 0;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+/* Location distribution */
+.location-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.location-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.location-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+}
+
+.location-bar-track {
+  width: 100px;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.location-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0;
+}
+
+.location-count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  width: 28px;
+  text-align: right;
+}
+
+.location-pct {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  width: 36px;
+  text-align: right;
+}
+
+/* ============================================
+   DARK MODE TOGGLE
+   ============================================ */
+.theme-toggle {
+  position: relative;
+}
+
+.theme-toggle input {
+  display: none;
+}
+
+.theme-switch {
+  width: 40px;
+  height: 22px;
+  background: var(--border);
+  border-radius: 11px;
+  cursor: pointer;
+  display: block;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.theme-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: all var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.theme-toggle input:checked + .theme-switch {
+  background: var(--primary);
+}
+
+.theme-toggle input:checked + .theme-switch::after {
+  transform: translateX(18px);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-card,
+.card {
+  animation: fadeIn 0.4s ease-out backwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+.dashboard-grid .card:nth-child(1) { animation-delay: 0.25s; }
+.dashboard-grid .card:nth-child(2) { animation-delay: 0.3s; }
+
+.bottom-grid .card:nth-child(1) { animation-delay: 0.35s; }
+.bottom-grid .card:nth-child(2) { animation-delay: 0.4s; }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1100px) {
+  .dashboard-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .content {
+    padding: 16px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== SIDEBAR ====== -->
+<nav class="sidebar">
+  <div class="sidebar-logo">G</div>
+  <div class="sidebar-nav">
+    <button class="sidebar-item active">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="tooltip">Dashboard</span>
+    </button>
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22c4-4 8-7.5 8-12a8 8 0 10-16 0c0 4.5 4 8 8 12z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span class="tooltip">Standorte</span>
+    </button>
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      <span class="tooltip">Aufgaben</span>
+    </button>
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      <span class="tooltip">Team</span>
+    </button>
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+      <span class="tooltip">Pflanzen</span>
+    </button>
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span class="tooltip">Kalender</span>
+    </button>
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="tooltip">Berichte</span>
+    </button>
+  </div>
+  <div class="sidebar-bottom">
+    <button class="sidebar-item">
+      <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span class="tooltip">Einstellungen</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ====== MAIN ====== -->
+<div class="main-wrapper">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-title"><span>Garten</span>planer</div>
+    <div class="search-box">
+      <span class="search-icon">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" placeholder="Aufgaben, Pflanzen, Standorte suchen...">
+      <span class="search-kbd">/</span>
+    </div>
+    <div class="topbar-actions">
+      <label class="theme-toggle" title="Dark Mode umschalten">
+        <input type="checkbox" id="themeToggle">
+        <span class="theme-switch"></span>
+      </label>
+      <button class="icon-btn" title="Benachrichtigungen">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="badge"></span>
+      </button>
+      <div class="avatar">NH</div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <div class="content-header">
+      <h1>Dashboard</h1>
+      <div class="content-header-actions">
+        <button class="btn-secondary">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn-primary">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Neue Aufgabe
+        </button>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Offene Aufgaben</div>
+        <div class="stat-value-row">
+          <span class="stat-value mono">12</span>
+          <span class="stat-trend up">&#8593; +4</span>
+        </div>
+        <div class="stat-sub">vs. letzte Woche</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Erledigt (Monat)</div>
+        <div class="stat-value-row">
+          <span class="stat-value mono">34</span>
+          <span class="stat-trend up">&#8593; +8</span>
+        </div>
+        <div class="stat-sub">vs. letzte Woche</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Erledigungsquote</div>
+        <div class="stat-value-row">
+          <span class="stat-value mono">73.9<span style="font-size:18px">%</span></span>
+          <span class="stat-trend up">&#8593; +2.1%</span>
+        </div>
+        <div class="stat-progress">
+          <div class="stat-progress-bar" data-width="73.9"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Aktive Mitarbeiter</div>
+        <div class="stat-value-row">
+          <span class="stat-value mono">5</span>
+          <span class="stat-trend down">&#8595; -1</span>
+        </div>
+        <div class="stat-sub"><span class="mono">6.8</span> Aufgaben / MA</div>
+      </div>
+    </div>
+
+    <!-- 2 COLUMN GRID -->
+    <div class="dashboard-grid">
+
+      <!-- LEFT COLUMN -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Bar Chart Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Aufgaben nach Status</span>
+            <button class="icon-btn" title="Mehr">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-item">
+                <span class="bar-label">Offen</span>
+                <div class="bar-track">
+                  <div class="bar-fill blue" data-width="26"><span class="bar-fill-label">12</span></div>
+                </div>
+                <span class="bar-count mono">12</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">In Arbeit</span>
+                <div class="bar-track">
+                  <div class="bar-fill amber" data-width="17"><span class="bar-fill-label">8</span></div>
+                </div>
+                <span class="bar-count mono">8</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">Review</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="background:#A855F7" data-width="9"><span class="bar-fill-label">4</span></div>
+                </div>
+                <span class="bar-count mono">4</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">Erledigt</span>
+                <div class="bar-track">
+                  <div class="bar-fill green" data-width="74"><span class="bar-fill-label">34</span></div>
+                </div>
+                <span class="bar-count mono">34</span>
+              </div>
+              <div class="bar-item">
+                <span class="bar-label">Archiviert</span>
+                <div class="bar-track">
+                  <div class="bar-fill" style="background:#94A3B8" data-width="48"><span class="bar-fill-label">22</span></div>
+                </div>
+                <span class="bar-count mono">22</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Card -->
+        <div class="card">
+          <div class="tabs" id="taskTabs">
+            <button class="tab active" data-tab="all">Alle <span class="tab-count mono">46</span></button>
+            <button class="tab" data-tab="open">Offen <span class="tab-count mono">12</span></button>
+            <button class="tab" data-tab="done">Erledigt <span class="tab-count mono">34</span></button>
+            <button class="tab" data-tab="archived">Archiviert <span class="tab-count mono">22</span></button>
+          </div>
+          <div class="table-wrapper">
+            <table id="taskTable">
+              <thead>
+                <tr>
+                  <th data-sort="prio" class="sorted">Prio <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="task">Aufgabe <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="location">Standort <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="who">Wer <span class="sort-icon">&#9650;</span></th>
+                  <th data-sort="status">Status <span class="sort-icon">&#9650;</span></th>
+                  <th>Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="taskBody">
+                <tr data-status="open">
+                  <td><span class="prio p1">1</span></td>
+                  <td>Tomaten-Beete bewässern</td>
+                  <td>Gewächshaus A</td>
+                  <td>Lisa M.</td>
+                  <td><span class="status-badge open"><span class="dot"></span>Offen</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Erledigen">&#10003;</button></div></td>
+                </tr>
+                <tr data-status="progress">
+                  <td><span class="prio p1">1</span></td>
+                  <td>Rosenschnitt Hauptbeet</td>
+                  <td>Rosengarten</td>
+                  <td>Marco K.</td>
+                  <td><span class="status-badge progress"><span class="dot"></span>In Arbeit</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Erledigen">&#10003;</button></div></td>
+                </tr>
+                <tr data-status="open">
+                  <td><span class="prio p2">2</span></td>
+                  <td>Kompost umsetzen</td>
+                  <td>Kompostanlage</td>
+                  <td>Jan B.</td>
+                  <td><span class="status-badge open"><span class="dot"></span>Offen</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Erledigen">&#10003;</button></div></td>
+                </tr>
+                <tr data-status="review">
+                  <td><span class="prio p2">2</span></td>
+                  <td>Kräuterbeet anlegen</td>
+                  <td>Südterrasse</td>
+                  <td>Sarah W.</td>
+                  <td><span class="status-badge review"><span class="dot"></span>Review</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Erledigen">&#10003;</button></div></td>
+                </tr>
+                <tr data-status="progress">
+                  <td><span class="prio p2">2</span></td>
+                  <td>Obstbäume düngen</td>
+                  <td>Obstwiese</td>
+                  <td>Lisa M.</td>
+                  <td><span class="status-badge progress"><span class="dot"></span>In Arbeit</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Erledigen">&#10003;</button></div></td>
+                </tr>
+                <tr data-status="done">
+                  <td><span class="prio p3">3</span></td>
+                  <td>Rasen mähen Nordseite</td>
+                  <td>Nordgarten</td>
+                  <td>Tom H.</td>
+                  <td><span class="status-badge done"><span class="dot"></span>Erledigt</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Archivieren">&#128451;</button></div></td>
+                </tr>
+                <tr data-status="open">
+                  <td><span class="prio p3">3</span></td>
+                  <td>Bewässerungssystem prüfen</td>
+                  <td>Gewächshaus B</td>
+                  <td>Marco K.</td>
+                  <td><span class="status-badge open"><span class="dot"></span>Offen</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Erledigen">&#10003;</button></div></td>
+                </tr>
+                <tr data-status="done">
+                  <td><span class="prio p4">4</span></td>
+                  <td>Werkzeugschuppen aufräumen</td>
+                  <td>Wirtschaftshof</td>
+                  <td>Jan B.</td>
+                  <td><span class="status-badge done"><span class="dot"></span>Erledigt</span></td>
+                  <td><div class="table-actions"><button class="action-btn" title="Bearbeiten">&#9998;</button><button class="action-btn" title="Archivieren">&#128451;</button></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span class="table-footer-info">Zeige <span class="mono">1-8</span> von <span class="mono">46</span></span>
+            <div class="pagination">
+              <button class="page-btn" disabled>&lsaquo;</button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">4</button>
+              <button class="page-btn">5</button>
+              <button class="page-btn">6</button>
+              <button class="page-btn">&rsaquo;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Weather Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Wetter 7 Tage</span>
+            <span style="font-size:12px; color:var(--text-secondary);">Standort: Berlin</span>
+          </div>
+          <div class="card-body" style="padding: 12px 16px;">
+            <div class="weather-grid">
+              <div class="weather-day today">
+                <span class="weather-day-name">Mo</span>
+                <span class="weather-icon">&#9728;&#65039;</span>
+                <span class="weather-temp mono">18&deg;</span>
+                <span class="weather-low mono">8&deg;</span>
+                <span class="weather-precip">0%</span>
+              </div>
+              <div class="weather-day">
+                <span class="weather-day-name">Di</span>
+                <span class="weather-icon">&#9925;</span>
+                <span class="weather-temp mono">15&deg;</span>
+                <span class="weather-low mono">7&deg;</span>
+                <span class="weather-precip">20%</span>
+              </div>
+              <div class="weather-day">
+                <span class="weather-day-name">Mi</span>
+                <span class="weather-icon">&#127782;&#65039;</span>
+                <span class="weather-temp mono">12&deg;</span>
+                <span class="weather-low mono">6&deg;</span>
+                <span class="weather-precip">65%</span>
+              </div>
+              <div class="weather-day">
+                <span class="weather-day-name">Do</span>
+                <span class="weather-icon">&#127783;&#65039;</span>
+                <span class="weather-temp mono">10&deg;</span>
+                <span class="weather-low mono">5&deg;</span>
+                <span class="weather-precip">80%</span>
+              </div>
+              <div class="weather-day">
+                <span class="weather-day-name">Fr</span>
+                <span class="weather-icon">&#9925;</span>
+                <span class="weather-temp mono">14&deg;</span>
+                <span class="weather-low mono">6&deg;</span>
+                <span class="weather-precip">30%</span>
+              </div>
+              <div class="weather-day">
+                <span class="weather-day-name">Sa</span>
+                <span class="weather-icon">&#9728;&#65039;</span>
+                <span class="weather-temp mono">19&deg;</span>
+                <span class="weather-low mono">9&deg;</span>
+                <span class="weather-precip">5%</span>
+              </div>
+              <div class="weather-day">
+                <span class="weather-day-name">So</span>
+                <span class="weather-icon">&#9728;&#65039;</span>
+                <span class="weather-temp mono">21&deg;</span>
+                <span class="weather-low mono">11&deg;</span>
+                <span class="weather-precip">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Top Mitarbeiter</span>
+            <span style="font-size:12px; color:var(--text-secondary);">Diese Woche</span>
+          </div>
+          <div class="card-body">
+            <div class="leaderboard">
+              <div class="leader-item">
+                <span class="leader-rank gold mono">1</span>
+                <div class="leader-avatar" style="background: linear-gradient(135deg, #166534, #4ADE80);">LM</div>
+                <div class="leader-info">
+                  <div class="leader-name">Lisa Meier</div>
+                  <div class="leader-role">Gärtnerin</div>
+                </div>
+                <div class="leader-stat">
+                  <div class="leader-count mono">12</div>
+                  <div class="leader-unit">Aufgaben</div>
+                </div>
+              </div>
+              <div class="leader-item">
+                <span class="leader-rank silver mono">2</span>
+                <div class="leader-avatar" style="background: linear-gradient(135deg, #0EA5E9, #38BDF8);">MK</div>
+                <div class="leader-info">
+                  <div class="leader-name">Marco Klein</div>
+                  <div class="leader-role">Landschaftsbauer</div>
+                </div>
+                <div class="leader-stat">
+                  <div class="leader-count mono">9</div>
+                  <div class="leader-unit">Aufgaben</div>
+                </div>
+              </div>
+              <div class="leader-item">
+                <span class="leader-rank bronze mono">3</span>
+                <div class="leader-avatar" style="background: linear-gradient(135deg, #D97706, #FBBF24);">JB</div>
+                <div class="leader-info">
+                  <div class="leader-name">Jan Becker</div>
+                  <div class="leader-role">Gärtner</div>
+                </div>
+                <div class="leader-stat">
+                  <div class="leader-count mono">7</div>
+                  <div class="leader-unit">Aufgaben</div>
+                </div>
+              </div>
+              <div class="leader-item">
+                <span class="leader-rank mono">4</span>
+                <div class="leader-avatar" style="background: linear-gradient(135deg, #8B5CF6, #C084FC);">SW</div>
+                <div class="leader-info">
+                  <div class="leader-name">Sarah Weber</div>
+                  <div class="leader-role">Pflanzenexpertin</div>
+                </div>
+                <div class="leader-stat">
+                  <div class="leader-count mono">4</div>
+                  <div class="leader-unit">Aufgaben</div>
+                </div>
+              </div>
+              <div class="leader-item">
+                <span class="leader-rank mono">5</span>
+                <div class="leader-avatar" style="background: linear-gradient(135deg, #64748B, #94A3B8);">TH</div>
+                <div class="leader-info">
+                  <div class="leader-name">Tom Hoffmann</div>
+                  <div class="leader-role">Auszubildender</div>
+                </div>
+                <div class="leader-stat">
+                  <div class="leader-count mono">2</div>
+                  <div class="leader-unit">Aufgaben</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-grid">
+
+      <!-- Activity Sparkline -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Aktivität (30 Tage)</span>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:12px; color:var(--text-secondary);">Gesamt: <span class="mono" style="font-size:12px; color:var(--text);">127</span></span>
+            <span class="stat-trend up" style="font-size:11px;">&#8593; +14%</span>
+          </div>
+        </div>
+        <div class="card-body sparkline-area">
+          <div class="sparkline-chart" id="sparkline">
+            <!-- bars generated by JS -->
+          </div>
+          <div class="sparkline-labels">
+            <span>01. Mär</span>
+            <span>08. Mär</span>
+            <span>15. Mär</span>
+            <span>22. Mär</span>
+            <span>30. Mär</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Distribution -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Standort-Verteilung</span>
+          <span style="font-size:12px; color:var(--text-secondary);"><span class="mono" style="font-size:12px; color:var(--text);">6</span> Standorte</span>
+        </div>
+        <div class="card-body">
+          <div class="location-list">
+            <div class="location-item">
+              <span class="location-dot" style="background:#166534;"></span>
+              <span class="location-name">Gewächshaus A</span>
+              <div class="location-bar-track">
+                <div class="location-bar-fill" data-width="85" style="background:#166534;"></div>
+              </div>
+              <span class="location-count mono">14</span>
+              <span class="location-pct mono">30%</span>
+            </div>
+            <div class="location-item">
+              <span class="location-dot" style="background:#4ADE80;"></span>
+              <span class="location-name">Rosengarten</span>
+              <div class="location-bar-track">
+                <div class="location-bar-fill" data-width="61" style="background:#4ADE80;"></div>
+              </div>
+              <span class="location-count mono">10</span>
+              <span class="location-pct mono">22%</span>
+            </div>
+            <div class="location-item">
+              <span class="location-dot" style="background:#0EA5E9;"></span>
+              <span class="location-name">Obstwiese</span>
+              <div class="location-bar-track">
+                <div class="location-bar-fill" data-width="42" style="background:#0EA5E9;"></div>
+              </div>
+              <span class="location-count mono">7</span>
+              <span class="location-pct mono">15%</span>
+            </div>
+            <div class="location-item">
+              <span class="location-dot" style="background:#A855F7;"></span>
+              <span class="location-name">Südterrasse</span>
+              <div class="location-bar-track">
+                <div class="location-bar-fill" data-width="36" style="background:#A855F7;"></div>
+              </div>
+              <span class="location-count mono">6</span>
+              <span class="location-pct mono">13%</span>
+            </div>
+            <div class="location-item">
+              <span class="location-dot" style="background:#F59E0B;"></span>
+              <span class="location-name">Nordgarten</span>
+              <div class="location-bar-track">
+                <div class="location-bar-fill" data-width="24" style="background:#F59E0B;"></div>
+              </div>
+              <span class="location-count mono">5</span>
+              <span class="location-pct mono">11%</span>
+            </div>
+            <div class="location-item">
+              <span class="location-dot" style="background:#64748B;"></span>
+              <span class="location-name">Wirtschaftshof</span>
+              <div class="location-bar-track">
+                <div class="location-bar-fill" data-width="18" style="background:#64748B;"></div>
+              </div>
+              <span class="location-count mono">4</span>
+              <span class="location-pct mono">9%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ============================================
+// DARK MODE TOGGLE
+// ============================================
+const themeToggle = document.getElementById('themeToggle');
+const html = document.documentElement;
+
+// Check for saved theme preference
+if (localStorage.getItem('terra-theme') === 'dark') {
+  html.setAttribute('data-theme', 'dark');
+  themeToggle.checked = true;
+}
+
+themeToggle.addEventListener('change', () => {
+  if (themeToggle.checked) {
+    html.setAttribute('data-theme', 'dark');
+    localStorage.setItem('terra-theme', 'dark');
+  } else {
+    html.removeAttribute('data-theme');
+    localStorage.setItem('terra-theme', 'light');
+  }
+});
+
+// ============================================
+// ANIMATED BARS & PROGRESS ON LOAD
+// ============================================
+function animateBars() {
+  // Progress bars in stat cards
+  document.querySelectorAll('.stat-progress-bar').forEach(bar => {
+    const width = bar.getAttribute('data-width');
+    setTimeout(() => { bar.style.width = width + '%'; }, 200);
+  });
+
+  // Horizontal bar fills
+  document.querySelectorAll('.bar-fill').forEach(bar => {
+    const width = bar.getAttribute('data-width');
+    setTimeout(() => { bar.style.width = width + '%'; }, 300);
+  });
+
+  // Location bar fills
+  document.querySelectorAll('.location-bar-fill').forEach(bar => {
+    const width = bar.getAttribute('data-width');
+    setTimeout(() => { bar.style.width = width + '%'; }, 400);
+  });
+}
+
+// ============================================
+// SPARKLINE CHART
+// ============================================
+function generateSparkline() {
+  const container = document.getElementById('sparkline');
+  const data = [3,5,2,7,4,6,3,8,5,4,6,9,7,5,3,6,8,4,5,7,3,6,4,8,5,7,9,4,6,5];
+  const max = Math.max(...data);
+
+  data.forEach((val, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'spark-bar';
+    bar.setAttribute('data-value', val);
+    bar.style.height = '0%';
+    container.appendChild(bar);
+
+    setTimeout(() => {
+      bar.style.height = (val / max * 100) + '%';
+    }, 400 + i * 30);
+  });
+}
+
+// ============================================
+// TABLE SORTING
+// ============================================
+const sortState = { column: 'prio', direction: 'asc' };
+
+function sortTable(column) {
+  const tbody = document.getElementById('taskBody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const headers = document.querySelectorAll('thead th[data-sort]');
+
+  // Toggle direction if same column
+  if (sortState.column === column) {
+    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortState.column = column;
+    sortState.direction = 'asc';
+  }
+
+  // Update header styles
+  headers.forEach(th => {
+    th.classList.remove('sorted');
+    th.querySelector('.sort-icon').innerHTML = '&#9650;';
+  });
+  const activeHeader = document.querySelector(`th[data-sort="${column}"]`);
+  activeHeader.classList.add('sorted');
+  activeHeader.querySelector('.sort-icon').innerHTML = sortState.direction === 'asc' ? '&#9650;' : '&#9660;';
+
+  const colIndex = { prio: 0, task: 1, location: 2, who: 3, status: 4 };
+  const idx = colIndex[column];
+
+  rows.sort((a, b) => {
+    let aVal = a.cells[idx].textContent.trim();
+    let bVal = b.cells[idx].textContent.trim();
+
+    // Numeric sort for prio
+    if (column === 'prio') {
+      aVal = parseInt(aVal);
+      bVal = parseInt(bVal);
+      return sortState.direction === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+
+    return sortState.direction === 'asc'
+      ? aVal.localeCompare(bVal, 'de')
+      : bVal.localeCompare(aVal, 'de');
+  });
+
+  rows.forEach(row => tbody.appendChild(row));
+}
+
+document.querySelectorAll('thead th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => sortTable(th.getAttribute('data-sort')));
+});
+
+// ============================================
+// TAB SWITCHING
+// ============================================
+const tabButtons = document.querySelectorAll('#taskTabs .tab');
+const taskRows = document.querySelectorAll('#taskBody tr');
+
+const statusMap = {
+  all: null,
+  open: ['open'],
+  done: ['done'],
+  archived: [] // no archived data in our demo
+};
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Update active tab
+    tabButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const tab = btn.getAttribute('data-tab');
+    const allowedStatuses = statusMap[tab];
+
+    taskRows.forEach(row => {
+      if (allowedStatuses === null) {
+        row.style.display = '';
+      } else {
+        const rowStatus = row.getAttribute('data-status');
+        row.style.display = allowedStatuses.includes(rowStatus) ? '' : 'none';
+      }
+    });
+  });
+});
+
+// ============================================
+// PAGINATION
+// ============================================
+document.querySelectorAll('.pagination .page-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    if (this.disabled) return;
+    document.querySelectorAll('.pagination .page-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ============================================
+// SIDEBAR ACTIVE STATE
+// ============================================
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ============================================
+// KEYBOARD SHORTCUT: / to focus search
+// ============================================
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.querySelector('.search-box input').focus();
+  }
+  if (e.key === 'Escape') {
+    document.activeElement.blur();
+  }
+});
+
+// ============================================
+// INIT
+// ============================================
+window.addEventListener('DOMContentLoaded', () => {
+  generateSparkline();
+  animateBars();
+});
+</script>
+</body>
+</html>
