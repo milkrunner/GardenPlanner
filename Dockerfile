@@ -31,6 +31,9 @@ COPY public/ ./public/
 COPY src/ ./src/
 COPY README.md ./
 
+# Build CSS/JS bundles for production (#47)
+RUN node scripts/build.js
+
 # Datenverzeichnis erstellen und Rechte setzen
 RUN mkdir -p /app/data /app/data/logs && chown -R node:node /app
 
