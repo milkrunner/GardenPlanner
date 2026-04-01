@@ -322,6 +322,11 @@ header h1 {
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 1rem 0;
 }
 
 /* Nav Action Button */
