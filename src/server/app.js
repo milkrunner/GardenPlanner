@@ -16,6 +16,8 @@ const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
 const authRouter = require('./routes/auth');
+const adminRouter = require('./routes/admin');
+const { requireAdmin } = require('./middleware/require-admin');
 
 const app = express();
 
@@ -129,6 +131,10 @@ app.use('/api/v1/plants', plantsRouter);
 app.get('/api/v1/plant-categories', (req, res) => {
     res.json(listCategories());
 });
+
+// --- Admin Routes ---
+app.use('/api/v1/admin', requireAdmin, adminRouter);
+app.use('/api/admin', requireAdmin, adminRouter);
 
 // --- Test-only error route (for verifying error handler) ---
 if (process.env.NODE_ENV === 'test') {
