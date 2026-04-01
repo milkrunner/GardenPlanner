@@ -1,18 +1,18 @@
 services:
   gartenplaner:
-    build:
-      context: .
-      args:
-        NPM_REGISTRY: http://repo.inform-software.com/artifactory/api/npm/npmjs/
-        NPM_STRICT_SSL: "false"
+    build: .
     container_name: gartenplaner
     ports:
       - "8080:3000"
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
-      - API_KEY=${API_KEY}
-      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://gartenplaner:${DB_PASSWORD:-gartenplaner}@db:5432/gartenplaner
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - gartenplaner-data:/app/data
     labels:
@@ -22,14 +22,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 10s
 
-networks:
-  default:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
+  db:
+    image: postgres:16-alpine
+    container_name: gartenplaner-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=gartenplaner
+      - POSTGRES_USER=gartenplaner
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-gartenplaner}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gartenplaner"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   gartenplaner-data:
+  db-data:

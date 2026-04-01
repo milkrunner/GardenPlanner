@@ -44,18 +44,7 @@ const { v4: uuidv4 } = require('uuid');
 const { audit } = require('../logger');
 const { PAGINATION } = require('../config');
 const { validateTask, sanitizeTaskData } = require('../validation/task-validator');
-const {
-    readTasks,
-    readArchivedTasks,
-    withLockedTasks,
-    withLockedArchive,
-    acquireLock,
-    releaseLock,
-    writeTasks,
-    writeArchivedTasks,
-    TASKS_FILE,
-    ARCHIVED_FILE
-} = require('../storage/json-store');
+const store = require('../storage/postgres-store');
 
 // --- Pagination helper ---
 
@@ -93,10 +82,10 @@ function paginate(tasks, query) {
  * @param {string} [query.status] - Filter by status ('pending'|'in-progress'|'completed')
  * @param {string|number} [query.page] - Page number
  * @param {string|number} [query.limit] - Items per page
- * @returns {Task[]|PaginatedResult} Array of tasks or paginated result
+ * @returns {Promise<Task[]|PaginatedResult>} Array of tasks or paginated result
  */
-function listTasks(query) {
-    let tasks = readTasks();
+async function listTasks(query) {
+    let tasks = await store.readTasks();
 
     // Only allow non-sensitive filter via query param
     const status = typeof query.status === 'string' ? query.status.trim() : '';
@@ -119,10 +108,10 @@ function listTasks(query) {
  * @param {string} [body.location] - Filter by location (exact match)
  * @param {string|number} [body.page] - Page number
  * @param {string|number} [body.limit] - Items per page
- * @returns {Task[]|PaginatedResult} Array of tasks or paginated result
+ * @returns {Promise<Task[]|PaginatedResult>} Array of tasks or paginated result
  */
-function searchTasks(body) {
-    let tasks = readTasks();
+async function searchTasks(body) {
+    let tasks = await store.readTasks();
     const { status, employee, location, page, limit } = body;
 
     if (typeof status === 'string' && status.trim()) {
@@ -145,11 +134,10 @@ function searchTasks(body) {
 /**
  * Get a single task by ID.
  * @param {string} id - Task UUID
- * @returns {Task|null} The task or null if not found
+ * @returns {Promise<Task|null>} The task or null if not found
  */
-function getTask(id) {
-    const tasks = readTasks();
-    return tasks.find(t => String(t.id) === String(id)) || null;
+async function getTask(id) {
+    return store.getTaskById(id);
 }
 
 /**
@@ -192,13 +180,9 @@ async function createTask(body) {
         sortOrder: Date.now()
     };
 
-    await withLockedTasks((tasks) => {
-        tasks.push(task);
-        return { tasks };
-    });
-
-    audit('task_created', { taskId: task.id, title: sanitized.title, employee: sanitized.employee });
-    return { error: false, task };
+    const created = await store.createTask(task);
+    audit('task_created', { taskId: created.id, title: sanitized.title, employee: sanitized.employee });
+    return { error: false, task: created };
 }
 
 /**
@@ -214,75 +198,76 @@ async function updateTask(id, body) {
     }
 
     const sanitized = sanitizeTaskData(body);
-    const result = await withLockedTasks((tasks) => {
-        const index = tasks.findIndex(t => String(t.id) === String(id));
-        if (index === -1) return { tasks: undefined, notFound: true };
+    const existing = await store.getTaskById(id);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Task not found' };
+    }
 
-        const task = tasks[index];
-        const changes = [];
+    const updatedFields = {};
+    const changes = [];
+    const historyEntries = [];
 
-        if (sanitized.title !== undefined && sanitized.title !== task.title) {
-            changes.push(`Titel: "${task.title}" \u2192 "${sanitized.title}"`);
-            task.title = sanitized.title;
+    if (sanitized.title !== undefined && sanitized.title !== existing.title) {
+        changes.push(`Titel: "${existing.title}" \u2192 "${sanitized.title}"`);
+        updatedFields.title = sanitized.title;
+    }
+    if (sanitized.employee !== undefined && sanitized.employee !== existing.employee) {
+        changes.push(`Mitarbeiter: "${existing.employee}" \u2192 "${sanitized.employee}"`);
+        updatedFields.employee = sanitized.employee;
+    }
+    if (sanitized.location !== undefined && sanitized.location !== existing.location) {
+        changes.push(`Standort: "${existing.location}" \u2192 "${sanitized.location}"`);
+        updatedFields.location = sanitized.location;
+    }
+    if (sanitized.description !== undefined && sanitized.description !== existing.description) {
+        changes.push('Beschreibung ge\u00e4ndert');
+        updatedFields.description = sanitized.description;
+    }
+    if (sanitized.notes !== undefined && sanitized.notes !== existing.notes) {
+        changes.push('Notizen ge\u00e4ndert');
+        updatedFields.notes = sanitized.notes;
+    }
+    if (sanitized.status !== undefined && sanitized.status !== existing.status) {
+        const oldStatus = existing.status;
+        updatedFields.status = sanitized.status;
+        if (sanitized.status === 'completed') {
+            updatedFields.completedAt = new Date().toISOString();
+        } else {
+            updatedFields.completedAt = null;
         }
-        if (sanitized.employee !== undefined && sanitized.employee !== task.employee) {
-            changes.push(`Mitarbeiter: "${task.employee}" \u2192 "${sanitized.employee}"`);
-            task.employee = sanitized.employee;
-        }
-        if (sanitized.location !== undefined && sanitized.location !== task.location) {
-            changes.push(`Standort: "${task.location}" \u2192 "${sanitized.location}"`);
-            task.location = sanitized.location;
-        }
-        if (sanitized.description !== undefined && sanitized.description !== task.description) {
-            changes.push('Beschreibung ge\u00e4ndert');
-            task.description = sanitized.description;
-        }
-        if (sanitized.notes !== undefined && sanitized.notes !== task.notes) {
-            changes.push('Notizen ge\u00e4ndert');
-            task.notes = sanitized.notes;
-        }
-        if (sanitized.status !== undefined && sanitized.status !== task.status) {
-            const oldStatus = task.status;
-            task.status = sanitized.status;
-            if (sanitized.status === 'completed') {
-                task.completedAt = new Date().toISOString();
-            } else {
-                task.completedAt = null;
-            }
-            if (!task.history) task.history = [];
-            task.history.push({
-                timestamp: new Date().toISOString(),
-                action: sanitized.status === 'completed' ? 'completed' : 'reopened',
-                details: { from: oldStatus, to: sanitized.status }
-            });
-        }
-        if (sanitized.priority !== undefined) task.priority = sanitized.priority;
-        if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
-        if (sanitized.subtasks !== undefined) {
-            task.subtasks = Array.isArray(sanitized.subtasks) ? sanitized.subtasks.map(st => ({
-                id: Date.now() + Math.random(),
-                text: typeof st === 'string' ? st : (st.text || ''),
-                completed: typeof st === 'object' ? !!st.completed : false
-            })) : [];
-        }
+        historyEntries.push({
+            timestamp: new Date().toISOString(),
+            action: sanitized.status === 'completed' ? 'completed' : 'reopened',
+            details: { from: oldStatus, to: sanitized.status }
+        });
+    }
+    if (sanitized.priority !== undefined) updatedFields.priority = sanitized.priority;
+    if (sanitized.recurrence !== undefined) updatedFields.recurrence = sanitized.recurrence;
+    if (sanitized.subtasks !== undefined) {
+        updatedFields.subtasks = Array.isArray(sanitized.subtasks) ? sanitized.subtasks.map(st => ({
+            id: Date.now() + Math.random(),
+            text: typeof st === 'string' ? st : (st.text || ''),
+            completed: typeof st === 'object' ? !!st.completed : false
+        })) : [];
+    }
 
-        if (changes.length > 0) {
-            if (!task.history) task.history = [];
-            task.history.push({
-                timestamp: new Date().toISOString(),
-                action: 'edited',
-                details: { changes }
-            });
-        }
+    if (changes.length > 0) {
+        historyEntries.push({
+            timestamp: new Date().toISOString(),
+            action: 'edited',
+            details: { changes }
+        });
+    }
 
-        tasks[index] = task;
-        return { tasks, task, changes };
-    });
+    // Merge history entries with existing history
+    if (historyEntries.length > 0) {
+        const currentHistory = Array.isArray(existing.history) ? existing.history : [];
+        updatedFields.history = [...currentHistory, ...historyEntries];
+    }
 
-    if (result.notFound) return { error: true, status: 404, message: 'Task not found' };
-
-    audit('task_updated', { taskId: result.task.id, changes: result.changes });
-    return { error: false, task: result.task };
+    const updated = await store.updateTask(id, updatedFields);
+    audit('task_updated', { taskId: updated.id, changes });
+    return { error: false, task: updated };
 }
 
 /**
@@ -291,54 +276,34 @@ async function updateTask(id, body) {
  * @returns {Promise<TaskOperationResult>} Result indicating success or not-found error
  */
 async function deleteTask(id) {
-    const result = await withLockedTasks((tasks) => {
-        const index = tasks.findIndex(t => String(t.id) === String(id));
-        if (index === -1) return { tasks: undefined, notFound: true };
-        const deletedTask = tasks.splice(index, 1)[0];
-        return { tasks, deletedTask };
-    });
+    const existing = await store.getTaskById(id);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Task not found' };
+    }
 
-    if (result.notFound) return { error: true, status: 404, message: 'Task not found' };
-
-    audit('task_deleted', { taskId: result.deletedTask.id, title: result.deletedTask.title });
+    await store.deleteTask(id);
+    audit('task_deleted', { taskId: existing.id, title: existing.title });
     return { error: false };
 }
 
 /**
- * Archive a task by moving it from the active tasks store to the archive.
+ * Archive a task by setting its archived_at timestamp.
  * @param {string} id - Task UUID
  * @returns {Promise<TaskOperationResult>} Result with the archived task or not-found error
  */
 async function archiveTask(id) {
-    await acquireLock(TASKS_FILE);
-    await acquireLock(ARCHIVED_FILE);
-    try {
-        const tasks = readTasks();
-        const index = tasks.findIndex(t => String(t.id) === String(id));
-        if (index === -1) {
-            releaseLock(ARCHIVED_FILE);
-            releaseLock(TASKS_FILE);
-            return { error: true, status: 404, message: 'Task not found' };
-        }
-
-        const task = tasks[index];
-        task.archivedAt = new Date().toISOString();
-        if (!task.history) task.history = [];
-        task.history.push({ timestamp: new Date().toISOString(), action: 'archived', details: {} });
-
-        tasks.splice(index, 1);
-        const archived = readArchivedTasks();
-        archived.push(task);
-
-        await writeTasks(tasks);
-        await writeArchivedTasks(archived);
-
-        audit('task_archived', { taskId: task.id, title: task.title });
-        return { error: false, task };
-    } finally {
-        releaseLock(ARCHIVED_FILE);
-        releaseLock(TASKS_FILE);
+    const archived = await store.archiveTask(id);
+    if (!archived) {
+        return { error: true, status: 404, message: 'Task not found' };
     }
+
+    // Add history entry
+    const currentHistory = Array.isArray(archived.history) ? archived.history : [];
+    currentHistory.push({ timestamp: new Date().toISOString(), action: 'archived', details: {} });
+    await store.updateTask(id, { history: currentHistory });
+
+    audit('task_archived', { taskId: archived.id, title: archived.title });
+    return { error: false, task: archived };
 }
 
 /**
@@ -347,43 +312,26 @@ async function archiveTask(id) {
  * @returns {Promise<TaskOperationResult>} Result with the restored task or not-found error
  */
 async function unarchiveTask(id) {
-    await acquireLock(ARCHIVED_FILE);
-    await acquireLock(TASKS_FILE);
-    try {
-        const archived = readArchivedTasks();
-        const index = archived.findIndex(t => String(t.id) === String(id));
-        if (index === -1) {
-            releaseLock(TASKS_FILE);
-            releaseLock(ARCHIVED_FILE);
-            return { error: true, status: 404, message: 'Archived task not found' };
-        }
-
-        const task = archived[index];
-        delete task.archivedAt;
-        if (!task.history) task.history = [];
-        task.history.push({ timestamp: new Date().toISOString(), action: 'unarchived', details: {} });
-
-        archived.splice(index, 1);
-        const tasks = readTasks();
-        tasks.push(task);
-
-        await writeArchivedTasks(archived);
-        await writeTasks(tasks);
-
-        audit('task_unarchived', { taskId: task.id, title: task.title });
-        return { error: false, task };
-    } finally {
-        releaseLock(TASKS_FILE);
-        releaseLock(ARCHIVED_FILE);
+    const restored = await store.unarchiveTask(id);
+    if (!restored) {
+        return { error: true, status: 404, message: 'Archived task not found' };
     }
+
+    // Add history entry
+    const currentHistory = Array.isArray(restored.history) ? restored.history : [];
+    currentHistory.push({ timestamp: new Date().toISOString(), action: 'unarchived', details: {} });
+    await store.updateTask(id, { history: currentHistory });
+
+    audit('task_unarchived', { taskId: restored.id, title: restored.title });
+    return { error: false, task: restored };
 }
 
 /**
  * List all archived tasks.
- * @returns {Task[]} Array of archived tasks
+ * @returns {Promise<Task[]>} Array of archived tasks
  */
-function listArchivedTasks() {
-    return readArchivedTasks();
+async function listArchivedTasks() {
+    return store.readArchivedTasks();
 }
 
 /**
@@ -392,16 +340,13 @@ function listArchivedTasks() {
  * @returns {Promise<TaskOperationResult>} Result indicating success or not-found error
  */
 async function deleteArchivedTask(id) {
-    const result = await withLockedArchive((archived) => {
-        const index = archived.findIndex(t => String(t.id) === String(id));
-        if (index === -1) return { tasks: undefined, notFound: true };
-        const deletedArchived = archived.splice(index, 1)[0];
-        return { tasks: archived, deletedArchived };
-    });
+    const existing = await store.getTaskById(id);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Archived task not found' };
+    }
 
-    if (result.notFound) return { error: true, status: 404, message: 'Archived task not found' };
-
-    audit('archived_task_deleted', { taskId: result.deletedArchived.id, title: result.deletedArchived.title });
+    await store.deleteTask(id);
+    audit('archived_task_deleted', { taskId: existing.id, title: existing.title });
     return { error: false };
 }
 

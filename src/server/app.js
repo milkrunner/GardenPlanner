@@ -5,18 +5,19 @@ const path = require('path');
 
 const { requestLogger } = require('./logger');
 const { securityHeaders } = require('./middleware/security');
-const { apiKeyAuth } = require('./middleware/auth');
+const { jwtAuth } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/error-handler');
 const { generalLimiter, writeLimiter, authLimiter, resetRateLimitStores } = require('./middleware/rate-limit');
 const { validateTask, escapeHtml, sanitizeTaskData } = require('./validation/task-validator');
 const { paginate } = require('./services/task-service');
-const { resetCaches } = require('./storage/json-store');
 const { listCategories } = require('./services/plant-service');
 
 const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
 const authRouter = require('./routes/auth');
+const adminRouter = require('./routes/admin');
+const { requireAdmin } = require('./middleware/require-admin');
 
 const app = express();
 
@@ -56,9 +57,9 @@ app.use(requestLogger);
 app.use('/api/auth', authRouter);
 app.use('/api/v1/auth', authRouter);
 
-// API key authentication for /api/* routes
-app.use('/api', apiKeyAuth);
-app.use('/api/v1', apiKeyAuth);
+// JWT authentication for /api/* routes
+app.use('/api', jwtAuth);
+app.use('/api/v1', jwtAuth);
 
 // Rate limiting — tiered
 app.use('/api/auth', authLimiter);
@@ -80,7 +81,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // HTML page routes (with and without .html extension)
-const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];
+const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants', 'login', 'admin'];
 pages.forEach(page => {
     app.get(`/${page}`, (req, res) => {
         res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
@@ -131,6 +132,10 @@ app.get('/api/v1/plant-categories', (req, res) => {
     res.json(listCategories());
 });
 
+// --- Admin Routes ---
+app.use('/api/v1/admin', requireAdmin, adminRouter);
+app.use('/api/admin', requireAdmin, adminRouter);
+
 // --- Test-only error route (for verifying error handler) ---
 if (process.env.NODE_ENV === 'test') {
     app.get('/api/test-error', (req, res, next) => {
@@ -141,4 +146,4 @@ if (process.env.NODE_ENV === 'test') {
 // --- Global error handler (AFTER all routes) ---
 app.use(errorHandler);
 
-module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches, resetRateLimitStores };
+module.exports = { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetRateLimitStores };
