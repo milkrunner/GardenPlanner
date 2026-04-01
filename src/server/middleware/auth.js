@@ -19,7 +19,7 @@ function jwtAuth(req, res, next) {
         return next();
     }
 
-    const isPublicAuth = req.path === '/auth/status' || req.path === '/auth/login' || req.path === '/auth/logout';
+    const isPublicAuth = /^(\/v1)?\/auth\/(status|login|logout)$/.test(req.path);
     const cookies = parseCookies(req.headers.cookie);
     const token = cookies.token;
 
