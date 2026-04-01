@@ -274,10 +274,14 @@
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 1000;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+}
+
+.plant-modal.active {
+  display: flex;
 }
 
 .plant-modal-content {

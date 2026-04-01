@@ -244,10 +244,10 @@
             </div>
         `;
 
-        modal.style.display = 'flex';
+        modal.classList.add('active');
 
-        content.querySelector('.plant-modal-close').addEventListener('click', () => { modal.style.display = 'none'; });
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+        content.querySelector('.plant-modal-close').addEventListener('click', () => { modal.classList.remove('active'); });
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
 
         const createBtn = content.querySelector('.plant-create-task-btn');
         if (createBtn) {
@@ -303,7 +303,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('plantModal');
-                if (modal) modal.style.display = 'none';
+                if (modal) modal.classList.remove('active');
             }
         });
     }
