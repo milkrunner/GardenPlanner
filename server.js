@@ -30,7 +30,7 @@ if (require.main === module) {
         process.on('SIGTERM', () => shutdown('SIGTERM'));
         process.on('SIGINT', () => shutdown('SIGINT'));
     }).catch(err => {
-        logger.error({ err: err.message }, 'Migration failed, cannot start');
+        logger.error({ err: String(err), stack: err.stack }, 'Migration failed, cannot start');
         process.exit(1);
     });
 }

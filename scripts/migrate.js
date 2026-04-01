@@ -8,6 +8,17 @@ const ARCHIVED_FILE = path.join(__dirname, '..', 'data', 'archived-tasks.json');
 async function migrate() {
     console.log('Running database migration...');
 
+    if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL environment variable is not set. Cannot connect to PostgreSQL.');
+    }
+
+    // Test connection first
+    try {
+        await query('SELECT 1');
+    } catch (err) {
+        throw new Error(`Cannot connect to PostgreSQL at ${process.env.DATABASE_URL}: ${err.message}`);
+    }
+
     await query(`
         CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
