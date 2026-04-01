@@ -105,6 +105,10 @@ GartenPlaner.prototype.addTask = async function () {
 
 		this.showNotification("\u2705 Aufgabe erfolgreich hinzugef\u00fcgt!");
 
+		if (window.tabSync) {
+			window.tabSync.broadcast("create", task.id);
+		}
+
 		if (window.logger) {
 			window.logger.endPerformance("addTask");
 			window.logger.info("Task created successfully", "app", {
@@ -202,6 +206,9 @@ GartenPlaner.prototype.deleteTask = async function (id) {
 		this.updateStatistics();
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
+		if (window.tabSync) {
+			window.tabSync.broadcast("delete", id);
+		}
 		this.showNotification("\ud83d\uddd1\ufe0f Aufgabe gel\u00f6scht");
 	} catch (error) {
 		console.error("Fehler beim L\u00f6schen der Aufgabe:", error);
@@ -301,6 +308,9 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		this.updateStatistics();
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
+		if (window.tabSync) {
+			window.tabSync.broadcast("update", id);
+		}
 		this.showNotification("\u2705 Aufgabe erfolgreich aktualisiert!");
 	} catch (error) {
 		console.error("Fehler in saveEditedTask:", error);
@@ -370,6 +380,9 @@ GartenPlaner.prototype.archiveTask = async function (id) {
 			this.updateStatistics();
 			this.updateEmployeeFilter();
 			this.updateLocationFilter();
+			if (window.tabSync) {
+				window.tabSync.broadcast("archive", id);
+			}
 			this.showNotification("\ud83d\udce6 Aufgabe archiviert");
 		}
 	} catch (error) {
@@ -416,6 +429,9 @@ GartenPlaner.prototype.unarchiveTask = async function (id) {
 			this.updateStatistics();
 			this.updateEmployeeFilter();
 			this.updateLocationFilter();
+			if (window.tabSync) {
+				window.tabSync.broadcast("unarchive", id);
+			}
 			this.showNotification("\u21bb Aufgabe wiederhergestellt");
 		}
 	} catch (error) {
@@ -456,6 +472,9 @@ GartenPlaner.prototype.deleteArchivedTask = async function (id) {
 			);
 			await this.saveArchivedTasks();
 			this.renderTasks();
+			if (window.tabSync) {
+				window.tabSync.broadcast("delete", id);
+			}
 			this.showNotification(
 				"\ud83d\uddd1\ufe0f Archivierte Aufgabe gel\u00f6scht",
 			);
@@ -508,6 +527,9 @@ GartenPlaner.prototype.toggleTaskStatus = async function (id) {
 		await this.saveTasks();
 		this.renderTasks();
 		this.updateStatistics();
+		if (window.tabSync) {
+			window.tabSync.broadcast("update", id);
+		}
 		this.showNotification(
 			task.status === "completed"
 				? "\u2705 Aufgabe erledigt!"
