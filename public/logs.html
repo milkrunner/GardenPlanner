@@ -10,6 +10,36 @@
     <link rel="stylesheet" href="../src/css/styles.css" />
   </head>
   <body>
+    <script>
+        fetch('/api/v1/auth/status', { credentials: 'same-origin' })
+            .then(r => r.json())
+            .then(data => {
+                if (data.authRequired && !data.user) window.location.href = '/login';
+                if (data.user) {
+                    window.__user = data.user;
+                    const nav = document.querySelector('nav ul') || document.querySelector('.main-nav');
+                    if (nav && data.user.role === 'admin') {
+                        const adminLink = document.createElement('a');
+                        adminLink.href = '/admin';
+                        adminLink.className = 'nav-link';
+                        adminLink.textContent = 'Admin';
+                        nav.appendChild(adminLink);
+                    }
+                    if (nav) {
+                        const logoutLink = document.createElement('a');
+                        logoutLink.href = '#';
+                        logoutLink.className = 'nav-link';
+                        logoutLink.textContent = 'Logout';
+                        logoutLink.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            if (window.TaskAPI) TaskAPI.logout();
+                            else fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin' }).then(function() { window.location.href = '/login'; });
+                        });
+                        nav.appendChild(logoutLink);
+                    }
+                }
+            });
+    </script>
     <div class="log-viewer-container">
       <header>
         <h1>📊 System Logs</h1>

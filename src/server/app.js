@@ -81,7 +81,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // HTML page routes (with and without .html extension)
-const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];
+const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants', 'login', 'admin'];
 pages.forEach(page => {
     app.get(`/${page}`, (req, res) => {
         res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
