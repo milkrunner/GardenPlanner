@@ -1,6 +1,6 @@
 services:
   gartenplaner:
-    build: .
+    image: milkrunner/gardenplanner:beta
     container_name: gartenplaner
     ports:
       - "8080:3000"
