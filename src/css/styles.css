@@ -168,8 +168,6 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
-  /* Smooth scrolling auf mobilen Geräten */
-  -webkit-overflow-scrolling: touch;
   /* Verhindert ungewollte Zoom-Gesten */
   touch-action: manipulation;
 }
@@ -466,6 +464,12 @@ body:has(.add-task-section) .container {
   .data-management {
     grid-area: data;
   }
+
+  #filter-heading,
+  #tasksHeaderTitle {
+    font-size: var(--text-base);
+    margin-bottom: 1rem;
+  }
 }
 
 section {
@@ -551,14 +555,6 @@ section h2 {
 
 [data-theme="dark"] #add-task-heading {
   color: var(--primary);
-}
-
-@media (min-width: 1200px) {
-  #filter-heading,
-  #tasksHeaderTitle {
-    font-size: var(--text-base);
-    margin-bottom: 1rem;
-  }
 }
 
 /* Form Styles */
@@ -1182,119 +1178,6 @@ textarea {
   100% {
     content: "...";
   }
-}
-
-/* Dark Mode - Weather */
-.dark-mode .weather-section {
-  background: linear-gradient(
-    135deg,
-    rgba(74, 222, 128, 0.12) 0%,
-    rgba(34, 197, 94, 0.08) 50%,
-    rgba(22, 163, 74, 0.04) 100%
-  );
-  border-bottom-color: var(--border);
-}
-
-.dark-mode .weather-section::before {
-  background: radial-gradient(
-    circle,
-    rgba(74, 222, 128, 0.15) 0%,
-    transparent 70%
-  );
-}
-
-.dark-mode .weather-location {
-  background: var(--bg-secondary);
-  border-color: var(--primary);
-  border-width: 2px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.2);
-}
-
-.dark-mode .weather-location:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--primary);
-  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.3);
-}
-
-.dark-mode .weather-location-name {
-  color: var(--text);
-}
-
-.dark-mode .weather-day-card {
-  background: var(--bg-secondary);
-  border-color: var(--primary);
-  border-width: 2px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 4px 16px rgba(74, 222, 128, 0.2);
-}
-
-.dark-mode .weather-day-card::before {
-  background: linear-gradient(
-    90deg,
-    var(--primary) 0%,
-    rgba(74, 222, 128, 0.8) 100%
-  );
-}
-
-.dark-mode .weather-day-card:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--primary);
-  box-shadow: 0 12px 24px rgba(74, 222, 128, 0.35);
-}
-
-.dark-mode .weather-day-name {
-  color: var(--primary);
-  font-weight: 800;
-}
-
-.dark-mode .weather-temp {
-  color: var(--text);
-}
-
-.dark-mode .weather-description {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.dark-mode .weather-day-date {
-  color: var(--text-light);
-}
-
-.dark-mode .weather-temp-range {
-  color: var(--text-light);
-  opacity: 0.9;
-}
-
-.dark-mode .weather-garden-tip {
-  background: linear-gradient(
-    135deg,
-    rgba(74, 222, 128, 0.25) 0%,
-    rgba(34, 197, 94, 0.2) 100%
-  );
-  color: #a7f3d0;
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(74, 222, 128, 0.2);
-  font-weight: 700;
-}
-
-.dark-mode .weather-error {
-  background: rgba(248, 113, 113, 0.1);
-  border-color: var(--danger);
-}
-
-.dark-mode .weather-stale-notice {
-  background: rgba(230, 126, 34, 0.15);
-  border-color: rgba(230, 126, 34, 0.35);
-}
-
-.dark-mode .weather-unavailable {
-  background: rgba(200, 200, 200, 0.05);
-  border-color: var(--text-light);
-}
-
-.dark-mode .weather-loading {
-  color: var(--text);
 }
 
 .garden-tip {
@@ -2119,31 +2002,6 @@ main > section > h2::after {
   margin-bottom: 0;
 }
 
-.additional-stats h2 {
-  font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 2.5rem;
-  color: var(--primary);
-  position: relative;
-  padding-bottom: 1rem;
-}
-
-.additional-stats h2::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 80px;
-  height: 3px;
-  background: var(--primary-light);
-  border-radius: 2px;
-}
-
-[data-theme="dark"] .additional-stats h2 {
-  color: var(--primary);
-}
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2255,31 +2113,6 @@ main > section > h2::after {
   margin-bottom: 3rem;
 }
 
-.quick-actions h2 {
-  font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 2.5rem;
-  color: var(--primary);
-  position: relative;
-  padding-bottom: 1rem;
-}
-
-.quick-actions h2::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 80px;
-  height: 3px;
-  background: var(--primary-light);
-  border-radius: 2px;
-}
-
-[data-theme="dark"] .quick-actions h2 {
-  color: var(--primary);
-}
-
 .quick-actions .btn-group {
   display: flex;
   gap: var(--space-lg);
@@ -2309,28 +2142,7 @@ main > section > h2::after {
 }
 
 .history-section h2 {
-  font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 700;
   margin-bottom: 1rem;
-  color: var(--primary);
-  position: relative;
-  padding-bottom: 1rem;
-}
-
-.history-section h2::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 80px;
-  height: 3px;
-  background: var(--primary-light);
-  border-radius: 2px;
-}
-
-[data-theme="dark"] .history-section h2 {
-  color: var(--primary);
 }
 
 .history-section .subtitle {
@@ -2875,10 +2687,6 @@ main > section > h2::after {
 }
 
 /* Touch Feedback */
-.task-btn:active {
-  transform: scale(0.96);
-}
-
 .task-btn:hover {
   transform: translateY(-2px) scale(1.05);
 }
@@ -3431,15 +3239,6 @@ footer {
 
 [data-theme="dark"] .modal-actions {
   border-top-color: #333;
-}
-
-.btn-secondary {
-  background-color: var(--light);
-  color: var(--dark);
-}
-
-.btn-secondary:hover {
-  background-color: var(--border);
 }
 
 /* Confirm Modal Styles */
