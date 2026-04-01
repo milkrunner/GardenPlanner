@@ -5196,3 +5196,199 @@ footer {
     max-width: 200px;
   }
 }
+
+/* === Statistics Enhancements (#107) === */
+
+/* Toolbar: time range + export */
+.stats-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.time-range-selector {
+  display: flex;
+  gap: 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.time-range-btn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  border-right: 1px solid var(--border);
+}
+
+.time-range-btn:last-child {
+  border-right: none;
+}
+
+.time-range-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.time-range-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+[data-theme="dark"] .time-range-selector {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .time-range-btn {
+  color: var(--text);
+}
+
+[data-theme="dark"] .time-range-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .time-range-btn.active {
+  background: var(--primary);
+  color: #0C0A09;
+}
+
+.stats-export-btn {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+/* Stat number row with trend indicator */
+.stat-number-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.stat-number-row .stat-number {
+  margin-bottom: 0;
+}
+
+/* Trend indicators */
+.trend-indicator {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-family: var(--font-body);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.trend-indicator:empty {
+  display: none;
+}
+
+.trend-indicator.trend-good {
+  color: #16A34A;
+  background: rgba(22, 163, 74, 0.1);
+}
+
+.trend-indicator.trend-bad {
+  color: #E11D48;
+  background: rgba(225, 29, 72, 0.1);
+}
+
+[data-theme="dark"] .trend-indicator.trend-good {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+}
+
+[data-theme="dark"] .trend-indicator.trend-bad {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.15);
+}
+
+/* Hover tooltips (CSS-only, no library) */
+.stat-card[data-stat-tooltip] {
+  position: relative;
+}
+
+.stat-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+
+.stat-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--text);
+}
+
+.stat-card[data-stat-tooltip]:hover .stat-tooltip:not(:empty) {
+  opacity: 1;
+  visibility: visible;
+}
+
+[data-theme="dark"] .stat-tooltip {
+  background: var(--bg-tertiary);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+[data-theme="dark"] .stat-tooltip::after {
+  border-top-color: var(--bg-tertiary);
+}
+
+/* Responsive adjustments for toolbar */
+@media (max-width: 600px) {
+  .stats-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .time-range-selector {
+    width: 100%;
+  }
+
+  .time-range-btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px 8px;
+    font-size: var(--text-xs);
+  }
+
+  .stats-export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stat-tooltip {
+    font-size: 0.65rem;
+  }
+}
