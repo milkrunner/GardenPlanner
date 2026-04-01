@@ -861,7 +861,7 @@ GartenPlaner.prototype.updateBulkToolbar = function () {
 	var countSpan = document.getElementById("bulkCount");
 
 	if (toolbar && countSpan) {
-		toolbar.style.display = this.bulkMode ? "flex" : "none";
+		toolbar.hidden = !this.bulkMode;
 		countSpan.textContent = this.selectedTasks.size;
 	}
 };

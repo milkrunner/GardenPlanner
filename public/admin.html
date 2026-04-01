@@ -57,7 +57,7 @@
             <h2 id="adminFormTitle">Neuer Benutzer</h2>
             <button id="toggleNewUserBtn" class="btn btn-primary" type="button">Neuer Benutzer</button>
           </div>
-          <div id="newUserForm" class="admin-form" style="display: none;">
+          <div id="newUserForm" class="admin-form" hidden>
             <form id="userForm" novalidate>
               <input type="hidden" id="editUserId" value="" />
               <div class="admin-form-row">
@@ -81,7 +81,7 @@
                 <button type="submit" class="btn btn-primary" id="userFormSubmitBtn">Erstellen</button>
                 <button type="button" class="btn btn-secondary" id="cancelUserFormBtn">Abbrechen</button>
               </div>
-              <div id="userFormError" class="login-error" role="alert" style="display: none;"></div>
+              <div id="userFormError" class="login-error" role="alert" hidden></div>
             </form>
           </div>
         </section>
@@ -169,12 +169,12 @@
 
         function showFormError(msg) {
           formError.textContent = msg;
-          formError.style.display = 'block';
+          formError.hidden = false;
         }
 
         function hideFormError() {
           formError.textContent = '';
-          formError.style.display = 'none';
+          formError.hidden = true;
         }
 
         function resetForm() {
@@ -188,13 +188,13 @@
         }
 
         function showForm() {
-          newUserFormEl.style.display = 'block';
-          toggleBtn.style.display = 'none';
+          newUserFormEl.hidden = false;
+          toggleBtn.hidden = true;
         }
 
         function hideForm() {
-          newUserFormEl.style.display = 'none';
-          toggleBtn.style.display = '';
+          newUserFormEl.hidden = true;
+          toggleBtn.hidden = false;
           resetForm();
         }
 

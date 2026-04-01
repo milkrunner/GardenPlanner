@@ -130,22 +130,22 @@
           </div>
 
           <div class="log-actions">
-            <button class="btn btn-primary" onclick="logViewer.refresh()">
+            <button class="btn btn-primary" id="logRefreshBtn">
               🔄 Aktualisieren
             </button>
-            <button class="btn" onclick="logViewer.exportJSON()">
+            <button class="btn" id="logExportJsonBtn">
               💾 Export JSON
             </button>
-            <button class="btn" onclick="logViewer.exportCSV()">
+            <button class="btn" id="logExportCsvBtn">
               📊 Export CSV
             </button>
-            <button class="btn" onclick="logViewer.exportText()">
+            <button class="btn" id="logExportTextBtn">
               📄 Export Text
             </button>
-            <button class="btn btn-danger" onclick="logViewer.clearLogs()">
+            <button class="btn btn-danger" id="logClearBtn">
               🗑️ Logs löschen
             </button>
-            <div style="margin-left: auto">
+            <div class="ml-auto">
               <span id="healthIndicator" class="health-indicator" role="status"></span>
             </div>
           </div>
@@ -181,7 +181,7 @@
     <!-- Detail Modal -->
     <div class="log-detail-modal" id="logDetailModal" role="dialog" aria-modal="true" aria-label="Log-Detail">
       <div class="log-detail-content">
-        <button class="log-detail-close" onclick="logViewer.closeDetail()" aria-label="Dialog schliessen">
+        <button class="log-detail-close" id="logDetailCloseBtn" aria-label="Dialog schliessen">
           ×
         </button>
         <div id="logDetailContent"></div>

@@ -45,7 +45,7 @@
               placeholder="Passwort eingeben"
             />
           </div>
-          <div id="loginError" class="login-error" role="alert" style="display: none;"></div>
+          <div id="loginError" class="login-error" role="alert" hidden></div>
           <button type="submit" class="btn btn-primary login-submit-btn">Anmelden</button>
         </form>
       </div>
@@ -98,7 +98,7 @@
 
         form.addEventListener('submit', function(e) {
           e.preventDefault();
-          errorEl.style.display = 'none';
+          errorEl.hidden = true;
           errorEl.textContent = '';
 
           var username = document.getElementById('username').value.trim();
@@ -106,7 +106,7 @@
 
           if (!username || !password) {
             errorEl.textContent = 'Bitte Benutzername und Passwort eingeben.';
-            errorEl.style.display = 'block';
+            errorEl.hidden = false;
             return;
           }
 
@@ -133,7 +133,7 @@
           })
           .catch(function(err) {
             errorEl.textContent = err.message;
-            errorEl.style.display = 'block';
+            errorEl.hidden = false;
             submitBtn.disabled = false;
             submitBtn.textContent = 'Anmelden';
           });
