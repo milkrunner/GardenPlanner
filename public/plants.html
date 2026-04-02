@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../src/css/plants.css">
 </head>
 <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
     <script src="../src/js/auth-check.js"></script>
     <div class="container">
         <header role="banner">
@@ -30,7 +31,7 @@
             <a href="/index" class="btn btn-primary nav-action-btn">➕ Neue Aufgabe</a>
         </div>
 
-        <main>
+        <main id="main">
             <section class="plant-controls">
                 <div class="search-box">
                     <input type="text" id="plantSearch" placeholder="Pflanze suchen..." aria-label="Pflanzen durchsuchen">
@@ -66,7 +67,7 @@
             </section>
 
             <!-- Plant Detail Modal (injected by JS when opened) -->
-            <div class="plant-modal" id="plantModal" hidden>
+            <div class="plant-modal" id="plantModal" hidden role="dialog" aria-modal="true" aria-label="Pflanzendetails">
                 <div class="plant-modal-content" id="plantModalContent"></div>
             </div>
         </main>

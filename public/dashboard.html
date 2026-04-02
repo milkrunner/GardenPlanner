@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="../src/css/styles.css" />
   </head>
   <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
     <script src="../src/js/auth-check.js"></script>
     <div class="container">
       <header role="banner">
@@ -38,20 +39,20 @@
         >
       </div>
 
-      <main role="main">
+      <main id="main" role="main">
         <!-- Statistiken Schnellübersicht -->
         <section class="stats-section">
           <div class="stat-card">
             <h3>Offene Aufgaben</h3>
-            <p class="stat-number" id="statPending">0</p>
+            <p class="stat-number" id="statPending" aria-live="polite">0</p>
           </div>
           <div class="stat-card">
             <h3>Erledigte Aufgaben</h3>
-            <p class="stat-number" id="statCompleted">0</p>
+            <p class="stat-number" id="statCompleted" aria-live="polite">0</p>
           </div>
           <div class="stat-card">
             <h3>Aktive Mitarbeiter</h3>
-            <p class="stat-number" id="statEmployees">0</p>
+            <p class="stat-number" id="statEmployees" aria-live="polite">0</p>
           </div>
         </section>
 

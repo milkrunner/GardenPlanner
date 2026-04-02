@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="../src/css/styles.css" />
   </head>
   <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
     <script nonce="__CSP_NONCE__">
       fetch('/api/v1/auth/status', { credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
@@ -50,7 +51,7 @@
         <a href="/index" class="btn btn-primary nav-action-btn">Neue Aufgabe</a>
       </div>
 
-      <main role="main">
+      <main id="main" role="main">
         <!-- New User Form -->
         <section class="admin-section">
           <div class="admin-form-header">
