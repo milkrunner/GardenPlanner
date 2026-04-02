@@ -43,22 +43,22 @@
     <div class="log-viewer-container">
       <header>
         <h1>📊 System Logs</h1>
-
-        <div class="nav-container">
-          <nav class="main-nav" aria-label="Hauptnavigation">
-            <a href="/dashboard" class="nav-link">📋 Dashboard</a>
-            <a href="/statistics" class="nav-link">📊 Statistiken</a>
-            <a href="/plants" class="nav-link">🌱 Pflanzen</a>
-            <a href="/garden" class="nav-link">🌻 Garten</a>
-            <a href="/logs" class="nav-link active" aria-current="page"
-              >📜 Logs</a
-            >
-          </nav>
-          <a href="/index" class="btn btn-primary nav-action-btn"
-            >➕ Neue Aufgabe</a
-          >
-        </div>
       </header>
+
+      <div class="nav-container">
+        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+          <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+          <a href="/statistics" class="nav-link">📊 Statistiken</a>
+          <a href="/plants" class="nav-link">🌱 Pflanzen</a>
+          <a href="/garden" class="nav-link">🌻 Garten</a>
+          <a href="/logs" class="nav-link active" aria-current="page"
+            >📜 Logs</a
+          >
+        </nav>
+        <a href="/index" class="btn btn-primary nav-action-btn"
+          >➕ Neue Aufgabe</a
+        >
+      </div>
 
       <main>
         <!-- Statistiken -->
@@ -176,6 +176,10 @@
           </table>
         </section>
       </main>
+
+      <footer role="contentinfo">
+        <p>&copy; 2025 Gartenplaner</p>
+      </footer>
     </div>
 
     <!-- Detail Modal -->
