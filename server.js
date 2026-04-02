@@ -6,6 +6,10 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
 if (require.main === module) {
+    if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
+        process.stderr.write('\u26a0\ufe0f  WARNUNG: JWT_SECRET ist nicht gesetzt \u2014 Authentifizierung ist deaktiviert!\n');
+    }
+
     migrate().then(() => {
         const server = app.listen(PORT, () => {
             logger.info({ port: PORT, auth: !!JWT_SECRET }, 'Gartenplaner API started');
