@@ -50,9 +50,9 @@ function signToken(user) {
 }
 
 function setTokenCookie(res, token) {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const secure = process.env.COOKIE_SECURE === 'true';
     res.setHeader('Set-Cookie',
-        `token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400${isProduction ? '; Secure' : ''}`
+        `token=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400${secure ? '; Secure' : ''}`
     );
 }
 
