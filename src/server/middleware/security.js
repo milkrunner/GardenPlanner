@@ -22,7 +22,7 @@ function securityHeaders(req, res, next) {
     res.setHeader('Content-Security-Policy', [
         "default-src 'self'",
         `script-src 'self' 'nonce-${nonce}' https://cdnjs.cloudflare.com`,
-        `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "img-src 'self' data:",
         "font-src 'self' https://fonts.gstatic.com",
         "connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com",
