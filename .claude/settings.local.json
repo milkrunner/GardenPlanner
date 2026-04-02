@@ -85,7 +85,12 @@
       "Bash(npm pack:*)",
       "Bash(cmd //c \"mklink /J \"\"C:\\\\Git\\\\GardenPlanner\\\\.claude\\\\worktrees\\\\agent-a2cf477e\\\\node_modules\"\" \"\"C:\\\\Git\\\\GardenPlanner\\\\.claude\\\\worktrees\\\\agent-a9c844b1\\\\node_modules\"\"\")",
       "Bash(cmd.exe /c 'mklink /J node_modules \"\"C:\\\\Git\\\\GardenPlanner\\\\.claude\\\\worktrees\\\\agent-a9c844b1\\\\node_modules\"\"')",
-      "Bash(GIT_EDITOR=true git rebase --continue)"
+      "Bash(GIT_EDITOR=true git rebase --continue)",
+      "Bash(npm update:*)",
+      "Bash(sed -i 's|https://repo.inform-software.com/artifactory/api/npm/npmjs/|https://registry.npmjs.org/|g' package-lock.json)",
+      "Bash(sed -i 's|http://repo.inform-software.com/artifactory/api/npm/npmjs/|https://registry.npmjs.org/|g' package-lock.json)",
+      "Bash(grep -l:*)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }
