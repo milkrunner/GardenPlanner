@@ -2,11 +2,23 @@
 .git
 .gitignore
 
-# Documentation (wenn nicht benötigt im Container)
-# docs/
+# Documentation
+docs/
 
-# Tests (optional - auskommentieren wenn Tests im Container benötigt werden)
-# tests/
+# Tests
+tests/
+
+# Claude Code
+.claude/
+
+# GitHub Actions
+.github/
+
+# Dependencies (rebuilt in container)
+node_modules/
+
+# Runtime data (mounted as volume)
+data/
 
 # Environment
 .env
@@ -22,7 +34,7 @@
 .DS_Store
 Thumbs.db
 
-# Docker files selbst
+# Docker files
 Dockerfile
 docker-compose.yml
 .dockerignore

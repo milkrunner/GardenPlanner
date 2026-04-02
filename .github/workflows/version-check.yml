@@ -1,0 +1,30 @@
+name: Version Bump Check
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v5
+
+      - name: Get PR version
+        id: pr
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Get base branch version
+        id: base
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          echo "version=$(git show origin/${{ github.base_ref }}:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions
+        run: |
+          if [ "${{ steps.pr.outputs.version }}" = "${{ steps.base.outputs.version }}" ]; then
+            echo "::error::Version in package.json (${{ steps.pr.outputs.version }}) has not changed. Please bump the version (patch/minor/major) before merging."
+            exit 1
+          fi
+          echo "✓ Version bumped: ${{ steps.base.outputs.version }} → ${{ steps.pr.outputs.version }}"

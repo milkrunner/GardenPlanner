@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anmelden - Gartenplaner</title>
+    <meta name="description" content="Anmeldung zum Gartenplaner" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../src/css/styles.css" />
+  </head>
+  <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
+    <div class="login-container" id="main">
+      <div class="login-card">
+        <div class="login-header">
+          <h1>Gartenplaner</h1>
+          <p class="subtitle">Bitte melden Sie sich an</p>
+        </div>
+        <form id="loginForm" class="login-form" method="POST" action="/api/v1/auth/login" novalidate>
+          <div class="form-group">
+            <label for="username">Benutzername</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              required
+              autocomplete="username"
+              autofocus
+              placeholder="Benutzername eingeben"
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">Passwort</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              autocomplete="current-password"
+              placeholder="Passwort eingeben"
+            />
+          </div>
+          <div id="loginError" class="login-error" role="alert" hidden></div>
+          <button type="submit" class="btn btn-primary login-submit-btn">Anmelden</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+      <button
+        id="themeToggle"
+        class="theme-toggle-btn"
+        aria-label="Theme umschalten"
+        title="Dark Mode umschalten"
+      >
+        <svg
+          id="themeIcon"
+          class="theme-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <script src="../src/js/config.js"></script>
+    <script src="../src/js/app.js"></script>
+    <script nonce="__CSP_NONCE__">
+      (function() {
+        // Show error message if redirected back from failed non-JS form login
+        if (new URLSearchParams(window.location.search).has('error')) {
+          var errEl = document.getElementById('loginError');
+          errEl.textContent = 'Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.';
+          errEl.hidden = false;
+        }
+
+        // Check if already logged in
+        fetch('/api/v1/auth/status', { credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            if (data.user) {
+              window.location.href = '/dashboard';
+            }
+          })
+          .catch(function() { /* ignore */ });
+
+        var form = document.getElementById('loginForm');
+        var errorEl = document.getElementById('loginError');
+
+        form.addEventListener('submit', function(e) {
+          e.preventDefault();
+          errorEl.hidden = true;
+          errorEl.textContent = '';
+
+          var username = document.getElementById('username').value.trim();
+          var password = document.getElementById('password').value;
+
+          if (!username || !password) {
+            errorEl.textContent = 'Bitte Benutzername und Passwort eingeben.';
+            errorEl.hidden = false;
+            return;
+          }
+
+          var submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Anmelden...';
+
+          fetch('/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ username: username, password: password })
+          })
+          .then(function(res) {
+            if (!res.ok) {
+              return res.json().catch(function() { return {}; }).then(function(body) {
+                throw new Error(body.message || 'Anmeldung fehlgeschlagen');
+              });
+            }
+            return res.json();
+          })
+          .then(function() {
+            window.location.href = '/dashboard';
+          })
+          .catch(function(err) {
+            errorEl.textContent = err.message;
+            errorEl.hidden = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Anmelden';
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

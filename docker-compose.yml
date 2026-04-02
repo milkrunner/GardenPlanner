@@ -1,14 +1,18 @@
 services:
   gartenplaner:
-    build: .
+    image: milkrunner/gardenplanner:beta
     container_name: gartenplaner
     ports:
       - "8080:3000"
     restart: unless-stopped
     environment:
       - TZ=Europe/Berlin
-      - API_KEY=${API_KEY}
-      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=postgres://gartenplaner:gartenplaner@db:5432/gartenplaner
+      - JWT_SECRET=gartenplaner-jwt-secret-2026
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - gartenplaner-data:/app/data
     labels:
@@ -18,7 +22,41 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+
+  db:
+    image: postgres:16-alpine
+    container_name: gartenplaner-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=gartenplaner
+      - POSTGRES_USER=gartenplaner
+      - POSTGRES_PASSWORD=gartenplaner
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gartenplaner"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backup:
+    image: postgres:16-alpine
+    container_name: gartenplaner-backup
+    environment:
+      - PGPASSWORD=gartenplaner
+    volumes:
+      - ./scripts:/scripts:ro
+      - backup-data:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "echo '0 2 * * * /scripts/backup.sh >> /var/log/backup.log 2>&1' | crontab - && crond -f -l 2"
+    restart: unless-stopped
 
 volumes:
   gartenplaner-data:
+  db-data:
+  backup-data:

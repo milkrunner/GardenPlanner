@@ -1,19 +1,30 @@
 const request = require('supertest');
 const crypto = require('node:crypto');
-const fs = require('node:fs');
-const path = require('node:path');
-const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches } = require('../src/server/app');
+const { app, resetRateLimitStores } = require('../src/server/app');
+const { validateTask, escapeHtml, sanitizeTaskData } = require('../src/server/validation/task-validator');
+const { paginate } = require('../src/server/services/task-service');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
-const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
+const hasDB = !!process.env.DATABASE_URL;
+const describeWithDB = hasDB ? describe : describe.skip;
 
-// Reset data files and caches before each test
-beforeEach(() => {
-    fs.writeFileSync(TASKS_FILE, '[]', 'utf8');
-    fs.writeFileSync(ARCHIVED_FILE, '[]', 'utf8');
-    resetCaches();
-});
+if (hasDB) {
+    const { query } = require('../src/server/storage/db');
+    const { migrate } = require('../scripts/migrate');
+
+    beforeAll(async () => {
+        await migrate();
+    });
+
+    beforeEach(async () => {
+        await query('DELETE FROM tasks');
+        await query('DELETE FROM users');
+        resetRateLimitStores();
+    });
+} else {
+    beforeEach(() => {
+        resetRateLimitStores();
+    });
+}
 
 // --- Unit Tests: validateTask ---
 
@@ -229,9 +240,9 @@ describe('sanitizeTaskData', () => {
     });
 });
 
-// --- Integration Tests: API Endpoints ---
+// --- Integration Tests: API Endpoints (require PostgreSQL) ---
 
-describe('API Endpoints', () => {
+describeWithDB('API Endpoints', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -257,6 +268,8 @@ describe('API Endpoints', () => {
                 .send({ title: '' });
 
             expect(res.status).toBe(400);
+            expect(res.body.error).toBe(true);
+            expect(res.body.status).toBe(400);
             expect(res.body).toHaveProperty('errors');
         });
     });
@@ -292,7 +305,8 @@ describe('API Endpoints', () => {
         test('returns 400 for invalid ID format', async () => {
             const res = await request(app).get('/api/tasks/nonexistent');
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
@@ -317,7 +331,8 @@ describe('API Endpoints', () => {
                 .put('/api/tasks/nonexistent')
                 .send({ title: 'Test' });
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
@@ -385,7 +400,8 @@ describe('API Endpoints', () => {
         test('returns 400 for invalid ID format', async () => {
             const res = await request(app).delete('/api/tasks/nonexistent');
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
@@ -490,7 +506,7 @@ describe('paginate', () => {
     });
 });
 
-describe('GET /api/tasks with pagination', () => {
+describeWithDB('GET /api/tasks with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -526,7 +542,7 @@ describe('GET /api/tasks with pagination', () => {
     });
 });
 
-describe('POST /api/tasks/search with pagination', () => {
+describeWithDB('POST /api/tasks/search with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -554,7 +570,7 @@ describe('POST /api/tasks/search with pagination', () => {
 
 // --- UUID Validation Tests ---
 
-describe('UUID validation for :id parameters', () => {
+describeWithDB('UUID validation for :id parameters', () => {
     const invalidIds = ['nonexistent', '123', 'not-a-uuid', '../etc/passwd'];
     const routes = [
         { method: 'get', path: '/api/tasks/' },
@@ -572,31 +588,50 @@ describe('UUID validation for :id parameters', () => {
             if (body) req.send(body);
             const res = await req;
             expect(res.status).toBe(400);
-            expect(res.body.error).toMatch(/Invalid ID format/);
+            expect(res.body.error).toBe(true);
+            expect(res.body.message).toMatch(/Invalid ID format/);
         });
     });
 
     test('accepts valid UUID v4 format', async () => {
         const res = await request(app).get('/api/tasks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
-        expect(res.status).toBe(404); // valid format, just doesn't exist
+        // Without DB this may error, but with DB it should be 404 (valid format, doesn't exist)
+        if (hasDB) {
+            expect(res.status).toBe(404);
+        }
     });
 });
 
 // --- Error Handler Tests ---
 
-describe('Global error handler', () => {
-    test('returns 500 with generic message and no stack trace', async () => {
+describeWithDB('Global error handler', () => {
+    test('returns consistent error format for 500 errors', async () => {
         const res = await request(app).get('/api/test-error');
         expect(res.status).toBe(500);
-        expect(res.body).toEqual({ error: 'Internal server error' });
+        expect(res.body).toEqual({
+            error: true,
+            status: 500,
+            message: 'Internal server error'
+        });
         expect(res.body.stack).toBeUndefined();
-        expect(res.body.message).toBeUndefined();
+    });
+
+    test('returns consistent error format for 413 payload too large', async () => {
+        const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
+        const res = await request(app)
+            .post('/api/tasks')
+            .send(largeBody);
+
+        expect(res.status).toBe(413);
+        expect(res.body.error).toBe(true);
+        expect(res.body.status).toBe(413);
+        expect(res.body).toHaveProperty('message');
     });
 });
 
 // --- Security Tests ---
 
-describe('Security', () => {
+describeWithDB('Security', () => {
     test('sets security headers', async () => {
         const res = await request(app).get('/api/tasks');
         expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
@@ -610,9 +645,6 @@ describe('Security', () => {
     });
 
     test('does not bypass auth via sec-fetch-site header', async () => {
-        // This verifies the sec-fetch-site bypass has been removed.
-        // Since API_KEY is not set in tests, all requests are allowed,
-        // but the header should have no special effect on auth logic.
         const res = await request(app)
             .get('/api/tasks')
             .set('sec-fetch-site', 'same-origin');
@@ -621,7 +653,6 @@ describe('Security', () => {
 
     test('uses timing-safe comparison for API key validation', () => {
         // Verify that crypto.timingSafeEqual is available and works correctly
-        // for the pattern used in the auth middleware
         const key = 'test-secret-key';
         const keyBuffer = Buffer.from(key, 'utf8');
 
@@ -644,6 +675,37 @@ describe('Security', () => {
         expect(keyBuffer.length).not.toBe(emptyBuffer.length);
     });
 
+    test('CSP header contains nonce instead of unsafe-inline', async () => {
+        const res = await request(app).get('/');
+        const csp = res.headers['content-security-policy'];
+        expect(csp).not.toContain('unsafe-inline');
+        expect(csp).toMatch(/style-src 'self' 'nonce-[A-Za-z0-9+/=]+'/);
+    });
+
+    test('each request gets a unique CSP nonce', async () => {
+        const res1 = await request(app).get('/');
+        const res2 = await request(app).get('/');
+        const nonce1 = res1.headers['content-security-policy'].match(/nonce-([A-Za-z0-9+/=]+)/)[1];
+        const nonce2 = res2.headers['content-security-policy'].match(/nonce-([A-Za-z0-9+/=]+)/)[1];
+        expect(nonce1).not.toBe(nonce2);
+    });
+
+    test('logs page has no inline style tags after CSS extraction', async () => {
+        const res = await request(app).get('/logs');
+        expect(res.text).not.toContain('<style');
+        expect(res.text).not.toContain('__CSP_NONCE__');
+        const csp = res.headers['content-security-policy'];
+        expect(csp).toMatch(/nonce-[A-Za-z0-9+/=]+/);
+    });
+});
+
+describeWithDB('Security (DB-dependent)', () => {
+    const validTask = {
+        title: 'Rasen mähen',
+        employee: 'Max',
+        location: 'Garten'
+    };
+
     test('stores raw text without HTML escaping (escaping happens on frontend render)', async () => {
         const res = await request(app)
             .post('/api/tasks')
@@ -654,7 +716,6 @@ describe('Security', () => {
             });
 
         expect(res.status).toBe(201);
-        // API returns raw text — frontend is responsible for escaping on render
         expect(res.body.title).toBe('<script>alert("xss")</script>');
     });
 
@@ -674,7 +735,6 @@ describe('Security', () => {
         expect(res.body.location).toBe('Garten <Süd>');
         expect(res.body.description).toBe('Use "quotes" & ampersands');
 
-        // Verify the data round-trips correctly (no double-escaping on edit)
         const updated = await request(app)
             .put(`/api/tasks/${res.body.id}`)
             .send({ title: 'Tom & Jerry' });
@@ -701,6 +761,28 @@ describe('Security', () => {
     });
 });
 
+// --- Rate Limiting Tests ---
+
+describeWithDB('Rate limiting', () => {
+    test('returns rate limit headers on API responses', async () => {
+        const res = await request(app).get('/api/tasks');
+        expect(res.headers).toHaveProperty('ratelimit-limit');
+        expect(res.headers).toHaveProperty('ratelimit-remaining');
+    });
+
+    test('write endpoints have stricter limits than read endpoints', async () => {
+        const readRes = await request(app).get('/api/tasks');
+        const writeRes = await request(app)
+            .post('/api/tasks')
+            .send({ title: 'Test', location: 'Garten' });
+
+        const readLimit = parseInt(readRes.headers['ratelimit-limit'], 10);
+        const writeLimit = parseInt(writeRes.headers['ratelimit-limit'], 10);
+
+        expect(readLimit).toBeGreaterThan(writeLimit);
+    });
+});
+
 // --- JSON body size limit ---
 
 describe('JSON body size limit', () => {
@@ -711,5 +793,6 @@ describe('JSON body size limit', () => {
             .send(largeBody);
 
         expect(res.status).toBe(413);
+        expect(res.body.error).toBe(true);
     });
 });

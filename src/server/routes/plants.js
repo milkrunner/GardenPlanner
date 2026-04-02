@@ -1,3 +1,9 @@
+/**
+ * @module routes/plants
+ * Express router for plant data endpoints under /api/plants.
+ * Supports listing plants with optional category/search filters and fetching individual plants.
+ */
+
 const express = require('express');
 const router = express.Router();
 const { listPlants, getPlant, listCategories } = require('../services/plant-service');

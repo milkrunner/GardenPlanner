@@ -1,4 +1,4 @@
-// Statistiken-Seite Initialisierung (#71)
+// Statistiken-Seite Initialisierung (#71, #107)
 document.addEventListener('DOMContentLoaded', async () => {
     if (window.gartenPlaner) {
         await window.gartenPlaner.whenReady();
@@ -7,5 +7,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.gartenPlaner.updateStatistics();
         window.gartenPlaner.updateCharts();
         window.gartenPlaner.updateAdditionalStats();
+
+        // Interactive statistics (#107): time range, trends, tooltips, CSV export
+        if (typeof window.initInteractiveStatistics === 'function') {
+            window.initInteractiveStatistics();
+        }
     }
 });

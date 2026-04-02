@@ -34,7 +34,7 @@ GartenPlaner.prototype.performSearch = function () {
 	const searchResultCount = document.getElementById("searchResultCount");
 
 	if (clearBtn) {
-		clearBtn.style.display = this.searchQuery ? "flex" : "none";
+		clearBtn.hidden = !this.searchQuery;
 	}
 
 	this.renderTasks();
@@ -42,9 +42,9 @@ GartenPlaner.prototype.performSearch = function () {
 	if (searchResults && searchResultCount && this.searchQuery) {
 		const filteredTasks = this.getFilteredTasks();
 		searchResultCount.textContent = filteredTasks.length;
-		searchResults.style.display = "flex";
+		searchResults.hidden = false;
 	} else if (searchResults) {
-		searchResults.style.display = "none";
+		searchResults.hidden = true;
 	}
 };
 

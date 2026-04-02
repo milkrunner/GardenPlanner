@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GardenFlow - Gartenplaner Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ========================================
+       CSS CUSTOM PROPERTIES
+       ======================================== */
+    :root {
+      --color-primary: #2D5F3E;
+      --color-primary-light: #3A7A50;
+      --color-secondary: #87A96B;
+      --color-accent: #C45B28;
+      --color-accent-light: #D4712F;
+      --color-bg: #FAFAF7;
+      --color-surface: #FFFFFF;
+      --color-text: #1A1A1A;
+      --color-text-secondary: #6B7280;
+      --color-border: #E5E7EB;
+      --color-sidebar-active-bg: #F0FDF4;
+      --color-sidebar-bg: #FFFFFF;
+      --color-topbar-bg: #FFFFFF;
+      --color-input-bg: #FFFFFF;
+      --color-hover-card: #F9FAFB;
+      --color-task-hover: #FAFBFC;
+      --color-timeline-line: #E5E7EB;
+      --color-weather-bg: #F7FAF5;
+      --color-checkbox-border: #D1D5DB;
+      --color-search-bg: #F3F4F6;
+      --sidebar-width: 240px;
+      --sidebar-collapsed: 72px;
+      --topbar-height: 64px;
+      --transition-speed: 0.2s;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    [data-theme="dark"] {
+      --color-primary: #4CAF72;
+      --color-primary-light: #5BC47F;
+      --color-secondary: #87A96B;
+      --color-accent: #E07040;
+      --color-accent-light: #EB8555;
+      --color-bg: #111111;
+      --color-surface: #1C1C1C;
+      --color-text: #E8E8E8;
+      --color-text-secondary: #9CA3AF;
+      --color-border: #2D2D2D;
+      --color-sidebar-active-bg: #1A2E1F;
+      --color-sidebar-bg: #1C1C1C;
+      --color-topbar-bg: #1C1C1C;
+      --color-input-bg: #252525;
+      --color-hover-card: #252525;
+      --color-task-hover: #222222;
+      --color-timeline-line: #333333;
+      --color-weather-bg: #1A2E1F;
+      --color-checkbox-border: #4B5563;
+      --color-search-bg: #252525;
+    }
+
+    /* ========================================
+       RESET & BASE
+       ======================================== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'Source Sans 3', -apple-system, sans-serif;
+      font-weight: 400;
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.6;
+      overflow-x: hidden;
+      transition: background var(--transition-speed) ease, color var(--transition-speed) ease;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    /* ========================================
+       LAYOUT SHELL
+       ======================================== */
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ========================================
+       SIDEBAR
+       ======================================== */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: var(--sidebar-width);
+      background: var(--color-sidebar-bg);
+      border-right: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: width var(--transition-speed) ease, transform var(--transition-speed) ease;
+      overflow: hidden;
+    }
+
+    .sidebar.collapsed {
+      width: var(--sidebar-collapsed);
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      padding: 20px;
+      gap: 12px;
+      min-height: 64px;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--color-primary);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .logo-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--color-primary);
+      white-space: nowrap;
+      opacity: 1;
+      transition: opacity var(--transition-speed) ease;
+    }
+
+    .sidebar.collapsed .logo-text {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      font-size: 14px;
+      transition: all var(--transition-speed) ease;
+      white-space: nowrap;
+      border-left: 3px solid transparent;
+      position: relative;
+    }
+
+    .nav-item:hover {
+      color: var(--color-text);
+      background: var(--color-hover-card);
+    }
+
+    .nav-item.active {
+      color: var(--color-primary);
+      background: var(--color-sidebar-active-bg);
+      border-left-color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .nav-item svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .nav-item-label {
+      opacity: 1;
+      transition: opacity var(--transition-speed) ease;
+    }
+
+    .sidebar.collapsed .nav-item-label {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 10px;
+      border-left-color: transparent;
+    }
+
+    .sidebar.collapsed .nav-item.active {
+      border-left-color: transparent;
+    }
+
+    /* Tooltip on collapsed sidebar */
+    .sidebar.collapsed .nav-item::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--color-text);
+      color: var(--color-bg);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 200;
+    }
+
+    .sidebar.collapsed .nav-item:hover::after {
+      opacity: 1;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      font-weight: 500;
+      transition: all var(--transition-speed) ease;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .theme-toggle:hover {
+      color: var(--color-text);
+      background: var(--color-hover-card);
+    }
+
+    .theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .theme-toggle-label {
+      opacity: 1;
+      transition: opacity var(--transition-speed) ease;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed .theme-toggle-label {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sidebar.collapsed .theme-toggle {
+      justify-content: center;
+    }
+
+    /* ========================================
+       MAIN CONTENT AREA
+       ======================================== */
+    .main-area {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      transition: margin-left var(--transition-speed) ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar.collapsed ~ .main-area {
+      margin-left: var(--sidebar-collapsed);
+    }
+
+    /* ========================================
+       TOPBAR
+       ======================================== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--topbar-height);
+      background: var(--color-topbar-bg);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      padding: 0 32px;
+      gap: 16px;
+      transition: background var(--transition-speed) ease;
+    }
+
+    .sidebar-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-secondary);
+      transition: all var(--transition-speed) ease;
+    }
+
+    .sidebar-toggle:hover {
+      background: var(--color-hover-card);
+      color: var(--color-text);
+    }
+
+    .sidebar-toggle svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .search-wrapper {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 40px;
+      padding: 0 16px 0 42px;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-search-bg);
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 14px;
+      color: var(--color-text);
+      transition: all var(--transition-speed) ease;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: var(--color-text-secondary);
+    }
+
+    .search-input:focus {
+      border-color: var(--color-primary);
+      background: var(--color-input-bg);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-text-secondary);
+      pointer-events: none;
+    }
+
+    .search-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .notification-btn {
+      position: relative;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      color: var(--color-text-secondary);
+      transition: all var(--transition-speed) ease;
+    }
+
+    .notification-btn:hover {
+      background: var(--color-hover-card);
+      color: var(--color-text);
+    }
+
+    .notification-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      border: 2px solid var(--color-topbar-bg);
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform var(--transition-speed) ease;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.05);
+    }
+
+    /* ========================================
+       CONTENT
+       ======================================== */
+    .content {
+      flex: 1;
+      padding: 32px;
+      max-width: 1280px;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+      margin-bottom: 32px;
+    }
+
+    .welcome-section h1 {
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+
+    .welcome-date {
+      color: var(--color-text-secondary);
+      font-size: 15px;
+    }
+
+    /* ========================================
+       STAT CARDS
+       ======================================== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: all var(--transition-speed) ease;
+      cursor: default;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-1px);
+      border-color: var(--color-secondary);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .stat-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .stat-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-card-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .stat-card-icon.open {
+      background: #FEF3C7;
+      color: #D97706;
+    }
+
+    .stat-card-icon.done {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    .stat-card-icon.team {
+      background: #DBEAFE;
+      color: #2563EB;
+    }
+
+    .stat-card-icon.weather {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    [data-theme="dark"] .stat-card-icon.open {
+      background: #422006;
+      color: #FBBF24;
+    }
+
+    [data-theme="dark"] .stat-card-icon.done {
+      background: #064E3B;
+      color: #34D399;
+    }
+
+    [data-theme="dark"] .stat-card-icon.team {
+      background: #1E3A5F;
+      color: #60A5FA;
+    }
+
+    [data-theme="dark"] .stat-card-icon.weather {
+      background: #450A0A;
+      color: #F87171;
+    }
+
+    .stat-card-trend {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .stat-card-trend.up {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    .stat-card-trend.down {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    [data-theme="dark"] .stat-card-trend.up {
+      background: #064E3B;
+      color: #34D399;
+    }
+
+    [data-theme="dark"] .stat-card-trend.down {
+      background: #450A0A;
+      color: #F87171;
+    }
+
+    .stat-card-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--color-text);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-card-label {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+
+    /* ========================================
+       MAIN GRID (Tasks + Weather/Activity)
+       ======================================== */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+    }
+
+    /* ========================================
+       TASKS SECTION
+       ======================================== */
+    .section-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      transition: all var(--transition-speed) ease;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+      color: var(--color-text);
+    }
+
+    .section-count {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      background: var(--color-hover-card);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: var(--color-primary);
+      color: #FFFFFF;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+      transition: all var(--transition-speed) ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-primary:hover {
+      background: var(--color-primary-light);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--color-text-secondary);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+      border: 1.5px solid var(--color-border);
+      transition: all var(--transition-speed) ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    /* Task List */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--color-border);
+      transition: background var(--transition-speed) ease;
+      border-radius: 4px;
+      padding-left: 8px;
+      padding-right: 8px;
+      margin: 0 -8px;
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-item:hover {
+      background: var(--color-task-hover);
+    }
+
+    .task-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--color-checkbox-border);
+      border-radius: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all var(--transition-speed) ease;
+      position: relative;
+    }
+
+    .task-checkbox:checked {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .task-checkbox:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 1px;
+      width: 6px;
+      height: 10px;
+      border: solid #FFFFFF;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .task-checkbox:hover {
+      border-color: var(--color-primary);
+    }
+
+    .task-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--color-text);
+      transition: all var(--transition-speed) ease;
+    }
+
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: var(--color-text-secondary);
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+
+    .task-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .task-meta-item svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .task-priority {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .task-priority.high {
+      background: #EF4444;
+    }
+
+    .task-priority.medium {
+      background: #F59E0B;
+    }
+
+    .task-priority.low {
+      background: #10B981;
+    }
+
+    .task-time {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* ========================================
+       RIGHT COLUMN
+       ======================================== */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Weather Week */
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .weather-day {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 4px;
+      border-radius: var(--radius-sm);
+      background: var(--color-weather-bg);
+      transition: all var(--transition-speed) ease;
+      cursor: default;
+    }
+
+    .weather-day:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .weather-day.today {
+      background: var(--color-primary);
+      color: #FFFFFF;
+    }
+
+    .weather-day-name {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      color: var(--color-text-secondary);
+    }
+
+    .weather-day.today .weather-day-name {
+      color: rgba(255,255,255,0.8);
+    }
+
+    .weather-day-icon {
+      font-size: 22px;
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+
+    .weather-day-temp {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .weather-day.today .weather-day-temp {
+      color: #FFFFFF;
+    }
+
+    .weather-day-templow {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+
+    .weather-day.today .weather-day-templow {
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* Activity Timeline */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 14px;
+      padding: 12px 0;
+      position: relative;
+    }
+
+    .timeline-dot-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 20px;
+    }
+
+    .timeline-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .timeline-line {
+      width: 2px;
+      flex: 1;
+      background: var(--color-timeline-line);
+      margin-top: 4px;
+    }
+
+    .timeline-item:last-child .timeline-line {
+      display: none;
+    }
+
+    .timeline-dot.accent {
+      background: var(--color-accent);
+    }
+
+    .timeline-dot.secondary {
+      background: var(--color-secondary);
+    }
+
+    .timeline-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .timeline-text {
+      font-size: 13px;
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+
+    .timeline-text strong {
+      font-weight: 600;
+    }
+
+    .timeline-time {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+
+    /* ========================================
+       MOBILE OVERLAY
+       ======================================== */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 90;
+      opacity: 0;
+      transition: opacity var(--transition-speed) ease;
+    }
+
+    .sidebar-overlay.visible {
+      opacity: 1;
+    }
+
+    /* ========================================
+       RESPONSIVE
+       ======================================== */
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .right-column {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .right-column > .section-card {
+        flex: 1;
+        min-width: 280px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        width: var(--sidebar-width) !important;
+      }
+
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .sidebar-overlay {
+        display: block;
+      }
+
+      .main-area {
+        margin-left: 0 !important;
+      }
+
+      .content {
+        padding: 20px 16px;
+      }
+
+      .topbar {
+        padding: 0 16px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .weather-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .right-column {
+        flex-direction: column;
+      }
+
+      .right-column > .section-card {
+        min-width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .weather-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .task-meta {
+        flex-wrap: wrap;
+      }
+    }
+
+    /* ========================================
+       SCROLLBAR
+       ======================================== */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--color-text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="app-layout">
+    <!-- ========== SIDEBAR ========== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22c-4-3-8-6-8-11a8 8 0 0 1 16 0c0 5-4 8-8 11z"/>
+              <path d="M12 11c0-3 2-5 4-6"/>
+              <path d="M12 11c0-3-2-5-4-6"/>
+            </svg>
+          </div>
+          <span class="logo-text">GardenFlow</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-tooltip="Dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span class="nav-item-label">Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-tooltip="Aufgaben">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span class="nav-item-label">Aufgaben</span>
+        </a>
+        <a href="#" class="nav-item" data-tooltip="Pflanzen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 20h10"/>
+            <path d="M12 20V10"/>
+            <path d="M12 10c-2-4-6-5-9-4 3-1 6 1 9 4z"/>
+            <path d="M12 10c2-4 6-5 9-4-3-1-6 1-9 4z"/>
+            <path d="M12 10c0-4 1-7 0-10 0 3-1 6 0 10z"/>
+          </svg>
+          <span class="nav-item-label">Pflanzen</span>
+        </a>
+        <a href="#" class="nav-item" data-tooltip="Statistiken">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"/>
+            <line x1="12" y1="20" x2="12" y2="4"/>
+            <line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <span class="nav-item-label">Statistiken</span>
+        </a>
+        <a href="#" class="nav-item" data-tooltip="Logs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+          <span class="nav-item-label">Logs</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="theme-toggle" id="themeToggle" title="Theme umschalten">
+          <svg id="themeIconLight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="themeIconDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <span class="theme-toggle-label">Dark Mode</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ========== MAIN AREA ========== -->
+    <div class="main-area" id="mainArea">
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" title="Sidebar umschalten">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="17" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <div class="search-wrapper">
+          <span class="search-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <input type="text" class="search-input" placeholder="Pflanzen, Aufgaben oder Bereiche suchen...">
+        </div>
+
+        <div class="topbar-right">
+          <button class="notification-btn" title="Benachrichtigungen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notification-badge"></span>
+          </button>
+          <div class="user-avatar" title="Markus Gruen">MG</div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="content">
+        <!-- Welcome -->
+        <div class="welcome-section">
+          <h1>Willkommen zurueck, Markus</h1>
+          <p class="welcome-date" id="currentDate">Montag, 30. Maerz 2026</p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon open">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <span class="stat-card-trend down">-3</span>
+            </div>
+            <div class="stat-card-value">12</div>
+            <div class="stat-card-label">Offene Aufgaben</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon done">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <span class="stat-card-trend up">+8</span>
+            </div>
+            <div class="stat-card-value">34</div>
+            <div class="stat-card-label">Erledigt diese Woche</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon team">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <span class="stat-card-trend up">+1</span>
+            </div>
+            <div class="stat-card-value">5</div>
+            <div class="stat-card-label">Mitarbeiter aktiv</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <div class="stat-card-icon weather">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/>
+                  <line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              </div>
+            </div>
+            <div class="stat-card-value">18°C</div>
+            <div class="stat-card-label">Aktuelles Wetter</div>
+          </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Tasks -->
+          <div class="section-card">
+            <div class="section-header">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <h2>Heutige Aufgaben</h2>
+                <span class="section-count">5 Aufgaben</span>
+              </div>
+              <button class="btn-primary">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Neue Aufgabe
+              </button>
+            </div>
+
+            <div class="task-list">
+              <!-- Task 1 -->
+              <div class="task-item" data-task>
+                <span class="task-priority high"></span>
+                <input type="checkbox" class="task-checkbox">
+                <div class="task-content">
+                  <div class="task-title">Tomaten im Gewaechshaus giessen</div>
+                  <div class="task-meta">
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Gewaechshaus A
+                    </span>
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Lisa M.
+                    </span>
+                  </div>
+                </div>
+                <span class="task-time">07:00</span>
+              </div>
+
+              <!-- Task 2 -->
+              <div class="task-item" data-task>
+                <span class="task-priority high"></span>
+                <input type="checkbox" class="task-checkbox">
+                <div class="task-content">
+                  <div class="task-title">Rosenbeet Rueckschnitt vorbereiten</div>
+                  <div class="task-meta">
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Rosengarten
+                    </span>
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Thomas K.
+                    </span>
+                  </div>
+                </div>
+                <span class="task-time">08:30</span>
+              </div>
+
+              <!-- Task 3 -->
+              <div class="task-item" data-task>
+                <span class="task-priority medium"></span>
+                <input type="checkbox" class="task-checkbox">
+                <div class="task-content">
+                  <div class="task-title">Kompost umsetzen und verteilen</div>
+                  <div class="task-meta">
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Kompostplatz
+                    </span>
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Stefan B.
+                    </span>
+                  </div>
+                </div>
+                <span class="task-time">10:00</span>
+              </div>
+
+              <!-- Task 4 -->
+              <div class="task-item" data-task>
+                <span class="task-priority low"></span>
+                <input type="checkbox" class="task-checkbox">
+                <div class="task-content">
+                  <div class="task-title">Bewaesserungsanlage Sektor 3 pruefen</div>
+                  <div class="task-meta">
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Sektor 3
+                    </span>
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Markus G.
+                    </span>
+                  </div>
+                </div>
+                <span class="task-time">13:00</span>
+              </div>
+
+              <!-- Task 5 -->
+              <div class="task-item" data-task>
+                <span class="task-priority medium"></span>
+                <input type="checkbox" class="task-checkbox">
+                <div class="task-content">
+                  <div class="task-title">Neupflanzung Lavendel im Kraeuterbeet</div>
+                  <div class="task-meta">
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      Kraeutergarten
+                    </span>
+                    <span class="task-meta-item">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      Anna R.
+                    </span>
+                  </div>
+                </div>
+                <span class="task-time">15:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="right-column">
+            <!-- Weather Week -->
+            <div class="section-card">
+              <div class="section-header">
+                <h2>Wetter diese Woche</h2>
+                <button class="btn-secondary" style="padding:6px 12px; font-size:12px;">Details</button>
+              </div>
+              <div class="weather-grid">
+                <div class="weather-day today">
+                  <span class="weather-day-name">Mo</span>
+                  <span class="weather-day-icon">&#9728;&#65039;</span>
+                  <span class="weather-day-temp">18°</span>
+                  <span class="weather-day-templow">8°</span>
+                </div>
+                <div class="weather-day">
+                  <span class="weather-day-name">Di</span>
+                  <span class="weather-day-icon">&#9925;</span>
+                  <span class="weather-day-temp">16°</span>
+                  <span class="weather-day-templow">7°</span>
+                </div>
+                <div class="weather-day">
+                  <span class="weather-day-name">Mi</span>
+                  <span class="weather-day-icon">&#127782;&#65039;</span>
+                  <span class="weather-day-temp">14°</span>
+                  <span class="weather-day-templow">6°</span>
+                </div>
+                <div class="weather-day">
+                  <span class="weather-day-name">Do</span>
+                  <span class="weather-day-icon">&#127783;&#65039;</span>
+                  <span class="weather-day-temp">11°</span>
+                  <span class="weather-day-templow">5°</span>
+                </div>
+                <div class="weather-day">
+                  <span class="weather-day-name">Fr</span>
+                  <span class="weather-day-icon">&#127780;&#65039;</span>
+                  <span class="weather-day-temp">15°</span>
+                  <span class="weather-day-templow">6°</span>
+                </div>
+                <div class="weather-day">
+                  <span class="weather-day-name">Sa</span>
+                  <span class="weather-day-icon">&#9728;&#65039;</span>
+                  <span class="weather-day-temp">19°</span>
+                  <span class="weather-day-templow">9°</span>
+                </div>
+                <div class="weather-day">
+                  <span class="weather-day-name">So</span>
+                  <span class="weather-day-icon">&#9728;&#65039;</span>
+                  <span class="weather-day-temp">21°</span>
+                  <span class="weather-day-templow">10°</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div class="section-card">
+              <div class="section-header">
+                <h2>Letzte Aktivitaeten</h2>
+                <button class="btn-secondary" style="padding:6px 12px; font-size:12px;">Alle anzeigen</button>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="timeline-dot-wrapper">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-line"></div>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-text"><strong>Lisa M.</strong> hat die Bewaesserung in <strong>Gewaechshaus B</strong> abgeschlossen</div>
+                    <div class="timeline-time">Vor 15 Minuten</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-wrapper">
+                    <div class="timeline-dot accent"></div>
+                    <div class="timeline-line"></div>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-text"><strong>Thomas K.</strong> hat <strong>3 neue Pflanzen</strong> im Kraeuterbeet erfasst</div>
+                    <div class="timeline-time">Vor 42 Minuten</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-wrapper">
+                    <div class="timeline-dot secondary"></div>
+                    <div class="timeline-line"></div>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-text"><strong>Stefan B.</strong> hat einen Schaedlingsbefall in <strong>Sektor 2</strong> gemeldet</div>
+                    <div class="timeline-time">Vor 1 Stunde</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-wrapper">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-line"></div>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-text"><strong>Anna R.</strong> hat den Wochenbericht fuer <strong>Kalenderwoche 13</strong> erstellt</div>
+                    <div class="timeline-time">Vor 2 Stunden</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-wrapper">
+                    <div class="timeline-dot accent"></div>
+                    <div class="timeline-line"></div>
+                  </div>
+                  <div class="timeline-content">
+                    <div class="timeline-text"><strong>Markus G.</strong> hat die Duengeplanung fuer <strong>April</strong> freigegeben</div>
+                    <div class="timeline-time">Vor 3 Stunden</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================
+       SIDEBAR TOGGLE
+       ======================================== */
+    const sidebar = document.getElementById('sidebar');
+    const mainArea = document.getElementById('mainArea');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function isMobile() {
+      return window.innerWidth <= 768;
+    }
+
+    sidebarToggle.addEventListener('click', () => {
+      if (isMobile()) {
+        sidebar.classList.toggle('mobile-open');
+        sidebarOverlay.classList.toggle('visible');
+      } else {
+        sidebar.classList.toggle('collapsed');
+      }
+    });
+
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('mobile-open');
+      sidebarOverlay.classList.remove('visible');
+    });
+
+    // Close mobile sidebar on resize to desktop
+    window.addEventListener('resize', () => {
+      if (!isMobile()) {
+        sidebar.classList.remove('mobile-open');
+        sidebarOverlay.classList.remove('visible');
+      }
+    });
+
+    /* ========================================
+       DARK MODE TOGGLE
+       ======================================== */
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIconLight = document.getElementById('themeIconLight');
+    const themeIconDark = document.getElementById('themeIconDark');
+    const toggleLabel = themeToggle.querySelector('.theme-toggle-label');
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('gardenflow-theme', theme);
+      if (theme === 'dark') {
+        themeIconLight.style.display = 'none';
+        themeIconDark.style.display = 'block';
+        toggleLabel.textContent = 'Light Mode';
+      } else {
+        themeIconLight.style.display = 'block';
+        themeIconDark.style.display = 'none';
+        toggleLabel.textContent = 'Dark Mode';
+      }
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('gardenflow-theme') || 'light';
+    setTheme(savedTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      setTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    /* ========================================
+       TASK CHECKBOXES
+       ======================================== */
+    document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const taskItem = this.closest('.task-item');
+        if (this.checked) {
+          taskItem.classList.add('completed');
+        } else {
+          taskItem.classList.remove('completed');
+        }
+      });
+    });
+
+    /* ========================================
+       NAV ITEM ACTIVE STATE
+       ======================================== */
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+
+        // Close mobile sidebar on nav click
+        if (isMobile()) {
+          sidebar.classList.remove('mobile-open');
+          sidebarOverlay.classList.remove('visible');
+        }
+      });
+    });
+
+    /* ========================================
+       DATE DISPLAY
+       ======================================== */
+    const dateEl = document.getElementById('currentDate');
+    const now = new Date();
+    const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const months = ['Januar', 'Februar', 'Maerz', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()}. ${months[now.getMonth()]} ${now.getFullYear()}`;
+  </script>
+</body>
+</html>

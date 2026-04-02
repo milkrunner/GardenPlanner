@@ -58,21 +58,22 @@ Browser-Anfragen von der Anwendung selbst benötigen keinen API-Key.
 
 ### Endpoints
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|-------------|
-| `GET` | `/api/tasks` | Alle Tasks auflisten |
-| `GET` | `/api/tasks/:id` | Einzelnen Task abrufen |
-| `POST` | `/api/tasks` | Neuen Task erstellen |
-| `PUT` | `/api/tasks/:id` | Task aktualisieren |
-| `DELETE` | `/api/tasks/:id` | Task löschen |
-| `POST` | `/api/tasks/:id/archive` | Task archivieren |
-| `POST` | `/api/tasks/:id/unarchive` | Task wiederherstellen |
-| `GET` | `/api/archived-tasks` | Archivierte Tasks auflisten |
-| `DELETE` | `/api/archived-tasks/:id` | Archivierten Task löschen |
+| Methode  | Endpoint                   | Beschreibung                |
+| -------- | -------------------------- | --------------------------- |
+| `GET`    | `/api/tasks`               | Alle Tasks auflisten        |
+| `GET`    | `/api/tasks/:id`           | Einzelnen Task abrufen      |
+| `POST`   | `/api/tasks`               | Neuen Task erstellen        |
+| `PUT`    | `/api/tasks/:id`           | Task aktualisieren          |
+| `DELETE` | `/api/tasks/:id`           | Task löschen                |
+| `POST`   | `/api/tasks/:id/archive`   | Task archivieren            |
+| `POST`   | `/api/tasks/:id/unarchive` | Task wiederherstellen       |
+| `GET`    | `/api/archived-tasks`      | Archivierte Tasks auflisten |
+| `DELETE` | `/api/archived-tasks/:id`  | Archivierten Task löschen   |
 
 ### Filter
 
 `GET /api/tasks` unterstützt Query-Parameter:
+
 - `?status=pending` / `in-progress` / `completed`
 - `?employee=Max`
 - `?location=Gewächshaus`
@@ -92,6 +93,7 @@ curl -X POST http://localhost:8080/api/tasks \
 - **URL:** `http://gartenplaner:3000/api/tasks`
 - **Headers:** `X-API-Key: YOUR_API_KEY_HERE`
 - **Body (JSON):**
+
   ```json
   {
     "title": "Bewässerung prüfen",
@@ -101,11 +103,45 @@ curl -X POST http://localhost:8080/api/tasks \
   }
   ```
 
+## Backup & Restore
+
+Die PostgreSQL-Datenbank wird automatisch gesichert.
+
+### Automatisches Backup
+
+- Der `backup`-Service erstellt **täglich um 2:00 Uhr** ein komprimiertes Backup (`pg_dump | gzip`)
+- Es werden maximal **7 Backups** aufbewahrt, ältere werden automatisch gelöscht
+- Backups werden im Docker Volume `backup-data` unter `/backups/` gespeichert
+
+### Manuelles Backup
+
+```bash
+docker exec gartenplaner-backup /scripts/backup.sh
+```
+
+### Restore
+
+```bash
+# Verfügbare Backups anzeigen
+docker exec gartenplaner-backup /scripts/restore.sh
+
+# Bestimmtes Backup wiederherstellen
+docker exec gartenplaner-backup /scripts/restore.sh /backups/<dateiname>.sql.gz
+```
+
+### Backup-Speicherort
+
+Die Backups liegen im Docker Volume `backup-data`. Um sie lokal zu kopieren:
+
+```bash
+docker cp gartenplaner-backup:/backups/ ./local-backups/
+```
+
 ## Konfiguration
 
 Umgebungsvariablen (siehe `.env.example`):
 
-| Variable | Beschreibung | Standard |
-|----------|-------------|----------|
+| Variable  | Beschreibung                 | Standard             |
+| --------- | ---------------------------- | -------------------- |
 | `API_KEY` | API-Key für externen Zugriff | _(leer = kein Auth)_ |
-| `PORT` | Server-Port | `3000` |
+| `PORT`    | Server-Port                  | `3000`               |
