@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="../src/css/garden.css" />
   </head>
   <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
     <script nonce="__CSP_NONCE__">
         fetch('/api/v1/auth/status', { credentials: 'same-origin' })
             .then(r => r.json())
@@ -91,7 +92,7 @@
       </div>
 
       <!-- Main content: sidebar + grid -->
-      <div class="garden-main">
+      <div class="garden-main" id="main">
         <!-- Palette sidebar -->
         <aside class="garden-palette" id="gardenPalette" aria-label="Elemente-Palette">
           <!-- Filled dynamically by JS -->

@@ -282,8 +282,8 @@
         modal.removeAttribute('hidden');
         modal.classList.add('active');
 
-        content.querySelector('.plant-modal-close').addEventListener('click', () => { modal.classList.remove('active'); });
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+        content.querySelector('.plant-modal-close').addEventListener('click', () => { modal.classList.remove('active'); modal.setAttribute('hidden', ''); });
+        modal.addEventListener('click', (e) => { if (e.target === modal) { modal.classList.remove('active'); modal.setAttribute('hidden', ''); } });
 
         const createBtn = content.querySelector('.plant-create-task-btn');
         if (createBtn) {
@@ -339,7 +339,7 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('plantModal');
-                if (modal) modal.classList.remove('active');
+                if (modal) { modal.classList.remove('active'); modal.setAttribute('hidden', ''); }
             }
         });
     }
