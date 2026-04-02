@@ -1,6 +1,6 @@
 // Plant Library Module
 (function () {
-    const API_BASE = '/api';
+    const API_BASE = '/api/v1';
     let allPlants = [];
     let currentCategory = '';
     let currentSort = 'name-asc';

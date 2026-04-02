@@ -24,6 +24,7 @@
                 logoutLink.addEventListener('click', function(e) {
                     e.preventDefault();
                     if (window.TaskAPI) TaskAPI.logout();
+                    else fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'same-origin' }).then(function() { window.location.href = '/login'; });
                 });
                 if (nav) nav.appendChild(logoutLink);
             }
