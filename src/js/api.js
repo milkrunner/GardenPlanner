@@ -37,7 +37,7 @@ const TaskAPI = {
         });
         if (res.status === 401) {
             window.location.href = '/login';
-            return;
+            throw new Error('Authentication required');
         }
         if (!res.ok) {
             const body = await res.json().catch(() => ({}));
