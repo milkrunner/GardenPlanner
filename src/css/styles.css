@@ -4981,7 +4981,7 @@ footer {
 }
 
 .log-stats {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: white;
   padding: 20px;
   border-radius: var(--radius-lg);
@@ -5051,34 +5051,34 @@ footer {
 }
 
 .log-level.debug {
-  background: #e9ecef;
-  color: #6c757d;
+  background: var(--bg-tertiary);
+  color: var(--text-light);
 }
 
 .log-level.info {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: var(--info-light);
+  color: var(--info);
 }
 
 .log-level.warn {
-  background: #fff3cd;
-  color: #856404;
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .log-level.error {
-  background: #f8d7da;
-  color: #721c24;
+  background: var(--error-light);
+  color: var(--error);
 }
 
 .log-level.critical {
-  background: #dc3545;
+  background: var(--danger);
   color: white;
 }
 
 .log-category {
   padding: 4px 14px;
-  background: #ECFDF5;
-  color: #365E3D;
+  background: var(--primary-light);
+  color: var(--primary);
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 500;
@@ -5190,18 +5190,18 @@ footer {
 }
 
 .health-healthy {
-  background: #ECFDF5;
-  color: #166534;
+  background: var(--success-light);
+  color: var(--success);
 }
 
 .health-warning {
-  background: #FEF9C3;
-  color: #854D0E;
+  background: var(--warning-light);
+  color: var(--warning);
 }
 
 .health-critical {
-  background: #FEE2E2;
-  color: #991B1B;
+  background: var(--error-light);
+  color: var(--error);
 }
 
 @media (max-width: 768px) {
