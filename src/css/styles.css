@@ -2228,7 +2228,7 @@ main > section > h2::after {
 }
 
 .history-task-title {
-  color: var(--text-primary);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -2302,9 +2302,9 @@ main > section > h2::after {
 
 .view-btn {
   padding: 8px 20px;
-  border: 2px solid var(--primary-color);
+  border: 2px solid var(--primary);
   background: white;
-  color: var(--primary-color);
+  color: var(--primary);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
@@ -2312,12 +2312,12 @@ main > section > h2::after {
 }
 
 .view-btn.active {
-  background: var(--primary-color);
+  background: var(--primary);
   color: white;
 }
 
 .view-btn:hover {
-  background: var(--primary-color);
+  background: var(--primary);
   color: white;
 }
 
@@ -2342,7 +2342,7 @@ main > section > h2::after {
 
 /* Bulk Actions Toolbar */
 .bulk-toolbar {
-  background: var(--light);
+  background: var(--bg-tertiary);
   padding: 15px 20px;
   border-radius: var(--radius-lg);
   margin-bottom: 20px;
@@ -2350,17 +2350,17 @@ main > section > h2::after {
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  border: 2px solid var(--primary-color);
+  border: 2px solid var(--primary);
 }
 
 .bulk-info {
   font-weight: 600;
   font-size: 1.1em;
-  color: var(--dark);
+  color: var(--text);
 }
 
 .bulk-info span {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.3em;
 }
 
@@ -2528,7 +2528,7 @@ main > section > h2::after {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: var(--primary-color);
+  accent-color: var(--primary);
 }
 
 /* Drag & Drop States */
@@ -2539,7 +2539,7 @@ main > section > h2::after {
   cursor: grabbing;
   z-index: 1000;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid var(--primary-color);
+  border: 2px solid var(--primary);
 }
 
 [data-theme="dark"] .task-card.dragging {
@@ -2547,7 +2547,7 @@ main > section > h2::after {
 }
 
 .task-card.drag-over {
-  border-top: 3px dashed var(--primary-color);
+  border-top: 3px dashed var(--primary);
   margin-top: 15px;
   background: linear-gradient(
     135deg,
@@ -2605,7 +2605,7 @@ main > section > h2::after {
 }
 
 .drag-handle:hover {
-  color: var(--primary-color);
+  color: var(--primary);
   background: rgba(0, 0, 0, 0.05);
   transform: scale(1.1);
 }
@@ -2645,7 +2645,7 @@ main > section > h2::after {
 }
 
 .task-description {
-  color: var(--primary-color);
+  color: var(--primary);
   line-height: 1.6;
   font-weight: 500;
 }
@@ -2740,7 +2740,7 @@ main > section > h2::after {
 }
 
 .uncomplete-btn {
-  background: var(--warning-color);
+  background: var(--warning);
   color: white;
 }
 
@@ -2758,7 +2758,7 @@ main > section > h2::after {
 }
 
 .unarchive-btn {
-  background: var(--info-color);
+  background: var(--info);
   color: white;
 }
 
@@ -2789,11 +2789,11 @@ main > section > h2::after {
 .calendar-day-header {
   font-weight: bold;
   margin-bottom: 8px;
-  color: var(--dark);
+  color: var(--text);
 }
 
 .calendar-task {
-  background: var(--primary-color);
+  background: var(--primary);
   color: white;
   padding: 5px;
   margin-bottom: 5px;
@@ -2847,7 +2847,7 @@ main > section > h2::after {
 .empty-state h3 {
   font-size: 1.8em;
   margin-bottom: 15px;
-  color: var(--dark);
+  color: var(--text);
 }
 
 .empty-state p {
@@ -2874,7 +2874,7 @@ main > section > h2::after {
 
 /* Dashboard CTA Section */
 .dashboard-link-section {
-  background: linear-gradient(135deg, var(--info-color), #2980b9);
+  background: linear-gradient(135deg, var(--info), #2980b9);
   padding: 40px;
   border-radius: var(--radius-lg);
   text-align: center;
@@ -2897,13 +2897,13 @@ main > section > h2::after {
 
 .dashboard-cta .btn {
   background: white;
-  color: var(--info-color);
+  color: var(--info);
   font-size: 1.1em;
   padding: 15px 40px;
 }
 
 .dashboard-cta .btn:hover {
-  background: var(--light);
+  background: var(--bg-tertiary);
   transform: scale(1.05);
 }
 
@@ -3172,7 +3172,7 @@ footer {
 .subtask-text {
   flex: 1;
   font-size: 0.95em;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 [data-theme="dark"] .subtask-text {
@@ -3295,13 +3295,13 @@ footer {
 .confirm-modal-body p {
   font-size: 1.1em;
   line-height: 1.6;
-  color: var(--dark);
+  color: var(--text);
   margin: 0;
 }
 
 .modal-actions .btn-danger,
 #confirmOkBtn.btn-danger {
-  background-color: var(--danger-color);
+  background-color: var(--danger);
   color: white;
 }
 
@@ -5431,7 +5431,7 @@ footer {
 }
 
 .login-card {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
@@ -5509,7 +5509,7 @@ footer {
 
 /* Admin Page */
 .admin-section {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
@@ -5567,7 +5567,7 @@ footer {
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: var(--text-sm);
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   color: var(--text);
 }
 
@@ -5640,7 +5640,7 @@ footer {
 
 /* Dark Mode — Login + Admin */
 [data-theme="dark"] .login-card {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   border-color: var(--border);
 }
 
@@ -5662,7 +5662,7 @@ footer {
 }
 
 [data-theme="dark"] .admin-section {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   border-color: var(--border);
 }
 
@@ -5673,7 +5673,7 @@ footer {
 
 [data-theme="dark"] .admin-form .form-group input,
 [data-theme="dark"] .admin-form .form-group select {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
   border-color: var(--border);
   color: var(--text);
 }
