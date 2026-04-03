@@ -2819,6 +2819,21 @@ main > section > h2::after {
   display: inline-block;
 }
 
+.ui-state__icon--svg {
+  color: var(--primary);
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.ui-state__icon--svg svg {
+  width: 120px;
+  height: 120px;
+}
+
+.ui-state--error .ui-state__icon--svg {
+  color: var(--danger, #e74c3c);
+}
+
 @keyframes float {
   0%,
   100% {
