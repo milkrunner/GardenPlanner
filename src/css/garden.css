@@ -204,6 +204,10 @@
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(168, 213, 186, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 30%, rgba(168, 213, 186, 0.06) 0%, transparent 40%),
+    var(--bg);
   align-items: center;
   background: var(--bg);
 }
@@ -218,26 +222,29 @@
   gap: 1px;
   background: var(--border);
   border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), inset 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .garden-cell {
   width: 48px;
   height: 48px;
   background: var(--bg-secondary);
+  background-image: radial-gradient(circle, rgba(168, 213, 186, 0.06) 1px, transparent 1px);
+  background-size: 12px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.1s, box-shadow 0.1s;
+  transition: background-color 0.15s, box-shadow 0.15s;
   position: relative;
   user-select: none;
 }
 
 .garden-cell:hover {
-  background: var(--bg-tertiary);
+  background-color: rgba(168, 213, 186, 0.15);
+  background-image: none;
   box-shadow: inset 0 0 0 2px var(--primary-light);
 }
 
@@ -446,7 +453,15 @@
 }
 
 [data-theme="dark"] .garden-cell:hover {
-  background: var(--bg-tertiary);
+  background-color: var(--bg-tertiary);
+  background-image: none;
+}
+
+[data-theme="dark"] .garden-grid-area {
+  background:
+    radial-gradient(circle at 20% 50%, rgba(168, 213, 186, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 30%, rgba(168, 213, 186, 0.02) 0%, transparent 40%),
+    var(--bg);
 }
 
 [data-theme="dark"] .garden-save-dialog {
