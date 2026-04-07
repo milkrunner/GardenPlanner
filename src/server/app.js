@@ -23,6 +23,8 @@ const app = express();
 
 // --- Project root for static files ---
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
+const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
+const USE_BUNDLES = process.env.NODE_ENV === 'production' && fs.existsSync(DIST_DIR);
 
 // --- Middleware (order preserved exactly) ---
 
@@ -70,9 +72,14 @@ app.use('/api/v1', generalLimiter);
 
 // --- Static file serving (replaces nginx) ---
 
+// Serve bundled assets from dist/ in production (long cache — content is versioned by build)
+if (USE_BUNDLES) {
+    app.use('/dist', express.static(DIST_DIR, { maxAge: '7d' }));
+}
+
 app.use('/public', express.static(path.join(PROJECT_ROOT, 'public'), { maxAge: '1d' }));
 
-// Serve /src (CSS/JS needed in production since HTML references ../src/)
+// Serve /src (CSS/JS needed in dev since HTML references ../src/)
 app.use('/src', express.static(path.join(PROJECT_ROOT, 'src'), { maxAge: '1d' }));
 
 // #115: /tests and /docs only in development
@@ -82,19 +89,22 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // HTML page routes (with and without .html extension)
+// In production with bundles, serve pre-processed HTML from dist/
+const HTML_ROOT = USE_BUNDLES ? DIST_DIR : path.join(PROJECT_ROOT, 'public');
+
 const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants', 'garden', 'login', 'admin'];
 pages.forEach(page => {
     app.get(`/${page}`, (req, res) => {
-        res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
+        res.sendFile(path.join(HTML_ROOT, `${page}.html`));
     });
     app.get(`/${page}.html`, (req, res) => {
-        res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
+        res.sendFile(path.join(HTML_ROOT, `${page}.html`));
     });
 });
 
 // Root -> index.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(PROJECT_ROOT, 'public', 'index.html'));
+    res.sendFile(path.join(HTML_ROOT, 'index.html'));
 });
 
 // Stricter rate limit on write operations
