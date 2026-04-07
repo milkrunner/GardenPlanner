@@ -24,7 +24,7 @@ Alle Benutzereingaben werden vor der Darstellung escaped:
 
 - Titel: 1-200 Zeichen
 - Beschreibung: max. 2000 Zeichen
-- Mitarbeiter: 1-100 Zeichen (Pflichtfeld)
+- Mitarbeiter: 0-100 Zeichen (optional)
 - Standort: 1-100 Zeichen (Pflichtfeld)
 - Status: nur erlaubte Werte (pending, in-progress, completed)
 
