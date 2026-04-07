@@ -88,6 +88,14 @@ GartenPlaner.prototype.renderTasks = function () {
 				}
 			});
 
+			// Photo thumbnail click handlers
+			card.querySelectorAll(".task-photo-thumbnail").forEach((thumb) => {
+				thumb.addEventListener("click", (e) => {
+					e.stopPropagation();
+					this.openPhotoLightbox(thumb.src);
+				});
+			});
+
 			// Drag & Drop Event Listeners (nur für aktive Aufgaben und nicht auf mobilen Geräten)
 			var isMobile = window.innerWidth <= 768;
 			if (!isMobile) {
@@ -152,6 +160,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                 </div>
                 ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
                 ${this.renderSubtasksProgress(task)}
+                ${this.renderPhotoThumbnails(task)}
             </div>
             <div class="task-actions" role="group" aria-label="Aufgaben-Aktionen">
                 ${
@@ -854,6 +863,267 @@ GartenPlaner.prototype.renderSubtasksProgress = function (task) {
             </div>
         </div>
     `;
+};
+
+// ===== PHOTO METHODS =====
+
+GartenPlaner.prototype.renderPhotoThumbnails = function (task) {
+	if (!task.photos || task.photos.length === 0) {
+		return "";
+	}
+
+	var thumbnails = task.photos
+		.map(
+			(photo, index) =>
+				`<img src="${photo}" alt="Foto ${index + 1}" class="task-photo-thumbnail" data-task-id="${task.id}" data-photo-index="${index}" />`,
+		)
+		.join("");
+
+	return `<div class="task-photo-thumbnails">${thumbnails}</div>`;
+};
+
+GartenPlaner.prototype.openPhotoLightbox = function (src) {
+	var lightbox = document.getElementById("photoLightbox");
+	var img = document.getElementById("photoLightboxImg");
+	if (!lightbox || !img) return;
+
+	img.src = src;
+	lightbox.style.display = "flex";
+	lightbox.setAttribute("aria-hidden", "false");
+
+	var closeBtn = lightbox.querySelector(".photo-lightbox-close");
+	var closeLightbox = function () {
+		lightbox.style.display = "none";
+		lightbox.setAttribute("aria-hidden", "true");
+		img.src = "";
+	};
+
+	// Remove old listeners by cloning
+	var newCloseBtn = closeBtn.cloneNode(true);
+	closeBtn.replaceWith(newCloseBtn);
+	newCloseBtn.addEventListener("click", closeLightbox);
+
+	lightbox.addEventListener(
+		"click",
+		function (e) {
+			if (e.target === lightbox) {
+				closeLightbox();
+			}
+		},
+		{ once: true },
+	);
+
+	var handleKey = function (e) {
+		if (e.key === "Escape") {
+			closeLightbox();
+			lightbox.removeEventListener("keydown", handleKey);
+		}
+	};
+	lightbox.addEventListener("keydown", handleKey);
+	document.addEventListener(
+		"keydown",
+		function (e) {
+			if (e.key === "Escape" && lightbox.style.display === "flex") {
+				closeLightbox();
+			}
+		},
+		{ once: true },
+	);
+};
+
+GartenPlaner.prototype.processPhotoFile = function (file) {
+	return new Promise(function (resolve, reject) {
+		if (!file || !file.type.startsWith("image/")) {
+			reject(new Error("Keine gueltige Bilddatei"));
+			return;
+		}
+
+		var reader = new FileReader();
+		reader.onload = function (e) {
+			var img = new Image();
+			img.onload = function () {
+				var canvas = document.createElement("canvas");
+				var maxWidth = 800;
+				var width = img.width;
+				var height = img.height;
+
+				if (width > maxWidth) {
+					height = Math.round((height * maxWidth) / width);
+					width = maxWidth;
+				}
+
+				canvas.width = width;
+				canvas.height = height;
+				var ctx = canvas.getContext("2d");
+				ctx.drawImage(img, 0, 0, width, height);
+
+				var dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+				resolve(dataUrl);
+			};
+			img.onerror = function () {
+				reject(new Error("Bild konnte nicht geladen werden"));
+			};
+			img.src = e.target.result;
+		};
+		reader.onerror = function () {
+			reject(new Error("Datei konnte nicht gelesen werden"));
+		};
+		reader.readAsDataURL(file);
+	});
+};
+
+GartenPlaner.prototype.setupPhotoUploadCreate = function () {
+	var self = this;
+	var input = document.getElementById("photoInputCreate");
+	if (!input) return;
+
+	// Clone to remove old listeners
+	var newInput = input.cloneNode(true);
+	input.replaceWith(newInput);
+
+	newInput.addEventListener("change", async function (e) {
+		var files = Array.from(e.target.files);
+		var currentCount = self.tempPhotos ? self.tempPhotos.length : 0;
+		var remaining = 3 - currentCount;
+
+		if (files.length > remaining) {
+			self.showNotification(
+				"Maximal 3 Fotos erlaubt. " + remaining + " noch moeglich.",
+				"error",
+			);
+			files = files.slice(0, remaining);
+		}
+
+		for (var i = 0; i < files.length; i++) {
+			try {
+				var dataUrl = await self.processPhotoFile(files[i]);
+				if (!self.tempPhotos) self.tempPhotos = [];
+				self.tempPhotos.push(dataUrl);
+			} catch (err) {
+				self.showNotification("Fehler beim Verarbeiten: " + err.message, "error");
+			}
+		}
+
+		self.renderPhotoPreviewCreate();
+		newInput.value = "";
+	});
+};
+
+GartenPlaner.prototype.renderPhotoPreviewCreate = function () {
+	var container = document.getElementById("photoPreviewCreate");
+	if (!container) return;
+
+	if (!this.tempPhotos || this.tempPhotos.length === 0) {
+		container.innerHTML = "";
+		// Show upload label
+		var label = document.querySelector('label[for="photoInputCreate"]');
+		if (label) label.style.display = "";
+		return;
+	}
+
+	var self = this;
+	container.innerHTML = this.tempPhotos
+		.map(function (photo, index) {
+			return (
+				'<div class="photo-preview-item">' +
+				'<img src="' + photo + '" alt="Vorschau ' + (index + 1) + '" />' +
+				'<button type="button" class="photo-remove-btn" data-photo-index="' + index + '" aria-label="Foto entfernen">&times;</button>' +
+				"</div>"
+			);
+		})
+		.join("");
+
+	// Hide upload label if max reached
+	var label = document.querySelector('label[for="photoInputCreate"]');
+	if (label) {
+		label.style.display = this.tempPhotos.length >= 3 ? "none" : "";
+	}
+
+	container.querySelectorAll(".photo-remove-btn").forEach(function (btn) {
+		btn.addEventListener("click", function () {
+			var idx = parseInt(btn.dataset.photoIndex);
+			self.tempPhotos.splice(idx, 1);
+			self.renderPhotoPreviewCreate();
+		});
+	});
+};
+
+GartenPlaner.prototype.setupPhotoUploadEdit = function (task) {
+	var self = this;
+	var input = document.getElementById("photoInputEdit");
+	if (!input) return;
+
+	// Initialize edit photos from task
+	this.editPhotos = task.photos ? task.photos.slice() : [];
+
+	// Clone to remove old listeners
+	var newInput = input.cloneNode(true);
+	input.replaceWith(newInput);
+
+	newInput.addEventListener("change", async function (e) {
+		var files = Array.from(e.target.files);
+		var remaining = 3 - self.editPhotos.length;
+
+		if (files.length > remaining) {
+			self.showNotification(
+				"Maximal 3 Fotos erlaubt. " + remaining + " noch moeglich.",
+				"error",
+			);
+			files = files.slice(0, remaining);
+		}
+
+		for (var i = 0; i < files.length; i++) {
+			try {
+				var dataUrl = await self.processPhotoFile(files[i]);
+				self.editPhotos.push(dataUrl);
+			} catch (err) {
+				self.showNotification("Fehler beim Verarbeiten: " + err.message, "error");
+			}
+		}
+
+		self.renderPhotoPreviewEdit();
+		newInput.value = "";
+	});
+
+	this.renderPhotoPreviewEdit();
+};
+
+GartenPlaner.prototype.renderPhotoPreviewEdit = function () {
+	var container = document.getElementById("photoPreviewEdit");
+	if (!container) return;
+
+	if (!this.editPhotos || this.editPhotos.length === 0) {
+		container.innerHTML = "";
+		var label = document.getElementById("photoUploadLabelEdit");
+		if (label) label.style.display = "";
+		return;
+	}
+
+	var self = this;
+	container.innerHTML = this.editPhotos
+		.map(function (photo, index) {
+			return (
+				'<div class="photo-preview-item">' +
+				'<img src="' + photo + '" alt="Foto ' + (index + 1) + '" />' +
+				'<button type="button" class="photo-remove-btn" data-photo-index="' + index + '" aria-label="Foto entfernen">&times;</button>' +
+				"</div>"
+			);
+		})
+		.join("");
+
+	// Hide upload label if max reached
+	var label = document.getElementById("photoUploadLabelEdit");
+	if (label) {
+		label.style.display = this.editPhotos.length >= 3 ? "none" : "";
+	}
+
+	container.querySelectorAll(".photo-remove-btn").forEach(function (btn) {
+		btn.addEventListener("click", function () {
+			var idx = parseInt(btn.dataset.photoIndex);
+			self.editPhotos.splice(idx, 1);
+			self.renderPhotoPreviewEdit();
+		});
+	});
 };
 
 GartenPlaner.prototype.updateBulkToolbar = function () {

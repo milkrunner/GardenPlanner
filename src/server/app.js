@@ -29,8 +29,8 @@ const USE_BUNDLES = process.env.NODE_ENV === 'production' && fs.existsSync(DIST_
 // --- Middleware (order preserved exactly) ---
 
 app.use(compression());
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: false, limit: '100kb' }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: false, limit: '5mb' }));
 
 // Security headers
 app.use(securityHeaders);

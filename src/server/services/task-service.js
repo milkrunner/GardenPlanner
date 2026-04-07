@@ -177,6 +177,7 @@ async function createTask(body) {
             text: typeof st === 'string' ? st : (st.text || ''),
             completed: typeof st === 'object' ? !!st.completed : false
         })) : [],
+        photos: Array.isArray(sanitized.photos) ? sanitized.photos.filter(p => typeof p === 'string' && p.startsWith('data:image/')).slice(0, 3) : [],
         sortOrder: Date.now()
     };
 
@@ -249,6 +250,9 @@ async function updateTask(id, body) {
             text: typeof st === 'string' ? st : (st.text || ''),
             completed: typeof st === 'object' ? !!st.completed : false
         })) : [];
+    }
+    if (sanitized.photos !== undefined) {
+        updatedFields.photos = Array.isArray(sanitized.photos) ? sanitized.photos.filter(p => typeof p === 'string' && p.startsWith('data:image/')).slice(0, 3) : [];
     }
 
     if (changes.length > 0) {

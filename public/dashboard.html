@@ -384,6 +384,31 @@
             </div>
           </div>
 
+          <!-- Photo Upload in Edit Modal -->
+          <div class="form-group">
+            <label>Fotos <span class="optional-label">(max. 3)</span></label>
+            <div class="photo-upload-area" id="photoUploadAreaEdit">
+              <div id="photoPreviewEdit" class="photo-preview-list"></div>
+              <input
+                type="file"
+                id="photoInputEdit"
+                accept="image/*"
+                capture="environment"
+                multiple
+                class="photo-input"
+                aria-label="Fotos hinzufuegen"
+              />
+              <label for="photoInputEdit" class="photo-upload-label" id="photoUploadLabelEdit">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <span>Foto hinzufuegen</span>
+              </label>
+            </div>
+          </div>
+
           <div class="modal-actions">
             <button type="button" class="btn btn-secondary" id="cancelEditBtn">
               Abbrechen
@@ -421,6 +446,12 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- Photo Lightbox -->
+    <div id="photoLightbox" class="photo-lightbox" role="dialog" aria-modal="true" aria-label="Foto-Ansicht" aria-hidden="true">
+      <button class="photo-lightbox-close" aria-label="Foto schliessen">&times;</button>
+      <img id="photoLightboxImg" class="photo-lightbox-img" src="" alt="Foto Grossansicht" />
     </div>
 
     <!-- Dark Mode Toggle -->
