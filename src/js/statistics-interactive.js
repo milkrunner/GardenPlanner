@@ -77,7 +77,7 @@
 		var pending = filtered.filter(function (t) { return t.status === 'pending'; }).length;
 		var completed = filtered.filter(function (t) { return t.status === 'completed'; }).length;
 		var total = filtered.length;
-		var employees = new Set(filtered.map(function (t) { return t.employee; })).size;
+		var employees = new Set(filtered.map(function (t) { return t.employee; }).filter(function (e) { return e; })).size;
 		var locations = new Set(filtered.filter(function (t) { return t.location; }).map(function (t) { return t.location; })).size;
 		var completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -96,12 +96,13 @@
 		// Add per-employee breakdown
 		var employeeCounts = {};
 		filtered.forEach(function (t) {
-			if (!employeeCounts[t.employee]) {
-				employeeCounts[t.employee] = { total: 0, completed: 0, pending: 0 };
+			var emp = t.employee || 'Nicht zugewiesen';
+			if (!employeeCounts[emp]) {
+				employeeCounts[emp] = { total: 0, completed: 0, pending: 0 };
 			}
-			employeeCounts[t.employee].total++;
-			if (t.status === 'completed') employeeCounts[t.employee].completed++;
-			else employeeCounts[t.employee].pending++;
+			employeeCounts[emp].total++;
+			if (t.status === 'completed') employeeCounts[emp].completed++;
+			else employeeCounts[emp].pending++;
 		});
 
 		rows.push([]);
@@ -147,12 +148,12 @@
 		var pending = currentTasks.filter(function (t) { return t.status === 'pending'; }).length;
 		var completed = currentTasks.filter(function (t) { return t.status === 'completed'; }).length;
 		var total = currentTasks.length;
-		var employees = new Set(currentTasks.map(function (t) { return t.employee; })).size;
+		var employees = new Set(currentTasks.map(function (t) { return t.employee; }).filter(function (e) { return e; })).size;
 
 		// Previous period stats
 		var prevPending = previousTasks.filter(function (t) { return t.status === 'pending'; }).length;
 		var prevCompleted = previousTasks.filter(function (t) { return t.status === 'completed'; }).length;
-		var prevEmployees = new Set(previousTasks.map(function (t) { return t.employee; })).size;
+		var prevEmployees = new Set(previousTasks.map(function (t) { return t.employee; }).filter(function (e) { return e; })).size;
 
 		// Update stat numbers
 		var statPending = document.getElementById('statPending');

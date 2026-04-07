@@ -125,7 +125,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
 
 	// Sanitize all user inputs for XSS protection
 	var safeTitle = Security.escapeHtml(task.title);
-	var safeEmployee = Security.escapeHtml(task.employee);
+	var safeEmployee = task.employee ? Security.escapeHtml(task.employee) : "";
 	var safeLocation = Security.escapeHtml(task.location || "Kein Standort");
 	var safeDescription = task.description
 		? Security.escapeHtml(task.description)
@@ -155,7 +155,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                     ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString("de-DE")}</span>` : ""}
                 </div>
                 <div class="task-meta">
-                    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeEmployee}</span>
+                    ${safeEmployee ? `<span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeEmployee}</span>` : ""}
                     <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeLocation}</span>
                 </div>
                 ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
@@ -224,7 +224,7 @@ GartenPlaner.prototype.updateEmployeeFilter = function () {
 		return;
 	}
 
-	var employees = [...new Set(this.tasks.map((task) => task.employee))].sort();
+	var employees = [...new Set(this.tasks.map((task) => task.employee).filter((e) => e))].sort();
 	var currentValue = filterSelect.value;
 
 	// XSS-sicher: Escape alle Mitarbeiternamen
@@ -287,7 +287,7 @@ GartenPlaner.prototype.updateStatistics = function () {
 		var pending = this.tasks.filter((t) => t.status === "pending").length;
 		var completed = this.tasks.filter((t) => t.status === "completed").length;
 		var total = this.tasks.length;
-		var employees = new Set(this.tasks.map((t) => t.employee)).size;
+		var employees = new Set(this.tasks.map((t) => t.employee).filter((e) => e)).size;
 
 		var statPending = document.getElementById("statPending");
 		var statCompleted = document.getElementById("statCompleted");
@@ -356,7 +356,8 @@ GartenPlaner.prototype.updateEmployeeChart = function () {
 
 	var employeeCounts = {};
 	this.tasks.forEach((task) => {
-		employeeCounts[task.employee] = (employeeCounts[task.employee] || 0) + 1;
+		var emp = task.employee || "Nicht zugewiesen";
+		employeeCounts[emp] = (employeeCounts[emp] || 0) + 1;
 	});
 
 	var sortedEmployees = Object.entries(employeeCounts)
@@ -633,7 +634,7 @@ GartenPlaner.prototype.renderHistory = function () {
 			var detailsHTML = this.getHistoryDetailsHTML(entry);
 
 			var safeTitle = Security.escapeHtml(entry.taskTitle);
-			var safeEmployee = Security.escapeHtml(entry.taskEmployee);
+			var safeEmployee = entry.taskEmployee ? Security.escapeHtml(entry.taskEmployee) : "";
 
 			return `
             <div class="history-item">
@@ -646,7 +647,7 @@ GartenPlaner.prototype.renderHistory = function () {
                         <span class="history-task-title">"${safeTitle}"</span>
                     </div>
                     <div class="history-meta">
-                        <span class="history-employee">${safeEmployee}</span>
+                        ${safeEmployee ? `<span class="history-employee">${safeEmployee}</span>` : ""}
                         <span class="history-time" title="${formattedDate}">${timeAgo}</span>
                     </div>
                     ${detailsHTML ? `<div class="history-details">${detailsHTML}</div>` : ""}
@@ -675,7 +676,10 @@ GartenPlaner.prototype.getHistoryDetailsHTML = (entry) => {
 	if (!entry.details) return "";
 
 	if (entry.action === "created") {
-		return `Mitarbeiter: ${entry.details.employee}, Standort: ${entry.details.location}`;
+		var parts = [];
+		if (entry.details.employee) parts.push(`Mitarbeiter: ${entry.details.employee}`);
+		parts.push(`Standort: ${entry.details.location}`);
+		return parts.join(", ");
 	}
 
 	if (entry.action === "edited" && entry.details.changes) {
