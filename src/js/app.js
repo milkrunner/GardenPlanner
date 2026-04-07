@@ -507,6 +507,35 @@ document.addEventListener("DOMContentLoaded", () => {
 	window.themeManager = new ThemeManager();
 	window.GP.themeManager = window.themeManager;
 
+	// Hamburger-Menue fuer Mobile Navigation
+	const navContainer = document.querySelector(".nav-container");
+	if (navContainer) {
+		const mainNav = navContainer.querySelector(".main-nav");
+		if (mainNav) {
+			const hamburgerBtn = document.createElement("button");
+			hamburgerBtn.className = "hamburger-btn";
+			hamburgerBtn.setAttribute("aria-label", "Navigation öffnen");
+			hamburgerBtn.setAttribute("aria-expanded", "false");
+			hamburgerBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+			navContainer.insertBefore(hamburgerBtn, mainNav);
+
+			hamburgerBtn.addEventListener("click", () => {
+				const isOpen = navContainer.classList.toggle("nav-open");
+				hamburgerBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+				hamburgerBtn.setAttribute("aria-label", isOpen ? "Navigation schließen" : "Navigation öffnen");
+			});
+
+			// Nav schliessen wenn ein Link geklickt wird
+			mainNav.addEventListener("click", (e) => {
+				if (e.target.classList.contains("nav-link")) {
+					navContainer.classList.remove("nav-open");
+					hamburgerBtn.setAttribute("aria-expanded", "false");
+					hamburgerBtn.setAttribute("aria-label", "Navigation öffnen");
+				}
+			});
+		}
+	}
+
 	if (typeof GartenPlaner.prototype.loadTasks === "function") {
 		window.gartenPlaner = new GartenPlaner();
 		window.GP.gartenPlaner = window.gartenPlaner;
