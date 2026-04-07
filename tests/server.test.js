@@ -158,6 +158,50 @@ describe('validateTask', () => {
         const result = validateTask({ ...validTask, subtasks });
         expect(result.valid).toBe(true);
     });
+
+    // --- Photo validation ---
+
+    test('accepts valid photos array', () => {
+        const photos = ['data:image/jpeg;base64,/9j/4AAQ'];
+        const result = validateTask({ ...validTask, photos });
+        expect(result.valid).toBe(true);
+    });
+
+    test('accepts empty photos array', () => {
+        const result = validateTask({ ...validTask, photos: [] });
+        expect(result.valid).toBe(true);
+    });
+
+    test('rejects photos that is not an array', () => {
+        const result = validateTask({ ...validTask, photos: 'not-an-array' });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Array')]));
+    });
+
+    test('rejects more than 3 photos', () => {
+        const photos = Array.from({ length: 4 }, () => 'data:image/jpeg;base64,/9j/4AAQ');
+        const result = validateTask({ ...validTask, photos });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('3')]));
+    });
+
+    test('rejects photo that is not a string', () => {
+        const result = validateTask({ ...validTask, photos: [123] });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('String')]));
+    });
+
+    test('rejects photo without data:image/ prefix', () => {
+        const result = validateTask({ ...validTask, photos: ['not-a-data-url'] });
+        expect(result.valid).toBe(false);
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Data-URL')]));
+    });
+
+    test('accepts exactly 3 photos', () => {
+        const photos = Array.from({ length: 3 }, () => 'data:image/jpeg;base64,/9j/4AAQ');
+        const result = validateTask({ ...validTask, photos });
+        expect(result.valid).toBe(true);
+    });
 });
 
 // --- Unit Tests: escapeHtml ---
@@ -227,6 +271,17 @@ describe('sanitizeTaskData', () => {
         expect(result.description).toBe('Use "quotes" & ampersands');
         expect(result.notes).toBe('<script>alert("xss")</script>');
     });
+
+    test('passes through photos array', () => {
+        const photos = ['data:image/jpeg;base64,/9j/4AAQ'];
+        const result = sanitizeTaskData({ photos });
+        expect(result.photos).toEqual(photos);
+    });
+
+    test('does not include photos when not provided', () => {
+        const result = sanitizeTaskData({ title: 'Test' });
+        expect(result).not.toHaveProperty('photos');
+    });
 });
 
 // --- Integration Tests: API Endpoints ---
@@ -258,6 +313,26 @@ describe('API Endpoints', () => {
 
             expect(res.status).toBe(400);
             expect(res.body).toHaveProperty('errors');
+        });
+
+        test('creates a task with photos', async () => {
+            const photos = ['data:image/jpeg;base64,/9j/4AAQ', 'data:image/png;base64,iVBOR'];
+            const res = await request(app)
+                .post('/api/tasks')
+                .send({ ...validTask, photos });
+
+            expect(res.status).toBe(201);
+            expect(res.body.photos).toHaveLength(2);
+            expect(res.body.photos[0]).toBe('data:image/jpeg;base64,/9j/4AAQ');
+        });
+
+        test('creates a task with empty photos array', async () => {
+            const res = await request(app)
+                .post('/api/tasks')
+                .send({ ...validTask, photos: [] });
+
+            expect(res.status).toBe(201);
+            expect(res.body.photos).toEqual([]);
         });
     });
 
@@ -346,6 +421,18 @@ describe('API Endpoints', () => {
             expect(res.body.subtasks[1]).toHaveProperty('id');
             expect(res.body.subtasks[1].text).toBe('String subtask');
             expect(res.body.subtasks[1].completed).toBe(false);
+        });
+
+        test('updates photos on a task', async () => {
+            const created = await request(app).post('/api/tasks').send(validTask);
+            const photos = ['data:image/jpeg;base64,/9j/4AAQ'];
+            const res = await request(app)
+                .put(`/api/tasks/${created.body.id}`)
+                .send({ photos });
+
+            expect(res.status).toBe(200);
+            expect(res.body.photos).toHaveLength(1);
+            expect(res.body.photos[0]).toBe('data:image/jpeg;base64,/9j/4AAQ');
         });
 
         test('rejects subtasks exceeding max count via PUT', async () => {

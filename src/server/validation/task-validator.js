@@ -82,6 +82,24 @@ function validateTask(taskData, partial = false) {
             });
         }
     }
+    if (taskData.photos !== undefined) {
+        if (!Array.isArray(taskData.photos)) {
+            errors.push('Fotos m\u00fcssen ein Array sein');
+        } else {
+            if (taskData.photos.length > 3) {
+                errors.push('Maximal 3 Fotos erlaubt');
+            }
+            taskData.photos.forEach((photo, i) => {
+                if (typeof photo !== 'string') {
+                    errors.push(`Foto ${i + 1}: muss ein String (Data-URL) sein`);
+                } else if (!photo.startsWith('data:image/')) {
+                    errors.push(`Foto ${i + 1}: muss eine g\u00fcltige Bild-Data-URL sein`);
+                } else if (photo.length > 1500000) {
+                    errors.push(`Foto ${i + 1}: darf maximal ca. 1 MB gro\u00df sein`);
+                }
+            });
+        }
+    }
 
     return { valid: errors.length === 0, errors };
 }
@@ -107,6 +125,7 @@ function sanitizeTaskData(data) {
     if (data.priority !== undefined) sanitized.priority = data.priority;
     if (data.recurrence !== undefined) sanitized.recurrence = data.recurrence;
     if (data.subtasks !== undefined) sanitized.subtasks = data.subtasks;
+    if (data.photos !== undefined) sanitized.photos = data.photos;
     return sanitized;
 }
 

@@ -18,6 +18,7 @@ class GartenPlaner {
 		this.selectedTasks = new Set();
 		this.bulkMode = false;
 		this.tempSubtasks = [];
+		this.tempPhotos = [];
 		this.useAPI = typeof window.TaskAPI !== "undefined";
 		this.undoStack = [];
 		this.undoTimeout = null;

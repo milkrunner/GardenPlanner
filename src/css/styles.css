@@ -5140,3 +5140,216 @@ footer {
     width: 100%;
   }
 }
+
+/* ==========================================
+   Photo Upload & Thumbnails
+   ========================================== */
+
+.photo-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.photo-upload-area:hover {
+  border-color: var(--primary);
+}
+
+[data-theme="dark"] .photo-upload-area {
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .photo-upload-area:hover {
+  border-color: var(--primary);
+}
+
+.photo-input {
+  display: none;
+}
+
+.photo-upload-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  color: var(--text-light);
+  font-size: var(--text-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.photo-upload-label:hover {
+  color: var(--primary);
+  background: rgba(27, 94, 63, 0.06);
+}
+
+[data-theme="dark"] .photo-upload-label:hover {
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.photo-upload-label svg {
+  flex-shrink: 0;
+}
+
+.photo-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.photo-preview-list:empty {
+  margin-bottom: 0;
+}
+
+.photo-preview-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .photo-preview-item {
+  border-color: var(--border-light);
+}
+
+.photo-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-remove-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.2s ease;
+}
+
+.photo-remove-btn:hover {
+  background: var(--error);
+}
+
+/* Task Card Photo Thumbnails */
+.task-photo-thumbnails {
+  display: flex;
+  gap: 6px;
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.task-photo-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.task-photo-thumbnail:hover {
+  transform: scale(1.1);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .task-photo-thumbnail {
+  border-color: var(--border-light);
+}
+
+[data-theme="dark"] .task-photo-thumbnail:hover {
+  border-color: var(--primary);
+}
+
+/* Photo Lightbox */
+.photo-lightbox {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 10001;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.photo-lightbox-close {
+  position: absolute;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  z-index: 1;
+}
+
+.photo-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.photo-lightbox-img {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive Photo Adjustments */
+@media (max-width: 768px) {
+  .photo-preview-item {
+    width: 64px;
+    height: 64px;
+  }
+
+  .task-photo-thumbnail {
+    width: 40px;
+    height: 40px;
+  }
+
+  .photo-lightbox {
+    padding: var(--space-md);
+  }
+
+  .photo-lightbox-close {
+    top: var(--space-sm);
+    right: var(--space-sm);
+  }
+
+  .photo-lightbox-img {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+}

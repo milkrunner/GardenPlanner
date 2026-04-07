@@ -99,6 +99,10 @@ GartenPlaner.prototype.setupEventListeners = function () {
 	if (toggleArchiveBtn) {
 		toggleArchiveBtn.addEventListener("click", () => this.toggleArchiveView());
 	}
+
+	// Photo Upload (Create Form)
+	this.tempPhotos = [];
+	this.setupPhotoUploadCreate();
 };
 
 // Bulk Action Listeners
@@ -241,6 +245,9 @@ GartenPlaner.prototype.openEditModal = function (id) {
 
 	// Subtask Event Listeners (NACH dem replaceWith)
 	this.setupSubtaskListeners(task);
+
+	// Photo Upload im Edit-Modal einrichten
+	this.setupPhotoUploadEdit(task);
 
 	newCloseBtn.addEventListener("click", closeModal);
 	newCancelBtn.addEventListener("click", closeModal);

@@ -61,6 +61,8 @@ GartenPlaner.prototype.addTask = async function () {
 			return;
 		}
 
+		var photos = this.tempPhotos ? this.tempPhotos.slice() : [];
+
 		let task;
 		if (this.useAPI) {
 			task = await TaskAPI.createTask({
@@ -69,6 +71,7 @@ GartenPlaner.prototype.addTask = async function () {
 					text: st.text,
 					completed: st.completed,
 				})),
+				photos: photos,
 			});
 		} else {
 			task = {
@@ -77,6 +80,7 @@ GartenPlaner.prototype.addTask = async function () {
 				createdAt: new Date().toISOString(),
 				history: [],
 				subtasks: [...this.tempSubtasks],
+				photos: photos,
 			};
 			this.addHistoryEntry(task, "created", {
 				title: task.title,
@@ -98,7 +102,9 @@ GartenPlaner.prototype.addTask = async function () {
 		}
 
 		this.tempSubtasks = [];
+		this.tempPhotos = [];
 		this.renderCreateSubtasksList();
+		this.renderPhotoPreviewCreate();
 
 		setTimeout(() => {
 			const newTaskElement = document.querySelector(
@@ -276,6 +282,10 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		task.employee = taskData.employee;
 		task.location = taskData.location;
 		task.description = taskData.description;
+		// Update photos
+		if (this.editPhotos !== undefined) {
+			task.photos = this.editPhotos.slice();
+		}
 		const changes = [];
 		if (oldTitle !== task.title)
 			changes.push(`Titel: "${oldTitle}" \u2192 "${task.title}"`);
@@ -286,7 +296,7 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		if (oldDescription !== task.description)
 			changes.push("Beschreibung ge\u00e4ndert");
 		if (this.useAPI) {
-			await TaskAPI.updateTask(id, taskData);
+			await TaskAPI.updateTask(id, { ...taskData, photos: task.photos });
 		} else if (changes.length > 0) {
 			this.addHistoryEntry(task, "edited", { changes: changes });
 		}

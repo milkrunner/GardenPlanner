@@ -96,6 +96,31 @@
               </div>
             </div>
 
+            <!-- Photo Upload -->
+            <div class="form-group">
+              <label>Fotos <span class="optional-label">(optional, max. 3)</span></label>
+              <div class="photo-upload-area" id="photoUploadAreaCreate">
+                <input
+                  type="file"
+                  id="photoInputCreate"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  class="photo-input"
+                  aria-label="Fotos hinzufuegen"
+                />
+                <label for="photoInputCreate" class="photo-upload-label">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span>Fotos auswaehlen oder Kamera nutzen</span>
+                </label>
+                <div id="photoPreviewCreate" class="photo-preview-list"></div>
+              </div>
+            </div>
+
             <!-- Collapsible optional section -->
             <details class="form-options" id="formOptions">
               <summary class="form-options-toggle">

@@ -25,7 +25,7 @@ const PROJECT_ROOT = path.join(__dirname, '..', '..');
 // --- Middleware (order preserved exactly) ---
 
 app.use(compression());
-app.use(express.json({ limit: '100kb' }));
+app.use(express.json({ limit: '5mb' }));
 
 // Security headers
 app.use(securityHeaders);
