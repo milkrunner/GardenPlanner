@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GardenPlanner &mdash; GridGarden Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;600;700&family=Syne:wght@600;700;800&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --primary: #15803D;
+  --secondary: #84CC16;
+  --accent: #4F46E5;
+  --bg: #F1F5F9;
+  --surface: #FFFFFF;
+  --text: #020617;
+  --text-secondary: #475569;
+  --border: #CBD5E1;
+  --gradient-start: #15803D;
+  --gradient-end: #84CC16;
+  --glow: rgba(21, 128, 61, 0.12);
+  --font-heading: 'Syne', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+  --font-mono: 'Azeret Mono', monospace;
+  --radius-card: 12px;
+  --radius-pill: 9999px;
+  --radius-btn: 8px;
+  --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --primary: #4ADE80;
+  --secondary: #84CC16;
+  --accent: #818CF8;
+  --bg: #020617;
+  --surface: #0F172A;
+  --text: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --border: #1E293B;
+  --gradient-start: #4ADE80;
+  --gradient-end: #84CC16;
+  --glow: rgba(74, 222, 128, 0.15);
+}
+
+html {
+  font-size: 14px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+
+/* ========== NAVIGATION ========== */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  transition: background var(--transition-base), border-color var(--transition-base);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.nav-brand svg {
+  width: 28px;
+  height: 28px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+}
+
+.nav-links a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-base);
+}
+
+.nav-links a:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.nav-links a.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+[data-theme="dark"] .nav-links a.active {
+  background: var(--primary);
+  color: #020617;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-icon:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+[data-theme="dark"] .btn-primary {
+  color: #020617;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--glow);
+}
+
+/* ========== MAIN CONTAINER ========== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.page-header p {
+  color: var(--text-secondary);
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+/* ========== BENTO GRID ========== */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto;
+  gap: 16px;
+}
+
+/* Grid placement */
+.card-open-tasks   { grid-column: 1; grid-row: 1; }
+.card-completion   { grid-column: 2; grid-row: 1; }
+.card-weather      { grid-column: 3; grid-row: 1 / span 2; }
+.card-done         { grid-column: 1; grid-row: 2; }
+.card-staff        { grid-column: 2; grid-row: 2; }
+.card-next-tasks   { grid-column: 1 / span 2; grid-row: 3 / span 2; }
+.card-locations    { grid-column: 3; grid-row: 3; }
+.card-activity     { grid-column: 3; grid-row: 4; }
+
+/* ========== CARD BASE ========== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  transition: all var(--transition-base);
+  opacity: 0;
+  transform: translateY(20px) scale(0.97);
+  position: relative;
+  overflow: hidden;
+}
+
+.card.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.card:hover {
+  border-color: transparent;
+  box-shadow: 0 0 0 1px var(--border), 0 0 20px var(--glow);
+}
+
+.card-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-label svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+}
+
+.stat-number {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.stat-number.green { color: var(--primary); }
+.stat-number.accent { color: var(--accent); }
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0%;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ========== CIRCULAR PROGRESS ========== */
+.circle-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.circle-progress {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.circle-progress svg {
+  transform: rotate(-90deg);
+  width: 80px;
+  height: 80px;
+}
+
+.circle-progress-bg {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 6;
+}
+
+.circle-progress-fill {
+  fill: none;
+  stroke: url(#circleGrad);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 207.35;
+  stroke-dashoffset: 207.35;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.circle-progress-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.circle-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.circle-details span:first-child {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--primary);
+}
+
+.circle-details span:last-child {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ========== WEATHER CARD ========== */
+.weather-current {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.weather-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FDE68A, #FBBF24);
+  border-radius: 16px;
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .weather-icon {
+  background: linear-gradient(135deg, #78350F, #92400E);
+}
+
+.weather-temp {
+  font-family: var(--font-mono);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.weather-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.weather-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.weather-detail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.weather-detail-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.weather-forecast-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.weather-forecast {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.weather-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.weather-day-temp {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.weather-mini-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to top, var(--gradient-start), var(--gradient-end));
+  min-height: 12px;
+}
+
+/* ========== DONE CARD ========== */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.stat-badge.positive {
+  background: rgba(21, 128, 61, 0.1);
+  color: var(--primary);
+}
+
+[data-theme="dark"] .stat-badge.positive {
+  background: rgba(74, 222, 128, 0.12);
+}
+
+/* ========== MINI BAR CHART ========== */
+.mini-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 48px;
+  margin-top: 12px;
+}
+
+.mini-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(to top, var(--gradient-start), var(--gradient-end));
+  opacity: 0.75;
+  transition: opacity var(--transition-base), height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 0;
+}
+
+.mini-bar:hover {
+  opacity: 1;
+}
+
+.mini-bar-labels {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.mini-bar-labels span {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+/* ========== TASK LIST ========== */
+.card-next-tasks {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: background var(--transition-base);
+  cursor: pointer;
+}
+
+.task-item:hover {
+  background: var(--bg);
+}
+
+.task-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  background: var(--surface);
+  position: relative;
+}
+
+.task-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.task-checkbox:checked::after {
+  content: '';
+  width: 6px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translate(-1px, -1px);
+  position: absolute;
+}
+
+[data-theme="dark"] .task-checkbox:checked::after {
+  border-color: #020617;
+}
+
+.task-checkbox:hover {
+  border-color: var(--primary);
+}
+
+.task-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  transition: all var(--transition-base);
+}
+
+.task-item.checked .task-title {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.task-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+.task-priority {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.task-priority.high {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+}
+
+.task-priority.medium {
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+}
+
+.task-priority.low {
+  background: rgba(21, 128, 61, 0.1);
+  color: var(--primary);
+}
+
+/* ========== LOCATION BARS ========== */
+.location-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.location-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.location-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.location-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.location-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.location-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.location-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 0%;
+}
+
+.location-bar-fill.c1 { background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end)); }
+.location-bar-fill.c2 { background: linear-gradient(90deg, #4F46E5, #818CF8); }
+.location-bar-fill.c3 { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+.location-bar-fill.c4 { background: linear-gradient(90deg, #EC4899, #F472B6); }
+
+/* ========== SPARKLINE ========== */
+.sparkline-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 64px;
+  margin-top: 8px;
+}
+
+.sparkline-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+
+.sparkline-bar {
+  width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(to top, var(--gradient-start), var(--gradient-end));
+  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 0;
+  min-width: 12px;
+  max-width: 28px;
+  position: relative;
+}
+
+.sparkline-bar:hover {
+  opacity: 0.85;
+}
+
+.sparkline-bar::after {
+  content: attr(data-val);
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sparkline-bar:hover::after {
+  opacity: 1;
+}
+
+.sparkline-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.sparkline-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.sparkline-summary span:first-child {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sparkline-summary span:last-child {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ========== DARK MODE TRANSITION ========== */
+.theme-transitioning .card {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), background var(--transition-base), border-color var(--transition-base);
+  transform: scale(0.96);
+}
+
+.theme-transitioning .card.visible {
+  transform: scale(1);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-open-tasks,
+  .card-completion,
+  .card-weather,
+  .card-done,
+  .card-staff,
+  .card-next-tasks,
+  .card-locations,
+  .card-activity {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .nav-links { display: none; }
+
+  .container { padding: 16px; }
+
+  .weather-forecast { flex-wrap: wrap; justify-content: flex-start; gap: 12px; }
+}
+
+@media (max-width: 480px) {
+  .nav { padding: 0 16px; }
+  .btn-primary span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- SVG gradient definition for circular progress -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#15803D"/>
+      <stop offset="100%" stop-color="#84CC16"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ==================== NAVIGATION ==================== -->
+<nav class="nav">
+  <a href="#" class="nav-brand">
+    <svg viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="6" fill="currentColor"/>
+      <path d="M7 20V14a7 7 0 0 1 14 0v6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      <path d="M14 8v6M10 14h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    GridGarden
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#" class="active">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard</a></li>
+    <li><a href="#">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Beete</a></li>
+    <li><a href="#">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Aufgaben</a></li>
+    <li><a href="#">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+      Statistiken</a></li>
+  </ul>
+
+  <div class="nav-actions">
+    <button class="btn-icon" id="themeToggle" title="Dark Mode umschalten">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="icon-sun">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="icon-moon" style="display:none">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+    <button class="btn-primary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Neue Aufgabe</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<main class="container">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Montag, 30. M&auml;rz 2026 &mdash; Saison Fr&uuml;hjahr</p>
+  </div>
+
+  <div class="bento-grid">
+
+    <!-- ===== OFFENE AUFGABEN ===== -->
+    <div class="card card-open-tasks" data-delay="0">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+        Offene Aufgaben
+      </div>
+      <div class="stat-number green">12</div>
+      <div class="progress-label">
+        <span>4 &uuml;berf&auml;llig</span>
+        <span style="font-family:var(--font-mono);font-weight:600;">26%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-bar-fill" data-width="26"></div>
+      </div>
+    </div>
+
+    <!-- ===== ABSCHLUSSQUOTE ===== -->
+    <div class="card card-completion" data-delay="80">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Abschlussquote
+      </div>
+      <div class="circle-progress-wrapper">
+        <div class="circle-progress">
+          <svg viewBox="0 0 80 80">
+            <circle class="circle-progress-bg" cx="40" cy="40" r="33"/>
+            <circle class="circle-progress-fill" cx="40" cy="40" r="33" data-pct="73.9"/>
+          </svg>
+          <div class="circle-progress-text">73.9%</div>
+        </div>
+        <div class="circle-details">
+          <span>+5.2%</span>
+          <span>vs. letzter Monat</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== WETTER ===== -->
+    <div class="card card-weather" data-delay="160">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        Wetter &mdash; Aachen
+      </div>
+      <div class="weather-current">
+        <div class="weather-icon">&#9728;&#65039;</div>
+        <div>
+          <div class="weather-temp">18&deg;C</div>
+          <div class="weather-desc">Sonnig, leichter Wind</div>
+        </div>
+      </div>
+      <div class="weather-details">
+        <div class="weather-detail">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+          Feuchtigkeit <span class="weather-detail-val">62%</span>
+        </div>
+        <div class="weather-detail">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+          Wind <span class="weather-detail-val">12 km/h</span>
+        </div>
+        <div class="weather-detail">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
+          UV-Index <span class="weather-detail-val">5</span>
+        </div>
+        <div class="weather-detail">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+          Boden <span class="weather-detail-val">14&deg;C</span>
+        </div>
+      </div>
+      <div class="weather-forecast-label">7-Tage Vorhersage</div>
+      <div class="weather-forecast">
+        <div class="weather-day"><span>Mo</span><div class="weather-mini-bar" style="height:36px"></div><span class="weather-day-temp">18&deg;</span></div>
+        <div class="weather-day"><span>Di</span><div class="weather-mini-bar" style="height:32px"></div><span class="weather-day-temp">16&deg;</span></div>
+        <div class="weather-day"><span>Mi</span><div class="weather-mini-bar" style="height:28px"></div><span class="weather-day-temp">14&deg;</span></div>
+        <div class="weather-day"><span>Do</span><div class="weather-mini-bar" style="height:26px"></div><span class="weather-day-temp">13&deg;</span></div>
+        <div class="weather-day"><span>Fr</span><div class="weather-mini-bar" style="height:34px"></div><span class="weather-day-temp">17&deg;</span></div>
+        <div class="weather-day"><span>Sa</span><div class="weather-mini-bar" style="height:40px"></div><span class="weather-day-temp">20&deg;</span></div>
+        <div class="weather-day"><span>So</span><div class="weather-mini-bar" style="height:38px"></div><span class="weather-day-temp">19&deg;</span></div>
+      </div>
+    </div>
+
+    <!-- ===== ERLEDIGT ===== -->
+    <div class="card card-done" data-delay="240">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Erledigt
+      </div>
+      <div class="stat-number" style="color:var(--text)">34</div>
+      <div class="stat-badge positive">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        +8 vs. letzte Woche
+      </div>
+    </div>
+
+    <!-- ===== MITARBEITER ===== -->
+    <div class="card card-staff" data-delay="320">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Aktive Mitarbeiter
+      </div>
+      <div class="stat-number accent">5</div>
+      <div class="mini-bars">
+        <div class="mini-bar" data-height="85"></div>
+        <div class="mini-bar" data-height="60"></div>
+        <div class="mini-bar" data-height="95"></div>
+        <div class="mini-bar" data-height="45"></div>
+        <div class="mini-bar" data-height="70"></div>
+      </div>
+      <div class="mini-bar-labels">
+        <span>MK</span><span>TH</span><span>LS</span><span>JW</span><span>PB</span>
+      </div>
+    </div>
+
+    <!-- ===== NAECHSTE AUFGABEN ===== -->
+    <div class="card card-next-tasks" data-delay="400">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        N&auml;chste Aufgaben
+      </div>
+      <ul class="task-list">
+        <li class="task-item">
+          <input type="checkbox" class="task-checkbox">
+          <div class="task-content">
+            <div class="task-title">Tomaten-Beete mulchen</div>
+            <div class="task-meta">Beet A3 &middot; F&auml;llig heute</div>
+          </div>
+          <span class="task-priority high">Hoch</span>
+        </li>
+        <li class="task-item">
+          <input type="checkbox" class="task-checkbox">
+          <div class="task-content">
+            <div class="task-title">Bew&auml;sserungssystem pr&uuml;fen</div>
+            <div class="task-meta">Alle Standorte &middot; F&auml;llig morgen</div>
+          </div>
+          <span class="task-priority high">Hoch</span>
+        </li>
+        <li class="task-item">
+          <input type="checkbox" class="task-checkbox">
+          <div class="task-content">
+            <div class="task-title">Kr&auml;utergarten j&auml;ten</div>
+            <div class="task-meta">Beet K1 &middot; F&auml;llig Mi, 01.04.</div>
+          </div>
+          <span class="task-priority medium">Mittel</span>
+        </li>
+        <li class="task-item">
+          <input type="checkbox" class="task-checkbox">
+          <div class="task-content">
+            <div class="task-title">Erdbeeren d&uuml;ngen</div>
+            <div class="task-meta">Beet B2 &middot; F&auml;llig Do, 02.04.</div>
+          </div>
+          <span class="task-priority medium">Mittel</span>
+        </li>
+        <li class="task-item">
+          <input type="checkbox" class="task-checkbox">
+          <div class="task-content">
+            <div class="task-title">Kompost umsetzen</div>
+            <div class="task-meta">Kompoststation &middot; F&auml;llig Fr, 03.04.</div>
+          </div>
+          <span class="task-priority low">Niedrig</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- ===== STANDORT-VERTEILUNG ===== -->
+    <div class="card card-locations" data-delay="480">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Standort-Verteilung
+      </div>
+      <div class="location-list">
+        <div class="location-item">
+          <div class="location-header"><span class="location-name">Gem&uuml;segarten</span><span class="location-count">18</span></div>
+          <div class="location-bar"><div class="location-bar-fill c1" data-width="80"></div></div>
+        </div>
+        <div class="location-item">
+          <div class="location-header"><span class="location-name">Kr&auml;uterbeet</span><span class="location-count">12</span></div>
+          <div class="location-bar"><div class="location-bar-fill c2" data-width="55"></div></div>
+        </div>
+        <div class="location-item">
+          <div class="location-header"><span class="location-name">Obstgarten</span><span class="location-count">8</span></div>
+          <div class="location-bar"><div class="location-bar-fill c3" data-width="36"></div></div>
+        </div>
+        <div class="location-item">
+          <div class="location-header"><span class="location-name">Gew&auml;chshaus</span><span class="location-count">6</span></div>
+          <div class="location-bar"><div class="location-bar-fill c4" data-width="27"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== AKTIVITAET ===== -->
+    <div class="card card-activity" data-delay="560">
+      <div class="card-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Aktivit&auml;t
+      </div>
+      <div class="sparkline-chart">
+        <div class="sparkline-col">
+          <div class="sparkline-bar" data-height="40" data-val="5"></div>
+          <span class="sparkline-label">KW21</span>
+        </div>
+        <div class="sparkline-col">
+          <div class="sparkline-bar" data-height="55" data-val="7"></div>
+          <span class="sparkline-label">KW22</span>
+        </div>
+        <div class="sparkline-col">
+          <div class="sparkline-bar" data-height="35" data-val="4"></div>
+          <span class="sparkline-label">KW23</span>
+        </div>
+        <div class="sparkline-col">
+          <div class="sparkline-bar" data-height="70" data-val="9"></div>
+          <span class="sparkline-label">KW24</span>
+        </div>
+        <div class="sparkline-col">
+          <div class="sparkline-bar" data-height="85" data-val="11"></div>
+          <span class="sparkline-label">KW25</span>
+        </div>
+        <div class="sparkline-col">
+          <div class="sparkline-bar" data-height="65" data-val="8"></div>
+          <span class="sparkline-label">KW26</span>
+        </div>
+      </div>
+      <div class="sparkline-summary">
+        <span>Gesamt</span>
+        <span>44 Aufgaben</span>
+      </div>
+    </div>
+
+  </div><!-- /bento-grid -->
+</main>
+
+<script>
+(function() {
+  'use strict';
+
+  // ==================== STAGGERED LOAD ANIMATION ====================
+  function animateCards() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(function(card) {
+      const delay = parseInt(card.dataset.delay) || 0;
+      setTimeout(function() {
+        card.classList.add('visible');
+      }, 200 + delay);
+    });
+  }
+
+  // ==================== ANIMATE DATA-DRIVEN ELEMENTS ====================
+  function animateData() {
+    // Progress bars
+    document.querySelectorAll('.progress-bar-fill[data-width]').forEach(function(el) {
+      setTimeout(function() { el.style.width = el.dataset.width + '%'; }, 600);
+    });
+
+    // Location bars
+    document.querySelectorAll('.location-bar-fill[data-width]').forEach(function(el) {
+      setTimeout(function() { el.style.width = el.dataset.width + '%'; }, 800);
+    });
+
+    // Mini bars (staff)
+    document.querySelectorAll('.mini-bar[data-height]').forEach(function(el, i) {
+      setTimeout(function() { el.style.height = el.dataset.height + '%'; }, 700 + i * 80);
+    });
+
+    // Sparkline bars
+    document.querySelectorAll('.sparkline-bar[data-height]').forEach(function(el, i) {
+      setTimeout(function() { el.style.height = el.dataset.height + '%'; }, 900 + i * 80);
+    });
+
+    // Circular progress
+    document.querySelectorAll('.circle-progress-fill[data-pct]').forEach(function(el) {
+      var pct = parseFloat(el.dataset.pct);
+      var circumference = 2 * Math.PI * 33; // r=33
+      var offset = circumference - (pct / 100) * circumference;
+      setTimeout(function() { el.style.strokeDashoffset = offset; }, 700);
+    });
+  }
+
+  // ==================== DARK MODE TOGGLE ====================
+  var themeToggle = document.getElementById('themeToggle');
+  var html = document.documentElement;
+  var iconSun = themeToggle.querySelector('.icon-sun');
+  var iconMoon = themeToggle.querySelector('.icon-moon');
+
+  function applyThemeIcons() {
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    iconSun.style.display = isDark ? 'none' : 'block';
+    iconMoon.style.display = isDark ? 'block' : 'none';
+  }
+
+  themeToggle.addEventListener('click', function() {
+    var isDark = html.getAttribute('data-theme') === 'dark';
+
+    // Spectacular transition: scale all cards briefly
+    document.body.classList.add('theme-transitioning');
+
+    setTimeout(function() {
+      html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+      applyThemeIcons();
+    }, 150);
+
+    setTimeout(function() {
+      document.body.classList.remove('theme-transitioning');
+    }, 500);
+  });
+
+  applyThemeIcons();
+
+  // ==================== TASK CHECKBOXES ====================
+  document.querySelectorAll('.task-checkbox').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var item = cb.closest('.task-item');
+      if (cb.checked) {
+        item.classList.add('checked');
+      } else {
+        item.classList.remove('checked');
+      }
+    });
+  });
+
+  // ==================== INIT ====================
+  animateCards();
+  animateData();
+
+})();
+</script>
+</body>
+</html>

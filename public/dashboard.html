@@ -12,9 +12,14 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../src/css/styles.css" />
   </head>
   <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
+    <script src="../src/js/auth-check.js"></script>
     <div class="container">
       <header role="banner">
         <h1>📊 Dashboard - Aufgabenübersicht</h1>
@@ -26,6 +31,7 @@
           <a href="/dashboard" class="nav-link active" aria-current="page">📋 Dashboard</a>
           <a href="/statistics" class="nav-link">📊 Statistiken</a>
           <a href="/plants" class="nav-link">🌱 Pflanzen</a>
+          <a href="/garden" class="nav-link">🌻 Garten</a>
           <a href="/logs" class="nav-link">📜 Logs</a>
         </nav>
         <a href="/index" class="btn btn-primary nav-action-btn"
@@ -33,20 +39,20 @@
         >
       </div>
 
-      <main role="main">
+      <main id="main" role="main">
         <!-- Statistiken Schnellübersicht -->
         <section class="stats-section">
           <div class="stat-card">
             <h3>Offene Aufgaben</h3>
-            <p class="stat-number" id="statPending">0</p>
+            <p class="stat-number" id="statPending" aria-live="polite">0</p>
           </div>
           <div class="stat-card">
             <h3>Erledigte Aufgaben</h3>
-            <p class="stat-number" id="statCompleted">0</p>
+            <p class="stat-number" id="statCompleted" aria-live="polite">0</p>
           </div>
           <div class="stat-card">
             <h3>Aktive Mitarbeiter</h3>
-            <p class="stat-number" id="statEmployees">0</p>
+            <p class="stat-number" id="statEmployees" aria-live="polite">0</p>
           </div>
         </section>
 
@@ -183,7 +189,7 @@
                 <button
                   id="clearSearchBtn"
                   class="clear-search-btn"
-                  style="display: none"
+                  hidden
                   aria-label="Suche löschen"
                 >
                   <svg
@@ -219,7 +225,7 @@
               <div
                 id="searchResults"
                 class="search-results"
-                style="display: none"
+                hidden
               >
                 <span id="searchResultCount">0</span> Ergebnisse gefunden
               </div>
@@ -227,7 +233,7 @@
           </div>
 
           <!-- Bulk-Aktions-Toolbar -->
-          <div id="bulkToolbar" class="bulk-toolbar" style="display: none">
+          <div id="bulkToolbar" class="bulk-toolbar" hidden>
             <div class="bulk-info">
               <span id="bulkCount">0</span> Aufgaben ausgewählt
             </div>
@@ -279,15 +285,13 @@
             type="file"
             id="importFile"
             accept=".json"
-            style="display: none"
+            hidden
           />
         </section>
       </main>
 
-      <footer>
-        <p>
-          © 2025 Gartenplaner | Alle Änderungen werden automatisch gespeichert
-        </p>
+      <footer role="contentinfo">
+        <p>&copy; 2025 Gartenplaner</p>
       </footer>
     </div>
 
@@ -498,6 +502,7 @@
     <script src="../src/js/task-renderer.js"></script>
     <script src="../src/js/task-events.js"></script>
     <script src="../src/js/task-export.js"></script>
+    <script src="../src/js/tab-sync.js"></script>
     <script src="../src/js/dashboard-init.js"></script>
   </body>
 </html>

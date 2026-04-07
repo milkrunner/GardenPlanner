@@ -9,23 +9,32 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 
 WORKDIR /app
 
-# Update Alpine packages to fix known vulnerabilities
-# Allow failure for transient TLS/network errors in CI
-RUN apk update && apk upgrade --no-cache || true
+# Update Alpine packages to fix known vulnerabilities (CVE-2025-60876)
+RUN apk update && apk upgrade --no-cache
 
 # Dependencies installieren
+# NPM_REGISTRY defaults to public npm; override for internal builds:
+#   docker build --build-arg NPM_REGISTRY=http://repo.inform-software.com/artifactory/api/npm/npmjs/ .
+ARG NPM_REGISTRY=https://registry.npmjs.org/
+ARG NPM_STRICT_SSL=true
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev \
-    && npm audit --audit-level=moderate || true
+RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
+    && npm config set registry ${NPM_REGISTRY} \
+    && npm ci --omit=dev
+RUN npm audit --audit-level=high
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
 COPY server.js ./
+COPY scripts/ ./scripts/
 COPY public/ ./public/
 COPY src/ ./src/
 COPY README.md ./
 
+# Build CSS/JS bundles for production (#47)
+RUN node scripts/build.js
+
 # Datenverzeichnis erstellen und Rechte setzen
-RUN mkdir -p /app/data && chown -R node:node /app
+RUN mkdir -p /app/data /app/data/logs && chown -R node:node /app
 
 # Non-root User verwenden
 USER node

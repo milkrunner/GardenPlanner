@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Gartenplaner</title>
+    <meta name="description" content="Benutzerverwaltung im Gartenplaner" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../src/css/styles.css" />
+  </head>
+  <body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
+    <script nonce="__CSP_NONCE__">
+      fetch('/api/v1/auth/status', { credentials: 'same-origin' })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.authRequired && !data.user) {
+            window.location.href = '/login';
+          } else if (data.user && data.user.role !== 'admin') {
+            window.location.href = '/dashboard';
+          }
+          if (data.user) {
+            window.__user = data.user;
+          }
+        })
+        .catch(function() {
+          window.location.href = '/login';
+        });
+    </script>
+    <div class="container">
+      <header role="banner">
+        <h1>Benutzerverwaltung</h1>
+        <p class="subtitle">Benutzer anlegen, bearbeiten und verwalten</p>
+      </header>
+
+      <div class="nav-container">
+        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+          <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+          <a href="/statistics" class="nav-link">📊 Statistiken</a>
+          <a href="/plants" class="nav-link">🌱 Pflanzen</a>
+          <a href="/garden" class="nav-link">🌻 Garten</a>
+          <a href="/logs" class="nav-link">📜 Logs</a>
+          <a href="/admin" class="nav-link active" aria-current="page">Admin</a>
+        </nav>
+        <a href="/index" class="btn btn-primary nav-action-btn">Neue Aufgabe</a>
+      </div>
+
+      <main id="main" role="main">
+        <!-- New User Form -->
+        <section class="admin-section">
+          <div class="admin-form-header">
+            <h2 id="adminFormTitle">Neuer Benutzer</h2>
+            <button id="toggleNewUserBtn" class="btn btn-primary" type="button">Neuer Benutzer</button>
+          </div>
+          <div id="newUserForm" class="admin-form" hidden>
+            <form id="userForm" novalidate>
+              <input type="hidden" id="editUserId" value="" />
+              <div class="admin-form-row">
+                <div class="form-group">
+                  <label for="newUsername">Benutzername</label>
+                  <input type="text" id="newUsername" required placeholder="Benutzername" autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label for="newPassword">Passwort</label>
+                  <input type="password" id="newPassword" required placeholder="Passwort" autocomplete="new-password" />
+                </div>
+                <div class="form-group">
+                  <label for="newRole">Rolle</label>
+                  <select id="newRole">
+                    <option value="user">Benutzer</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+              </div>
+              <div class="admin-form-actions">
+                <button type="submit" class="btn btn-primary" id="userFormSubmitBtn">Erstellen</button>
+                <button type="button" class="btn btn-secondary" id="cancelUserFormBtn">Abbrechen</button>
+              </div>
+              <div id="userFormError" class="login-error" role="alert" hidden></div>
+            </form>
+          </div>
+        </section>
+
+        <!-- Users Table -->
+        <section class="admin-section">
+          <h2>Benutzer</h2>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Benutzername</th>
+                  <th>Rolle</th>
+                  <th>Erstellt am</th>
+                  <th>Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr>
+                  <td colspan="4">Lade Benutzer...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer role="contentinfo">
+        <p>&copy; 2025 Gartenplaner</p>
+      </footer>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+      <button
+        id="themeToggle"
+        class="theme-toggle-btn"
+        aria-label="Theme umschalten"
+        title="Dark Mode umschalten"
+      >
+        <svg
+          id="themeIcon"
+          class="theme-icon"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <script src="../src/js/config.js"></script>
+    <script src="../src/js/security.js"></script>
+    <script src="../src/js/encryption.js"></script>
+    <script src="../src/js/rate-limiter.js"></script>
+    <script src="../src/js/logger.js"></script>
+    <script src="../src/js/error-handler.js"></script>
+    <script src="../src/js/api.js"></script>
+    <script src="../src/js/confirm-dialog.js"></script>
+    <script src="../src/js/app.js"></script>
+    <script nonce="__CSP_NONCE__">
+      (function() {
+        var API_BASE = '/api/v1/admin/users';
+        var usersTableBody = document.getElementById('usersTableBody');
+        var newUserFormEl = document.getElementById('newUserForm');
+        var userForm = document.getElementById('userForm');
+        var editUserId = document.getElementById('editUserId');
+        var newUsername = document.getElementById('newUsername');
+        var newPassword = document.getElementById('newPassword');
+        var newRole = document.getElementById('newRole');
+        var toggleBtn = document.getElementById('toggleNewUserBtn');
+        var cancelBtn = document.getElementById('cancelUserFormBtn');
+        var formTitle = document.getElementById('adminFormTitle');
+        var submitBtn = document.getElementById('userFormSubmitBtn');
+        var formError = document.getElementById('userFormError');
+
+        function showFormError(msg) {
+          formError.textContent = msg;
+          formError.hidden = false;
+        }
+
+        function hideFormError() {
+          formError.textContent = '';
+          formError.hidden = true;
+        }
+
+        function resetForm() {
+          userForm.reset();
+          editUserId.value = '';
+          formTitle.textContent = 'Neuer Benutzer';
+          submitBtn.textContent = 'Erstellen';
+          newPassword.required = true;
+          newPassword.placeholder = 'Passwort';
+          hideFormError();
+        }
+
+        function showForm() {
+          newUserFormEl.hidden = false;
+          toggleBtn.hidden = true;
+        }
+
+        function hideForm() {
+          newUserFormEl.hidden = true;
+          toggleBtn.hidden = false;
+          resetForm();
+        }
+
+        toggleBtn.addEventListener('click', function() {
+          resetForm();
+          showForm();
+          newUsername.focus();
+        });
+
+        cancelBtn.addEventListener('click', hideForm);
+
+        function formatDate(dateStr) {
+          if (!dateStr) return '-';
+          var d = new Date(dateStr);
+          return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        function renderUsers(users) {
+          if (!users || users.length === 0) {
+            usersTableBody.innerHTML = '<tr><td colspan="4">Keine Benutzer vorhanden.</td></tr>';
+            return;
+          }
+          usersTableBody.innerHTML = users.map(function(u) {
+            var roleLabel = u.role === 'admin' ? 'Administrator' : 'Benutzer';
+            return '<tr data-user-id="' + u.id + '">' +
+              '<td>' + escapeHtml(u.username) + '</td>' +
+              '<td><span class="role-badge role-badge--' + u.role + '">' + roleLabel + '</span></td>' +
+              '<td>' + formatDate(u.created_at || u.createdAt) + '</td>' +
+              '<td class="admin-actions">' +
+                '<button class="btn btn-secondary btn-sm edit-user-btn" data-id="' + u.id + '">Bearbeiten</button> ' +
+                '<button class="btn btn-danger btn-sm delete-user-btn" data-id="' + u.id + '" data-username="' + escapeHtml(u.username) + '">L\u00f6schen</button>' +
+              '</td>' +
+            '</tr>';
+          }).join('');
+
+          // Attach edit handlers
+          usersTableBody.querySelectorAll('.edit-user-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var userId = this.getAttribute('data-id');
+              var user = users.find(function(u) { return String(u.id) === String(userId); });
+              if (!user) return;
+              startEdit(user);
+            });
+          });
+
+          // Attach delete handlers
+          usersTableBody.querySelectorAll('.delete-user-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var userId = this.getAttribute('data-id');
+              var username = this.getAttribute('data-username');
+              doDelete(userId, username);
+            });
+          });
+        }
+
+        function escapeHtml(str) {
+          var div = document.createElement('div');
+          div.textContent = str;
+          return div.innerHTML;
+        }
+
+        function startEdit(user) {
+          resetForm();
+          editUserId.value = user.id;
+          newUsername.value = user.username;
+          newRole.value = user.role;
+          newPassword.required = false;
+          newPassword.placeholder = 'Leer lassen um Passwort nicht zu aendern';
+          formTitle.textContent = 'Benutzer bearbeiten';
+          submitBtn.textContent = 'Speichern';
+          showForm();
+          newUsername.focus();
+        }
+
+        function doDelete(userId, username) {
+          var msg = 'Benutzer "' + username + '" wirklich loeschen?';
+          if (typeof window.confirmAction === 'function') {
+            window.confirmAction(msg, function() { deleteUser(userId); });
+          } else if (confirm(msg)) {
+            deleteUser(userId);
+          }
+        }
+
+        function deleteUser(userId) {
+          fetch(API_BASE + '/' + encodeURIComponent(userId), {
+            method: 'DELETE',
+            credentials: 'same-origin'
+          })
+          .then(function(res) {
+            if (!res.ok) {
+              return res.json().catch(function() { return {}; }).then(function(b) {
+                throw new Error(b.message || 'Loeschen fehlgeschlagen');
+              });
+            }
+            loadUsers();
+          })
+          .catch(function(err) {
+            alert('Fehler: ' + err.message);
+          });
+        }
+
+        userForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          hideFormError();
+
+          var isEdit = !!editUserId.value;
+          var payload = {
+            username: newUsername.value.trim(),
+            role: newRole.value
+          };
+
+          if (!payload.username) {
+            showFormError('Benutzername ist erforderlich.');
+            return;
+          }
+
+          var pw = newPassword.value;
+          if (!isEdit && !pw) {
+            showFormError('Passwort ist erforderlich.');
+            return;
+          }
+          if (pw) {
+            payload.password = pw;
+          }
+
+          var url = isEdit ? API_BASE + '/' + encodeURIComponent(editUserId.value) : API_BASE;
+          var method = isEdit ? 'PUT' : 'POST';
+
+          fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
+          })
+          .then(function(res) {
+            if (!res.ok) {
+              return res.json().catch(function() { return {}; }).then(function(b) {
+                throw new Error(b.message || b.errors && b.errors.join(', ') || 'Vorgang fehlgeschlagen');
+              });
+            }
+            return res.json();
+          })
+          .then(function() {
+            hideForm();
+            loadUsers();
+          })
+          .catch(function(err) {
+            showFormError(err.message);
+          });
+        });
+
+        function loadUsers() {
+          fetch(API_BASE, { credentials: 'same-origin' })
+            .then(function(res) {
+              if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+              }
+              if (res.status === 403) {
+                window.location.href = '/dashboard';
+                return;
+              }
+              if (!res.ok) throw new Error('HTTP ' + res.status);
+              return res.json();
+            })
+            .then(function(data) {
+              if (data) renderUsers(data.users || data);
+            })
+            .catch(function(err) {
+              usersTableBody.innerHTML = '<tr><td colspan="4">Fehler beim Laden: ' + escapeHtml(err.message) + '</td></tr>';
+            });
+        }
+
+        // Load users on page ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', loadUsers);
+        } else {
+          loadUsers();
+        }
+      })();
+    </script>
+  </body>
+</html>

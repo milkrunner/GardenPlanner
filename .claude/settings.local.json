@@ -90,8 +90,7 @@
       "Bash(sed -i 's|https://repo.inform-software.com/artifactory/api/npm/npmjs/|https://registry.npmjs.org/|g' package-lock.json)",
       "Bash(sed -i 's|http://repo.inform-software.com/artifactory/api/npm/npmjs/|https://registry.npmjs.org/|g' package-lock.json)",
       "Bash(grep -l:*)",
-      "Bash(echo \"exit: $?\")",
-      "Bash(node scripts/build.js)"
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

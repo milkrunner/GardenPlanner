@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GardenPlanner — Grün &amp; Klar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Karla:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #14532D;
+            --secondary: #86EFAC;
+            --accent: #D97706;
+            --bg: #FDFDFC;
+            --text: #111827;
+            --text-secondary: #9CA3AF;
+            --border: #F3F4F6;
+            --tag-bg: #ECFDF5;
+            --input-border: #E5E7EB;
+            --font-heading: 'Playfair Display', Georgia, serif;
+            --font-body: 'Karla', -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0A0A0A;
+            --text: #E5E7EB;
+            --text-secondary: #6B7280;
+            --border: #1F1F1F;
+            --tag-bg: #14532D20;
+            --input-border: #2A2A2A;
+            --primary: #86EFAC;
+            --surface: #161616;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-body);
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text);
+            background-color: var(--bg);
+            transition: background-color 0.4s ease, color 0.4s ease;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ===== Layout ===== */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ===== Navigation ===== */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: var(--bg);
+            transition: background-color 0.4s ease;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-inner {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+        }
+
+        .nav-brand {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 16px 0;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            transition: width 0.25s ease;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--text);
+        }
+
+        .nav-links a.active::after,
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ===== Dark Mode Toggle ===== */
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            color: var(--text);
+        }
+
+        .theme-toggle svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease, opacity 0.2s ease;
+        }
+
+        .theme-toggle .icon-moon { display: none; }
+        [data-theme="dark"] .theme-toggle .icon-sun { display: none; }
+        [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+        /* ===== Main Content ===== */
+        main {
+            padding: 48px 0 80px;
+        }
+
+        /* ===== Greeting ===== */
+        .greeting {
+            margin-bottom: 8px;
+            opacity: 0;
+            transform: translateY(8px);
+            animation: fadeUp 0.6s ease forwards;
+        }
+
+        .greeting h1 {
+            font-family: var(--font-heading);
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.3;
+            letter-spacing: -0.02em;
+        }
+
+        .greeting-sub {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* ===== Inline Stats ===== */
+        .stats-line {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 20px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(8px);
+            animation: fadeUp 0.6s ease 0.1s forwards;
+        }
+
+        .stats-line .stat-num {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .stats-line .stat-dot {
+            margin: 0 12px;
+            color: var(--text-secondary);
+            opacity: 0.4;
+        }
+
+        .stats-line .stat-highlight {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        [data-theme="dark"] .stats-line .stat-num {
+            color: #E5E7EB;
+        }
+
+        /* ===== Section Headers ===== */
+        .section-header {
+            font-family: var(--font-heading);
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text);
+            margin-top: 40px;
+            margin-bottom: 24px;
+            letter-spacing: -0.01em;
+        }
+
+        .section-header-small {
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-top: 36px;
+            margin-bottom: 16px;
+        }
+
+        /* ===== Task List ===== */
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(6px);
+            animation: fadeUp 0.5s ease forwards;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            border: 1.5px solid var(--input-border);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .task-checkbox:hover {
+            border-color: var(--primary);
+        }
+
+        .task-checkbox:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .task-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        [data-theme="dark"] .task-checkbox:checked {
+            background-color: #86EFAC;
+            border-color: #86EFAC;
+        }
+
+        [data-theme="dark"] .task-checkbox:checked::after {
+            border-color: #0A0A0A;
+        }
+
+        .task-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text);
+            transition: color 0.3s ease, text-decoration 0.3s ease;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+
+        .task-priority {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .priority-high {
+            color: #DC2626;
+            background: #FEF2F2;
+        }
+
+        .priority-medium {
+            color: var(--accent);
+            background: #FFFBEB;
+        }
+
+        .priority-low {
+            color: #059669;
+            background: var(--tag-bg);
+        }
+
+        [data-theme="dark"] .priority-high {
+            background: #DC262620;
+        }
+
+        [data-theme="dark"] .priority-medium {
+            background: #D9770620;
+        }
+
+        [data-theme="dark"] .priority-low {
+            background: #05966920;
+        }
+
+        /* Dot Leaders */
+        .task-meta {
+            display: flex;
+            align-items: center;
+            margin-top: 4px;
+            padding-left: 30px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            gap: 0;
+        }
+
+        .task-meta-item {
+            white-space: nowrap;
+        }
+
+        .dot-leader {
+            flex: 1;
+            border-bottom: 1px dotted var(--text-secondary);
+            opacity: 0.3;
+            margin: 0 8px;
+            min-width: 20px;
+            position: relative;
+            top: -3px;
+        }
+
+        .task-meta-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .meta-separator {
+            margin: 0 6px;
+            opacity: 0.4;
+        }
+
+        /* ===== Week View ===== */
+        .week-day {
+            margin-bottom: 8px;
+        }
+
+        .week-day-label {
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .week-day-label .day-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--secondary);
+        }
+
+        .week-day-label .today-indicator {
+            background-color: var(--accent);
+        }
+
+        .week-tasks {
+            padding-left: 14px;
+            list-style: none;
+        }
+
+        .week-tasks .task-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ===== Weather ===== */
+        .weather-strip {
+            margin-top: 40px;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(6px);
+            animation: fadeUp 0.5s ease 0.5s forwards;
+        }
+
+        .weather-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .weather-days {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 14px;
+        }
+
+        .weather-day {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .weather-day-name {
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .weather-day-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .weather-day-temp {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .weather-day-temp sup {
+            font-size: 10px;
+        }
+
+        /* ===== Buttons ===== */
+        .btn-primary {
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 500;
+            background-color: #14532D;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.88;
+        }
+
+        [data-theme="dark"] .btn-primary {
+            background-color: #86EFAC;
+            color: #0A0A0A;
+        }
+
+        .btn-text {
+            font-family: var(--font-body);
+            font-size: 14px;
+            font-weight: 500;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .btn-text:hover {
+            color: var(--text);
+            text-decoration: underline;
+        }
+
+        /* ===== Input Demo ===== */
+        .input-section {
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            opacity: 0;
+            transform: translateY(6px);
+            animation: fadeUp 0.5s ease 0.6s forwards;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 32px;
+        }
+
+        .input-field {
+            font-family: var(--font-body);
+            font-size: 15px;
+            width: 100%;
+            padding: 8px 0;
+            border: none;
+            border-bottom: 1.5px solid var(--input-border);
+            background: transparent;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        .input-field::placeholder {
+            color: transparent;
+        }
+
+        .input-label {
+            position: absolute;
+            top: 8px;
+            left: 0;
+            font-size: 15px;
+            color: var(--text-secondary);
+            pointer-events: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus ~ .input-label,
+        .input-field:not(:placeholder-shown) ~ .input-label {
+            top: -14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--primary);
+        }
+
+        /* ===== Modal ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background-color: var(--bg);
+            max-width: 480px;
+            width: 90%;
+            border-radius: 12px;
+            padding: 32px;
+            transform: translateY(20px) scale(0.97);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal h2 {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* ===== Tags ===== */
+        .tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 4px;
+            background-color: var(--tag-bg);
+            color: var(--primary);
+        }
+
+        [data-theme="dark"] .tag {
+            color: #86EFAC;
+        }
+
+        /* ===== Quick-Add Bar ===== */
+        .quick-add {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 24px;
+            padding: 12px 0;
+            opacity: 0;
+            transform: translateY(6px);
+            animation: fadeUp 0.5s ease 0.35s forwards;
+        }
+
+        .quick-add-input {
+            font-family: var(--font-body);
+            font-size: 14px;
+            flex: 1;
+            padding: 8px 0;
+            border: none;
+            border-bottom: 1.5px solid var(--input-border);
+            background: transparent;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .quick-add-input:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        .quick-add-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* ===== Animations ===== */
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Staggered animation delays for task items */
+        .task-item:nth-child(1) { animation-delay: 0.15s; }
+        .task-item:nth-child(2) { animation-delay: 0.22s; }
+        .task-item:nth-child(3) { animation-delay: 0.29s; }
+        .task-item:nth-child(4) { animation-delay: 0.36s; }
+        .task-item:nth-child(5) { animation-delay: 0.43s; }
+        .task-item:nth-child(6) { animation-delay: 0.50s; }
+
+        /* ===== Footer ===== */
+        footer {
+            padding: 32px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== Dark Mode Surface Cards ===== */
+        [data-theme="dark"] nav {
+            background-color: var(--surface);
+        }
+
+        [data-theme="dark"] .modal {
+            background-color: var(--surface);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 600px) {
+            .nav-links {
+                gap: 20px;
+            }
+
+            .greeting h1 {
+                font-size: 26px;
+            }
+
+            .stats-line {
+                font-size: 12px;
+            }
+
+            .stats-line .stat-dot {
+                margin: 0 6px;
+            }
+
+            .weather-days {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-inner">
+            <a href="#" class="nav-brand">GardenPlanner</a>
+            <ul class="nav-links">
+                <li><a href="#" class="active">Dashboard</a></li>
+                <li><a href="#">Aufgaben</a></li>
+                <li><a href="#">Beete</a></li>
+                <li><a href="#">Kalender</a></li>
+            </ul>
+            <div class="nav-right">
+                <button class="theme-toggle" id="themeToggle" aria-label="Farbschema umschalten">
+                    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <div class="container">
+
+            <!-- Greeting -->
+            <div class="greeting">
+                <h1>Guten Morgen!</h1>
+                <p class="greeting-sub">Hier ist dein Garten-Uberblick.</p>
+            </div>
+
+            <!-- Inline Stats -->
+            <div class="stats-line">
+                <span class="stat-num">12</span> offen
+                <span class="stat-dot">&middot;</span>
+                <span class="stat-num">34</span> erledigt
+                <span class="stat-dot">&middot;</span>
+                <span class="stat-num">5</span> Mitarbeiter
+                <span class="stat-dot">&middot;</span>
+                <span class="stat-highlight">73%</span> Quote
+            </div>
+
+            <!-- Today Section -->
+            <h2 class="section-header">Heute, Montag 30. M&auml;rz</h2>
+
+            <ul class="task-list">
+                <li class="task-item" data-task>
+                    <div class="task-top">
+                        <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                        <span class="task-title">Tomaten pikieren und in Einzelt&ouml;pfe umsetzen</span>
+                        <span class="task-priority priority-high">Hoch</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="task-meta-item">Gew&auml;chshaus</span>
+                        <span class="dot-leader"></span>
+                        <span class="task-meta-right">
+                            <span>Lena M.</span>
+                            <span class="meta-separator">&middot;</span>
+                            <span>09:00</span>
+                        </span>
+                    </div>
+                </li>
+                <li class="task-item" data-task>
+                    <div class="task-top">
+                        <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                        <span class="task-title">Kompost umsetzen und neue Schicht anlegen</span>
+                        <span class="task-priority priority-medium">Mittel</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="task-meta-item">Kompostplatz</span>
+                        <span class="dot-leader"></span>
+                        <span class="task-meta-right">
+                            <span>Thomas K.</span>
+                            <span class="meta-separator">&middot;</span>
+                            <span>11:00</span>
+                        </span>
+                    </div>
+                </li>
+                <li class="task-item" data-task>
+                    <div class="task-top">
+                        <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                        <span class="task-title">Fr&uuml;hbeet-Abdeckung kontrollieren</span>
+                        <span class="task-priority priority-low">Niedrig</span>
+                    </div>
+                    <div class="task-meta">
+                        <span class="task-meta-item">Beet A3</span>
+                        <span class="dot-leader"></span>
+                        <span class="task-meta-right">
+                            <span>Mira S.</span>
+                            <span class="meta-separator">&middot;</span>
+                            <span>14:00</span>
+                        </span>
+                    </div>
+                </li>
+            </ul>
+
+            <!-- Quick Add -->
+            <div class="quick-add">
+                <input type="text" class="quick-add-input" placeholder="Neue Aufgabe hinzufugen..." aria-label="Neue Aufgabe">
+                <button class="btn-primary" id="addTaskBtn">Hinzuf&uuml;gen</button>
+            </div>
+
+            <!-- This Week Section -->
+            <h2 class="section-header">Diese Woche</h2>
+
+            <!-- Tuesday -->
+            <div class="week-day">
+                <div class="week-day-label">
+                    <span class="day-indicator"></span>
+                    Dienstag, 31. M&auml;rz
+                </div>
+                <ul class="week-tasks task-list">
+                    <li class="task-item" data-task>
+                        <div class="task-top">
+                            <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                            <span class="task-title">Erdbeeren mulchen</span>
+                            <span class="tag">Beet B1</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-meta-item">Beet B1</span>
+                            <span class="dot-leader"></span>
+                            <span class="task-meta-right">
+                                <span>Jonas F.</span>
+                                <span class="meta-separator">&middot;</span>
+                                <span>10:00</span>
+                            </span>
+                        </div>
+                    </li>
+                    <li class="task-item" data-task>
+                        <div class="task-top">
+                            <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                            <span class="task-title">Bew&auml;sserungssystem Drucktest</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-meta-item">Hauptleitung</span>
+                            <span class="dot-leader"></span>
+                            <span class="task-meta-right">
+                                <span>Thomas K.</span>
+                                <span class="meta-separator">&middot;</span>
+                                <span>13:00</span>
+                            </span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Wednesday -->
+            <div class="week-day">
+                <div class="week-day-label">
+                    <span class="day-indicator"></span>
+                    Mittwoch, 1. April
+                </div>
+                <ul class="week-tasks task-list">
+                    <li class="task-item" data-task>
+                        <div class="task-top">
+                            <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                            <span class="task-title">Saatgut-Bestellung pr&uuml;fen</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-meta-item">B&uuml;ro</span>
+                            <span class="dot-leader"></span>
+                            <span class="task-meta-right">
+                                <span>Lena M.</span>
+                                <span class="meta-separator">&middot;</span>
+                                <span>09:30</span>
+                            </span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Thursday -->
+            <div class="week-day">
+                <div class="week-day-label">
+                    <span class="day-indicator"></span>
+                    Donnerstag, 2. April
+                </div>
+                <ul class="week-tasks task-list">
+                    <li class="task-item" data-task>
+                        <div class="task-top">
+                            <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                            <span class="task-title">Obstb&auml;ume: Erziehungsschnitt Jungb&auml;ume</span>
+                            <span class="task-priority priority-high">Hoch</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-meta-item">Streuobstwiese</span>
+                            <span class="dot-leader"></span>
+                            <span class="task-meta-right">
+                                <span>Mira S.</span>
+                                <span class="meta-separator">&middot;</span>
+                                <span>08:30</span>
+                            </span>
+                        </div>
+                    </li>
+                    <li class="task-item" data-task>
+                        <div class="task-top">
+                            <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                            <span class="task-title">Unkraut j&auml;ten Kr&auml;uterbeet</span>
+                        </div>
+                        <div class="task-meta">
+                            <span class="task-meta-item">Beet C2</span>
+                            <span class="dot-leader"></span>
+                            <span class="task-meta-right">
+                                <span>Anna B.</span>
+                                <span class="meta-separator">&middot;</span>
+                                <span>14:00</span>
+                            </span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Weather Strip -->
+            <div class="weather-strip">
+                <div class="weather-label">Wetter diese Woche</div>
+                <div class="weather-days">
+                    <div class="weather-day">
+                        <span class="weather-day-name">Mo</span>
+                        <span class="weather-day-icon">&#9925;</span>
+                        <span class="weather-day-temp">18<sup>&deg;</sup></span>
+                    </div>
+                    <div class="weather-day">
+                        <span class="weather-day-name">Di</span>
+                        <span class="weather-day-icon">&#9729;</span>
+                        <span class="weather-day-temp">16<sup>&deg;</sup></span>
+                    </div>
+                    <div class="weather-day">
+                        <span class="weather-day-name">Mi</span>
+                        <span class="weather-day-icon">&#9728;</span>
+                        <span class="weather-day-temp">20<sup>&deg;</sup></span>
+                    </div>
+                    <div class="weather-day">
+                        <span class="weather-day-name">Do</span>
+                        <span class="weather-day-icon">&#9728;</span>
+                        <span class="weather-day-temp">22<sup>&deg;</sup></span>
+                    </div>
+                    <div class="weather-day">
+                        <span class="weather-day-name">Fr</span>
+                        <span class="weather-day-icon">&#9925;</span>
+                        <span class="weather-day-temp">19<sup>&deg;</sup></span>
+                    </div>
+                    <div class="weather-day">
+                        <span class="weather-day-name">Sa</span>
+                        <span class="weather-day-icon">&#9728;</span>
+                        <span class="weather-day-temp">21<sup>&deg;</sup></span>
+                    </div>
+                    <div class="weather-day">
+                        <span class="weather-day-name">So</span>
+                        <span class="weather-day-icon">&#9729;</span>
+                        <span class="weather-day-temp">17<sup>&deg;</sup></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Demo Section -->
+            <div class="input-section">
+                <h2 class="section-header">Neue Aufgabe</h2>
+
+                <div class="input-group">
+                    <input type="text" class="input-field" id="inputTitle" placeholder=" " aria-label="Titel">
+                    <label class="input-label" for="inputTitle">Titel</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" class="input-field" id="inputLocation" placeholder=" " aria-label="Standort">
+                    <label class="input-label" for="inputLocation">Standort</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" class="input-field" id="inputPerson" placeholder=" " aria-label="Zustandig">
+                    <label class="input-label" for="inputPerson">Zust&auml;ndig</label>
+                </div>
+
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button class="btn-primary" id="openModalBtn">Erstellen</button>
+                    <button class="btn-text">Abbrechen</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2>Aufgabe erstellt</h2>
+            <p>Die neue Aufgabe wurde deinem Gartenplan hinzugef&uuml;gt und ist unter &bdquo;Heute&ldquo; sichtbar.</p>
+            <div class="modal-actions">
+                <button class="btn-text" id="modalClose">Schliessen</button>
+                <button class="btn-primary" id="modalConfirm">Zum Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            GardenPlanner &middot; Konzept &bdquo;Gr&uuml;n &amp; Klar&ldquo; &middot; <a href="#">Impressum</a>
+        </div>
+    </footer>
+
+    <script>
+        // ===== Dark Mode Toggle =====
+        const themeToggle = document.getElementById('themeToggle');
+        const root = document.documentElement;
+
+        function setTheme(theme) {
+            root.setAttribute('data-theme', theme);
+            localStorage.setItem('garden-theme', theme);
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const current = root.getAttribute('data-theme');
+            setTheme(current === 'dark' ? 'light' : 'dark');
+        });
+
+        // Restore saved theme
+        const savedTheme = localStorage.getItem('garden-theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+        }
+
+        // ===== Task Checkbox Animation =====
+        document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const taskItem = this.closest('.task-item');
+                if (this.checked) {
+                    taskItem.classList.add('completed');
+                    taskItem.style.transition = 'opacity 0.4s ease';
+                    taskItem.style.opacity = '0.55';
+                } else {
+                    taskItem.classList.remove('completed');
+                    taskItem.style.opacity = '1';
+                }
+            });
+        });
+
+        // ===== Modal =====
+        const modalOverlay = document.getElementById('modalOverlay');
+        const openModalBtn = document.getElementById('openModalBtn');
+        const modalClose = document.getElementById('modalClose');
+        const modalConfirm = document.getElementById('modalConfirm');
+
+        function openModal() {
+            modalOverlay.classList.add('active');
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+        }
+
+        openModalBtn.addEventListener('click', openModal);
+        modalClose.addEventListener('click', closeModal);
+        modalConfirm.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ===== Quick Add Task =====
+        const quickAddInput = document.querySelector('.quick-add-input');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+
+        function addTask() {
+            const title = quickAddInput.value.trim();
+            if (!title) return;
+
+            const taskList = document.querySelector('.task-list');
+            const li = document.createElement('li');
+            li.className = 'task-item';
+            li.setAttribute('data-task', '');
+            li.style.opacity = '0';
+            li.style.transform = 'translateY(6px)';
+            li.innerHTML = `
+                <div class="task-top">
+                    <input type="checkbox" class="task-checkbox" aria-label="Aufgabe abschliessen">
+                    <span class="task-title">${title}</span>
+                    <span class="tag">Neu</span>
+                </div>
+                <div class="task-meta">
+                    <span class="task-meta-item">Nicht zugewiesen</span>
+                    <span class="dot-leader"></span>
+                    <span class="task-meta-right">
+                        <span>&mdash;</span>
+                        <span class="meta-separator">&middot;</span>
+                        <span>Jetzt</span>
+                    </span>
+                </div>
+            `;
+
+            // Insert before the last item or at the end
+            taskList.appendChild(li);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                li.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                li.style.opacity = '1';
+                li.style.transform = 'translateY(0)';
+            });
+
+            // Bind checkbox
+            li.querySelector('.task-checkbox').addEventListener('change', function () {
+                const taskItem = this.closest('.task-item');
+                if (this.checked) {
+                    taskItem.classList.add('completed');
+                    taskItem.style.transition = 'opacity 0.4s ease';
+                    taskItem.style.opacity = '0.55';
+                } else {
+                    taskItem.classList.remove('completed');
+                    taskItem.style.opacity = '1';
+                }
+            });
+
+            quickAddInput.value = '';
+            quickAddInput.focus();
+        }
+
+        addTaskBtn.addEventListener('click', addTask);
+        quickAddInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        // ===== Intersection Observer for Scroll Animations =====
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -40px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.week-day').forEach((el, i) => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(8px)';
+            el.style.animation = `fadeUp 0.5s ease ${0.3 + i * 0.1}s forwards`;
+        });
+    </script>
+
+</body>
+</html>
