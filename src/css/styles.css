@@ -6169,3 +6169,11 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   .offline-sync-toast { animation: none; }
 }
+
+/* App Version Display */
+.app-version {
+  font-size: var(--text-xs);
+  color: var(--text-light);
+  opacity: 0.6;
+  margin-left: var(--space-xs);
+}

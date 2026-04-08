@@ -25,6 +25,7 @@ const app = express();
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
 const DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const USE_BUNDLES = process.env.NODE_ENV === 'production' && fs.existsSync(DIST_DIR);
+const APP_VERSION = require(path.join(PROJECT_ROOT, 'package.json')).version;
 
 // --- Middleware (order preserved exactly) ---
 
@@ -104,6 +105,11 @@ app.get('/sw.js', (req, res) => {
 // Manifest vom Root servieren
 app.get('/manifest.json', (req, res) => {
     res.sendFile(path.join(PROJECT_ROOT, 'public', 'manifest.json'));
+});
+
+// Version endpoint (public, no auth needed)
+app.get('/api/version', (req, res) => {
+    res.json({ version: APP_VERSION });
 });
 
 // HTML page routes (with and without .html extension)
