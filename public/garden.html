@@ -63,6 +63,9 @@
         </div>
 
         <div class="garden-header-right">
+          <button type="button" class="header-btn" id="helpBtn" title="Hilfe (?)" aria-label="Hilfe anzeigen">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </button>
           <button type="button" class="header-btn" id="undoBtn" title="Rückgängig (Ctrl+Z)" aria-label="Rückgängig" disabled>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
           </button>
@@ -72,9 +75,15 @@
 
           <span class="header-separator"></span>
 
-          <button type="button" class="header-btn" id="exportBtn" title="Als PNG exportieren" aria-label="Exportieren">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </button>
+          <div class="export-dropdown" id="exportDropdown">
+            <button type="button" class="header-btn" id="exportBtn" title="Exportieren" aria-label="Exportieren" aria-haspopup="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <div class="export-menu" id="exportMenu" style="display:none">
+              <button type="button" class="export-menu-item" data-format="png">Als PNG exportieren</button>
+              <button type="button" class="export-menu-item" data-format="svg">Als SVG exportieren</button>
+            </div>
+          </div>
           <button type="button" class="header-btn header-btn--primary" id="saveBtn" title="Speichern (Ctrl+S)" aria-label="Speichern">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             <span class="btn-label">Speichern</span>
@@ -192,6 +201,56 @@
       <footer role="contentinfo">
         <p>&copy; 2025 Gartenplaner <span class="app-version" id="appVersion"></span></p>
       </footer>
+
+      <!-- Help Modal -->
+      <div class="garden-help-overlay" id="gardenHelpOverlay" style="display:none">
+        <div class="garden-help-modal">
+          <div class="garden-help-header">
+            <h2>Hilfe — Gartenplaner</h2>
+            <button class="garden-help-close" id="helpCloseBtn" aria-label="Schliessen">&times;</button>
+          </div>
+          <div class="garden-help-content">
+            <section>
+              <h3>Werkzeuge</h3>
+              <table class="help-table">
+                <tr><td><kbd>V</kbd></td><td><strong>Auswahl</strong> — Elemente anklicken, verschieben</td></tr>
+                <tr><td><kbd>D</kbd></td><td><strong>Zeichnen</strong> — Flaechen als Polygone zeichnen. Doppelklick oder Klick auf Startpunkt schliesst die Flaeche</td></tr>
+                <tr><td><kbd>M</kbd></td><td><strong>Verschieben</strong> — Flaechen und Elemente ziehen</td></tr>
+                <tr><td><kbd>X</kbd></td><td><strong>Loeschen</strong> — Elemente und Flaechen entfernen</td></tr>
+              </table>
+            </section>
+            <section>
+              <h3>Tastenkuerzel</h3>
+              <table class="help-table">
+                <tr><td><kbd>G</kbd></td><td>Raster ein-/ausblenden</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Zeichnung abbrechen / Auswahl aufheben</td></tr>
+                <tr><td><kbd>Entf</kbd></td><td>Ausgewaehltes Element loeschen</td></tr>
+                <tr><td><kbd>Ctrl+Z</kbd></td><td>Rueckgaengig</td></tr>
+                <tr><td><kbd>Ctrl+Y</kbd></td><td>Wiederholen</td></tr>
+                <tr><td><kbd>Ctrl+S</kbd></td><td>Garten speichern</td></tr>
+                <tr><td><kbd>?</kbd></td><td>Diese Hilfe anzeigen</td></tr>
+              </table>
+            </section>
+            <section>
+              <h3>Maus & Navigation</h3>
+              <table class="help-table">
+                <tr><td>Scrollen</td><td>Canvas verschieben</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + Scrollen</td><td>Zoom</td></tr>
+                <tr><td><kbd>Shift</kbd> halten</td><td>Snap-to-Grid deaktivieren</td></tr>
+              </table>
+            </section>
+            <section>
+              <h3>Tipps</h3>
+              <ul>
+                <li>Waehle eine Flaeche in der Seitenleiste, dann zeichne mit dem Zeichenwerkzeug</li>
+                <li>Klicke auf eine Pflanze in der Seitenleiste, dann klicke auf den Canvas zum Platzieren</li>
+                <li>Beete koennen auf Rasen gezeichnet werden (Flaechen uebereinander)</li>
+                <li>Hover ueber eine Flaeche zeigt Groesse und Umfang</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Dark Mode Toggle -->

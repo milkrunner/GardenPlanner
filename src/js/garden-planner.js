@@ -1414,6 +1414,56 @@
   }
 
   // =====================================================
+  // Export (SVG)
+  // =====================================================
+  function exportSVG() {
+    setStatus('Exportiere als SVG...');
+
+    var svgClone = dom.canvas.cloneNode(true);
+    svgClone.setAttribute('viewBox', '0 0 ' + gardenData.canvasSize.width + ' ' + gardenData.canvasSize.height);
+    svgClone.setAttribute('width', gardenData.canvasSize.width);
+    svgClone.setAttribute('height', gardenData.canvasSize.height);
+    svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+    // Remove drawing layer and grid layer from clone
+    var drawLayer = svgClone.querySelector('#layerDrawing');
+    if (drawLayer) drawLayer.innerHTML = '';
+    var gridLayer = svgClone.querySelector('#layerGrid');
+    if (gridLayer) gridLayer.innerHTML = '';
+
+    // Add background rect
+    var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', gardenData.canvasSize.width);
+    bg.setAttribute('height', gardenData.canvasSize.height);
+    bg.setAttribute('fill', '#F5F3EE');
+    var content = svgClone.querySelector('#canvasContent');
+    if (content) content.insertBefore(bg, content.firstChild);
+
+    // Inline styles for clean SVG output
+    var allElements = svgClone.querySelectorAll('*');
+    allElements.forEach(function (el) {
+      var cs = window.getComputedStyle(el);
+      if (el.tagName === 'polygon' || el.tagName === 'circle' || el.tagName === 'line' || el.tagName === 'rect' || el.tagName === 'text' || el.tagName === 'path') {
+        if (cs.fill && cs.fill !== 'none') el.setAttribute('fill', cs.fill);
+        if (cs.stroke && cs.stroke !== 'none') el.setAttribute('stroke', cs.stroke);
+        if (cs.strokeWidth) el.setAttribute('stroke-width', cs.strokeWidth);
+        if (cs.fontSize) el.setAttribute('font-size', cs.fontSize);
+        if (cs.fontFamily) el.setAttribute('font-family', cs.fontFamily);
+        if (cs.textAnchor) el.setAttribute('text-anchor', cs.textAnchor);
+      }
+    });
+
+    var svgData = new XMLSerializer().serializeToString(svgClone);
+    var blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (gardenData.name || 'garten') + '.svg';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus('SVG exportiert: ' + a.download);
+  }
+
+  // =====================================================
   // Sidebar Rendering
   // =====================================================
   function renderSurfacePalette() {
@@ -1755,6 +1805,12 @@
           renderAll();
           setStatus('Raster ' + (state.gridVisible ? 'eingeblendet' : 'ausgeblendet'));
           break;
+        case '?':
+          var helpOv = document.getElementById('gardenHelpOverlay');
+          if (helpOv) {
+            helpOv.style.display = helpOv.style.display === 'flex' ? 'none' : 'flex';
+          }
+          break;
       }
     });
   }
@@ -1848,7 +1904,26 @@
     dom.undoBtn.addEventListener('click', undo);
     dom.redoBtn.addEventListener('click', redo);
     document.getElementById('saveBtn').addEventListener('click', saveCurrentGarden);
-    document.getElementById('exportBtn').addEventListener('click', exportPNG);
+    // Export dropdown
+    var exportBtn = document.getElementById('exportBtn');
+    var exportMenu = document.getElementById('exportMenu');
+    if (exportBtn && exportMenu) {
+      exportBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        exportMenu.style.display = exportMenu.style.display === 'none' ? 'block' : 'none';
+      });
+      exportMenu.querySelectorAll('.export-menu-item').forEach(function (item) {
+        item.addEventListener('click', function () {
+          exportMenu.style.display = 'none';
+          if (this.dataset.format === 'png') exportPNG();
+          else if (this.dataset.format === 'svg') exportSVG();
+        });
+      });
+      // Close menu on outside click
+      document.addEventListener('click', function () {
+        exportMenu.style.display = 'none';
+      });
+    }
 
     // Zoom buttons
     document.getElementById('zoomIn').addEventListener('click', zoomIn);
@@ -1875,6 +1950,22 @@
         localStorage.setItem('gardenplanner_gridScale', String(state.gridScale));
         initPatterns();
         renderAll();
+      });
+    }
+
+    // Help button
+    var helpBtn = document.getElementById('helpBtn');
+    var helpOverlay = document.getElementById('gardenHelpOverlay');
+    var helpCloseBtn = document.getElementById('helpCloseBtn');
+    if (helpBtn && helpOverlay) {
+      helpBtn.addEventListener('click', function () {
+        helpOverlay.style.display = 'flex';
+      });
+      helpCloseBtn.addEventListener('click', function () {
+        helpOverlay.style.display = 'none';
+      });
+      helpOverlay.addEventListener('click', function (e) {
+        if (e.target === helpOverlay) helpOverlay.style.display = 'none';
       });
     }
 

@@ -922,6 +922,143 @@
   outline: 2px solid var(--focus-ring);
 }
 
+/* =============================================
+   Help Modal
+   ============================================= */
+.garden-help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.garden-help-modal {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  max-width: 560px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+}
+
+.garden-help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.garden-help-header h2 {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  margin: 0;
+}
+
+.garden-help-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.garden-help-content {
+  padding: var(--space-lg);
+}
+
+.garden-help-content section {
+  margin-bottom: var(--space-lg);
+}
+
+.garden-help-content section:last-child {
+  margin-bottom: 0;
+}
+
+.garden-help-content h3 {
+  font-size: var(--text-base);
+  margin-bottom: var(--space-sm);
+  color: var(--primary);
+}
+
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.help-table td {
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+  vertical-align: top;
+}
+
+.help-table td:first-child {
+  width: 100px;
+  white-space: nowrap;
+}
+
+.garden-help-content kbd {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: monospace;
+  font-size: var(--text-xs);
+}
+
+.garden-help-content ul {
+  padding-left: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--text-light);
+}
+
+.garden-help-content li {
+  margin-bottom: var(--space-xs);
+}
+
+/* =============================================
+   Export Dropdown
+   ============================================= */
+.export-dropdown {
+  position: relative;
+}
+
+.export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 200;
+  min-width: 180px;
+  margin-top: 4px;
+}
+
+.export-menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.export-menu-item:hover {
+  background: var(--bg-tertiary);
+}
+
 /* Dark mode adjustments for rulers */
 [data-theme="dark"] .garden-ruler-corner,
 [data-theme="dark"] .garden-ruler-top,
