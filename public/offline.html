@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline - Gartenplaner</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#365E3D" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Nunito:wght@400;600&display=swap');
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --color-primary: #365E3D;
+        --color-bg: #FBF9F4;
+        --color-text: #1C1917;
+        --color-text-light: #78716C;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --color-primary: #A8D5BA;
+          --color-bg: #0C0A09;
+          --color-text: #F5F5F4;
+          --color-text-light: #A8A29E;
+        }
+      }
+
+      html, body {
+        height: 100%;
+      }
+
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        padding: 1.5rem;
+      }
+
+      .offline-container {
+        text-align: center;
+        max-width: 28rem;
+      }
+
+      .offline-icon {
+        font-size: 5rem;
+        line-height: 1;
+        margin-bottom: 1.5rem;
+      }
+
+      .offline-heading {
+        font-family: 'DM Serif Display', 'Georgia', serif;
+        font-size: 1.75rem;
+        font-weight: 400;
+        color: var(--color-text);
+        margin-bottom: 1rem;
+      }
+
+      .offline-text {
+        font-size: 1rem;
+        color: var(--color-text-light);
+        margin-bottom: 2rem;
+      }
+
+      .offline-button {
+        display: inline-block;
+        padding: 0.75rem 1.75rem;
+        background-color: var(--color-primary);
+        color: #FBF9F4;
+        font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: opacity 0.15s ease;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .offline-button {
+          color: #0C0A09;
+        }
+      }
+
+      .offline-button:hover {
+        opacity: 0.85;
+      }
+
+      .offline-button:focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="offline-container">
+      <div class="offline-icon" aria-hidden="true">📡</div>
+      <h1 class="offline-heading">Keine Internetverbindung</h1>
+      <p class="offline-text">
+        Diese Seite ist leider nicht im Offline-Cache verfügbar.
+        Prüfe deine Internetverbindung und versuche es erneut.
+      </p>
+      <button class="offline-button" onclick="window.location.reload()">
+        Erneut versuchen
+      </button>
+    </main>
+  </body>
+</html>
