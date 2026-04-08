@@ -14,6 +14,9 @@
   var DEFAULT_CANVAS = { width: 1200, height: 800 };
   var SNAP_DISTANCE = 12;
   var CLOSE_POLYGON_DISTANCE = 14;
+  var PIXELS_PER_GRID = 50;
+  var GRID_SCALES = [0.25, 0.5, 1];
+  var DEFAULT_GRID_SCALE = 0.5;
 
   var SURFACE_TYPES = [
     { id: 'bed', name: 'Beet', color: '#8B6F47', pattern: 'pattern-bed', icon: '🌱' },
@@ -58,7 +61,9 @@
     selectedElement: null,    // currently selected element ID
     zoom: 1,
     panX: 0,
-    panY: 0
+    panY: 0,
+    gridVisible: true,
+    gridScale: DEFAULT_GRID_SCALE
   };
 
   var gardenData = createEmptyGarden();
@@ -129,12 +134,49 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function pixelsPerMeter() {
+    return PIXELS_PER_GRID / state.gridScale;
+  }
+
+  function pixelsToMeters(px) {
+    return px / pixelsPerMeter();
+  }
+
+  function snapToGrid(point, forceOff) {
+    if (forceOff) return point;
+    var step = PIXELS_PER_GRID;
+    return {
+      x: Math.round(point.x / step) * step,
+      y: Math.round(point.y / step) * step
+    };
+  }
+
   // =====================================================
   // SVG Patterns
   // =====================================================
   function initPatterns() {
     var defs = dom.svgDefs;
     defs.innerHTML = '';
+
+    // Grid pattern
+    addPattern(defs, 'pattern-grid', PIXELS_PER_GRID, PIXELS_PER_GRID, 'transparent', function (p) {
+      var line1 = createSVGElement('line');
+      line1.setAttribute('x1', '0');
+      line1.setAttribute('y1', '0');
+      line1.setAttribute('x2', String(PIXELS_PER_GRID));
+      line1.setAttribute('y2', '0');
+      line1.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+      line1.setAttribute('stroke-width', '0.5');
+      p.appendChild(line1);
+      var line2 = createSVGElement('line');
+      line2.setAttribute('x1', '0');
+      line2.setAttribute('y1', '0');
+      line2.setAttribute('x2', '0');
+      line2.setAttribute('y2', String(PIXELS_PER_GRID));
+      line2.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+      line2.setAttribute('stroke-width', '0.5');
+      p.appendChild(line2);
+    });
 
     // Bed pattern - soil dots
     addPattern(defs, 'pattern-bed', 12, 12, '#8B6F47', function (p) {
@@ -268,7 +310,25 @@
   // =====================================================
   // Render
   // =====================================================
+  function renderGrid() {
+    var layer = dom.layerGrid;
+    if (!layer) return;
+    layer.innerHTML = '';
+    if (!state.gridVisible) return;
+
+    var w = gardenData.canvasSize.width;
+    var h = gardenData.canvasSize.height;
+    var rect = createSVGElement('rect');
+    rect.setAttribute('x', '0');
+    rect.setAttribute('y', '0');
+    rect.setAttribute('width', String(w));
+    rect.setAttribute('height', String(h));
+    rect.setAttribute('fill', 'url(#pattern-grid)');
+    layer.appendChild(rect);
+  }
+
   function renderAll() {
+    renderGrid();
     renderAreas();
     renderElements();
     updateViewBox();
@@ -573,6 +633,7 @@
   // Drawing
   // =====================================================
   function handleDrawClick(pt, e) {
+    pt = snapToGrid(pt, e.shiftKey);
     // Check if clicking close to first point to close polygon
     if (drawPoints.length >= 3) {
       var first = drawPoints[0];
@@ -728,8 +789,10 @@
   function handleDrag(e) {
     if (!dragState) return;
     var pt = mouseToSVG(e);
-    var dx = pt.x - dragState.startX;
-    var dy = pt.y - dragState.startY;
+    var snapped = snapToGrid(pt, false);
+    var startSnapped = snapToGrid({ x: dragState.startX, y: dragState.startY }, false);
+    var dx = snapped.x - startSnapped.x;
+    var dy = snapped.y - startSnapped.y;
 
     if (dragState.type === 'element') {
       var el = gardenData.elements.find(function (el) { return el.id === dragState.id; });
@@ -793,6 +856,7 @@
   // =====================================================
   function placePlant(pt) {
     if (!state.selectedPlant) return;
+    pt = snapToGrid(pt);
     pushUndo();
 
     var element = {
@@ -813,6 +877,7 @@
 
   function placeStructure(pt) {
     if (!state.selectedStructure) return;
+    pt = snapToGrid(pt);
     pushUndo();
 
     var element = {
@@ -1437,6 +1502,12 @@
             zoomReset();
           }
           break;
+        case 'g':
+        case 'G':
+          state.gridVisible = !state.gridVisible;
+          renderAll();
+          setStatus('Raster ' + (state.gridVisible ? 'eingeblendet' : 'ausgeblendet'));
+          break;
       }
     });
   }
@@ -1497,6 +1568,13 @@
     dom.zoomLevel = document.getElementById('zoomLevel');
     dom.undoBtn = document.getElementById('undoBtn');
     dom.redoBtn = document.getElementById('redoBtn');
+    dom.layerGrid = document.getElementById('layerGrid');
+    dom.rulerTop = document.getElementById('rulerTop');
+    dom.rulerLeft = document.getElementById('rulerLeft');
+    dom.rulerCorner = document.getElementById('rulerCorner');
+    dom.tooltip = document.getElementById('gardenTooltip');
+    dom.gridScaleSelect = document.getElementById('gridScaleSelect');
+    dom.statusCanvasSize = document.getElementById('statusCanvasSize');
   }
 
   function bindEvents() {
@@ -1542,6 +1620,17 @@
       renderSavedGardens();
     });
 
+    // Grid scale change
+    if (dom.gridScaleSelect) {
+      dom.gridScaleSelect.value = String(state.gridScale);
+      dom.gridScaleSelect.addEventListener('change', function () {
+        state.gridScale = parseFloat(this.value);
+        localStorage.setItem('gardenplanner_gridScale', String(state.gridScale));
+        initPatterns();
+        renderAll();
+      });
+    }
+
     // Global mouseup for drag end
     document.addEventListener('mouseup', function () {
       if (dragState) endDrag();
@@ -1561,6 +1650,14 @@
 
   function init() {
     cacheDom();
+
+    // Restore grid scale
+    var savedScale = localStorage.getItem('gardenplanner_gridScale');
+    if (savedScale && GRID_SCALES.indexOf(parseFloat(savedScale)) !== -1) {
+      state.gridScale = parseFloat(savedScale);
+      if (dom.gridScaleSelect) dom.gridScaleSelect.value = String(state.gridScale);
+    }
+
     initTheme();
     initPatterns();
     initKeyboard();
