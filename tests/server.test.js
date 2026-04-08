@@ -474,6 +474,42 @@ describeWithDB('API Endpoints', () => {
         });
     });
 
+    describe('PUT /api/tasks/:id - Conflict Detection', () => {
+        test('returns 409 when lastKnownUpdate is older than server updatedAt', async () => {
+            const createRes = await request(app)
+                .post('/api/tasks')
+                .send({ title: 'Conflict Test', location: 'Garten' });
+            const taskId = createRes.body.id;
+
+            await request(app)
+                .put(`/api/tasks/${taskId}`)
+                .send({ title: 'Updated Title' });
+
+            const res = await request(app)
+                .put(`/api/tasks/${taskId}`)
+                .send({
+                    title: 'Offline Change',
+                    lastKnownUpdate: '2020-01-01T00:00:00.000Z'
+                });
+
+            expect(res.status).toBe(409);
+            expect(res.body.error).toBe(true);
+            expect(res.body.serverTask).toBeDefined();
+        });
+
+        test('accepts update when lastKnownUpdate is not provided', async () => {
+            const createRes = await request(app)
+                .post('/api/tasks')
+                .send({ title: 'No Conflict', location: 'Garten' });
+
+            const res = await request(app)
+                .put(`/api/tasks/${createRes.body.id}`)
+                .send({ title: 'Updated Without Timestamp' });
+
+            expect(res.status).toBe(200);
+        });
+    });
+
     describe('DELETE /api/tasks/:id', () => {
         test('deletes a task and returns 204', async () => {
             const created = await request(app).post('/api/tasks').send(validTask);

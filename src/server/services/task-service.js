@@ -204,6 +204,20 @@ async function updateTask(id, body) {
         return { error: true, status: 404, message: 'Task not found' };
     }
 
+    // Konflikt-Erkennung fuer Offline-Sync
+    if (body.lastKnownUpdate) {
+        const clientUpdate = new Date(body.lastKnownUpdate).getTime();
+        const serverUpdate = new Date(existing.updatedAt).getTime();
+        if (serverUpdate > clientUpdate) {
+            return {
+                error: true,
+                status: 409,
+                message: 'Task wurde zwischenzeitlich geaendert',
+                serverTask: existing
+            };
+        }
+    }
+
     const updatedFields = {};
     const changes = [];
     const historyEntries = [];

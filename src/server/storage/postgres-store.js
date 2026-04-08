@@ -26,7 +26,8 @@ function rowToTask(row) {
         sortOrder: parseInt(row.sort_order),
         completedAt: row.completed_at,
         archivedAt: row.archived_at,
-        createdAt: row.created_at
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
     };
 }
 

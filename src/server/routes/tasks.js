@@ -47,6 +47,7 @@ router.put('/:id', validateIdParam, async (req, res) => {
     const result = await updateTask(req.params.id, req.body);
     if (result.error) {
         if (result.status === 400) return res.status(400).json({ error: true, status: 400, message: 'Validation failed', errors: result.errors });
+        if (result.status === 409) return res.status(409).json({ error: true, status: 409, message: result.message, serverTask: result.serverTask });
         return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.json(result.task);
