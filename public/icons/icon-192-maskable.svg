@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 512 512">
+  <!-- Background fills entire viewBox for maskable safe zone -->
+  <rect width="512" height="512" fill="#365E3D"/>
+  <!-- Seedling scaled to 80% safe zone (content within center 80%) -->
+  <g transform="translate(256, 285) scale(0.72)">
+    <!-- Stem -->
+    <path d="M0 70 C0 30 0 -10 0 -40" stroke="#ffffff" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <!-- Left leaf -->
+    <path d="M0 -10 C-10 -30 -65 -55 -75 -85 C-45 -80 -10 -60 0 -40" fill="#A8D5A2"/>
+    <!-- Right leaf (slightly higher, asymmetric for natural look) -->
+    <path d="M0 -40 C10 -60 65 -85 75 -115 C45 -110 10 -90 0 -70" fill="#C8E6C9"/>
+  </g>
+</svg>
