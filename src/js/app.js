@@ -603,4 +603,15 @@ document.addEventListener("DOMContentLoaded", () => {
 	console.log(
 		"♿ Accessibility verbessert - ARIA-Labels und Keyboard-Navigation!",
 	);
+
+	// Fetch and display app version
+	var versionEl = document.getElementById('appVersion');
+	if (versionEl) {
+		fetch('/api/version')
+			.then(function(r) { return r.json(); })
+			.then(function(data) {
+				if (data.version) versionEl.textContent = 'v' + data.version;
+			})
+			.catch(function() { /* silently ignore */ });
+	}
 });
