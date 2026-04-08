@@ -1,406 +1,882 @@
 /**
- * Garden Planner - Interactive grid-based garden layout editor
- * MVP: localStorage-based save/load, vanilla JS
+ * Garden Planner - SVG-based freehand garden layout editor
+ * Version 2: Polygon drawing, plant placement, drag-move, undo/redo
  */
 
 (function () {
   'use strict';
 
   // =====================================================
-  // Element Definitions
+  // Constants
   // =====================================================
-  const GARDEN_ELEMENTS = {
-    beds: [
-      { id: 'raised-bed', name: 'Hochbeet', icon: '\u{1F331}', color: '#8B7355' },
-      { id: 'ground-bed', name: 'Bodenbeet', icon: '\u{1F33F}', color: '#6B8E23' },
-      { id: 'herb-spiral', name: 'Kr\u00E4uterspirale', icon: '\u{1F300}', color: '#9ACD32' }
-    ],
-    paths: [
-      { id: 'stone-path', name: 'Steinweg', icon: '\u{1FAA8}', color: '#A9A9A9' },
-      { id: 'grass-path', name: 'Rasenweg', icon: '\u{1F7E9}', color: '#7CFC00' },
-      { id: 'gravel', name: 'Kies', icon: '\u26AA', color: '#D3D3D3' }
-    ],
-    structures: [
-      { id: 'greenhouse', name: 'Gew\u00E4chshaus', icon: '\u{1F3E0}', color: '#B0C4DE' },
-      { id: 'compost', name: 'Kompost', icon: '\u267B\uFE0F', color: '#8B4513' },
-      { id: 'water', name: 'Wasseranschluss', icon: '\u{1F6B0}', color: '#4169E1' },
-      { id: 'fence', name: 'Zaun', icon: '\u{1F3D7}\uFE0F', color: '#DEB887' },
-      { id: 'bench', name: 'Sitzbank', icon: '\u{1FA91}', color: '#D2691E' }
-    ]
-  };
+  var STORAGE_KEY = 'gardenplanner_gardens';
+  var MAX_UNDO = 20;
+  var DEFAULT_CANVAS = { width: 1200, height: 800 };
+  var SNAP_DISTANCE = 12;
+  var CLOSE_POLYGON_DISTANCE = 14;
 
-  const CATEGORY_LABELS = {
-    beds: 'Beete',
-    paths: 'Wege',
-    structures: 'Strukturen',
-    plants: 'Pflanzen'
-  };
-
-  const GRID_SIZES = [
-    { label: '8 x 8', rows: 8, cols: 8 },
-    { label: '10 x 10', rows: 10, cols: 10 },
-    { label: '12 x 12', rows: 12, cols: 12 },
-    { label: '16 x 16', rows: 16, cols: 16 },
-    { label: '20 x 20', rows: 20, cols: 20 }
+  var SURFACE_TYPES = [
+    { id: 'bed', name: 'Beet', color: '#8B6F47', pattern: 'pattern-bed', icon: '🌱' },
+    { id: 'lawn', name: 'Rasen', color: '#6BAF5B', pattern: 'pattern-lawn', icon: '🌿' },
+    { id: 'gravel', name: 'Kies', color: '#B0A896', pattern: 'pattern-gravel', icon: '⬡' },
+    { id: 'path', name: 'Weg', color: '#A09080', pattern: 'pattern-path', icon: '🚶' },
+    { id: 'water', name: 'Wasser', color: '#5B9BD5', pattern: 'pattern-water', icon: '💧' },
+    { id: 'terrace', name: 'Terrasse', color: '#8C7B6B', pattern: 'pattern-terrace', icon: '🏡' }
   ];
 
-  const STORAGE_KEY = 'gardenplanner_gardens';
+  var PLANTS = [
+    { id: 'tomate', name: 'Tomate', icon: '\u{1F345}', color: '#FFCDD2', info: 'Sonnig, Mai-Sep' },
+    { id: 'salat', name: 'Salat', icon: '\u{1F96C}', color: '#C8E6C9', info: 'Halbschatten, Mrz-Okt' },
+    { id: 'sonnenblume', name: 'Sonnenblume', icon: '\u{1F33B}', color: '#FFE0B2', info: 'Sonnig, Apr-Sep' },
+    { id: 'lavendel', name: 'Lavendel', icon: '\u{1F490}', color: '#D1C4E9', info: 'Sonnig, mehrjährig' },
+    { id: 'rose', name: 'Rose', icon: '\u{1F339}', color: '#FFCCBC', info: 'Sonnig, mehrjährig' },
+    { id: 'gurke', name: 'Gurke', icon: '\u{1F952}', color: '#C5E1A5', info: 'Sonnig, Mai-Aug' },
+    { id: 'blaubeere', name: 'Blaubeere', icon: '\u{1FAD0}', color: '#BBDEFB', info: 'Halbschatten, mehrj.' },
+    { id: 'basilikum', name: 'Basilikum', icon: '\u{1F33F}', color: '#F0F4C3', info: 'Sonnig, Mai-Sep' },
+    { id: 'erdbeere', name: 'Erdbeere', icon: '\u{1F353}', color: '#FFCDD2', info: 'Sonnig, Apr-Jul' },
+    { id: 'paprika', name: 'Paprika', icon: '\u{1FAD1}', color: '#C8E6C9', info: 'Sonnig, Mai-Sep' },
+    { id: 'karotte', name: 'Karotte', icon: '\u{1F955}', color: '#FFE0B2', info: 'Sonnig, Mrz-Okt' },
+    { id: 'zucchini', name: 'Zucchini', icon: '\u{1F952}', color: '#C5E1A5', info: 'Sonnig, Mai-Aug' }
+  ];
+
+  var STRUCTURES = [
+    { id: 'bank', name: 'Gartenbank', icon: '\u{1FA91}', color: '#D7CCC8' },
+    { id: 'zaun', name: 'Zaun', icon: '\u26E9', color: '#EFEBE9' },
+    { id: 'kompost', name: 'Kompost', icon: '\u{1F5D1}', color: '#E0E0E0' },
+    { id: 'schuppen', name: 'Schuppen', icon: '\u{1F3E0}', color: '#BCAAA4' },
+    { id: 'brunnen', name: 'Brunnen', icon: '\u26F2', color: '#BBDEFB' }
+  ];
 
   // =====================================================
   // State
   // =====================================================
-  let gridSize = { rows: 12, cols: 12 };
-  let gridState = []; // 2D array: null or { type, name, icon, color, id }
-  let selectedElement = null;
-  let isPainting = false;
-  let zoomLevel = 1;
-  let currentGardenId = null;
-  let plantElements = [];
+  var state = {
+    tool: 'select',           // select | draw | move | delete
+    selectedSurface: 'bed',   // which surface type for drawing
+    selectedPlant: null,      // plant to place (click mode)
+    selectedStructure: null,  // structure to place
+    selectedElement: null,    // currently selected element ID
+    zoom: 1,
+    panX: 0,
+    panY: 0
+  };
+
+  var gardenData = createEmptyGarden();
+  var currentGardenId = null;
+
+  // Drawing state
+  var drawPoints = [];
+  var drawPreviewLine = null;
+
+  // Drag state
+  var dragState = null;
+
+  // Undo/redo
+  var undoStack = [];
+  var redoStack = [];
+
+  // DOM cache
+  var dom = {};
 
   // =====================================================
-  // DOM References
+  // Helpers
   // =====================================================
-  const dom = {};
+  function generateId() {
+    return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  }
 
-  function cacheDom() {
-    dom.gridSizeSelect = document.getElementById('gridSizeSelect');
-    dom.gridContainer = document.getElementById('gardenGrid');
-    dom.gridWrapper = document.getElementById('gardenGridWrapper');
-    dom.palette = document.getElementById('gardenPalette');
-    dom.infoText = document.getElementById('gardenInfoText');
-    dom.zoomIn = document.getElementById('zoomIn');
-    dom.zoomOut = document.getElementById('zoomOut');
-    dom.zoomLevel = document.getElementById('zoomLevel');
-    dom.saveBtn = document.getElementById('gardenSaveBtn');
-    dom.loadBtn = document.getElementById('gardenLoadBtn');
-    dom.clearBtn = document.getElementById('gardenClearBtn');
-    dom.saveDialog = document.getElementById('gardenSaveDialog');
-    dom.loadDialog = document.getElementById('gardenLoadDialog');
+  function createEmptyGarden() {
+    return {
+      version: 2,
+      name: 'Mein Garten',
+      canvasSize: { width: DEFAULT_CANVAS.width, height: DEFAULT_CANVAS.height },
+      layers: [],
+      elements: []
+    };
+  }
+
+  function cloneData(d) {
+    return JSON.parse(JSON.stringify(d));
+  }
+
+  function svgNS() {
+    return 'http://www.w3.org/2000/svg';
+  }
+
+  function createSVGElement(tag) {
+    return document.createElementNS(svgNS(), tag);
+  }
+
+  function getSurfaceType(id) {
+    for (var i = 0; i < SURFACE_TYPES.length; i++) {
+      if (SURFACE_TYPES[i].id === id) return SURFACE_TYPES[i];
+    }
+    return SURFACE_TYPES[0];
+  }
+
+  // Convert mouse event to SVG coordinates
+  function mouseToSVG(e) {
+    var svg = dom.canvas;
+    var rect = svg.getBoundingClientRect();
+    var x = (e.clientX - rect.left) / state.zoom - state.panX / state.zoom;
+    var y = (e.clientY - rect.top) / state.zoom - state.panY / state.zoom;
+    return { x: x, y: y };
+  }
+
+  function dist(a, b) {
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
 
   // =====================================================
-  // Grid Management
+  // SVG Patterns
   // =====================================================
-  function initGrid() {
-    gridState = [];
-    for (let r = 0; r < gridSize.rows; r++) {
-      gridState[r] = [];
-      for (let c = 0; c < gridSize.cols; c++) {
-        gridState[r][c] = null;
+  function initPatterns() {
+    var defs = dom.svgDefs;
+    defs.innerHTML = '';
+
+    // Bed pattern - soil dots
+    addPattern(defs, 'pattern-bed', 12, 12, '#8B6F47', function (p) {
+      var c1 = createSVGElement('circle');
+      c1.setAttribute('cx', '3');
+      c1.setAttribute('cy', '3');
+      c1.setAttribute('r', '1.2');
+      c1.setAttribute('fill', '#7A5F3A');
+      p.appendChild(c1);
+      var c2 = createSVGElement('circle');
+      c2.setAttribute('cx', '9');
+      c2.setAttribute('cy', '9');
+      c2.setAttribute('r', '1');
+      c2.setAttribute('fill', '#6B5030');
+      p.appendChild(c2);
+    });
+
+    // Lawn pattern - grass lines
+    addPattern(defs, 'pattern-lawn', 10, 10, '#6BAF5B', function (p) {
+      var l = createSVGElement('line');
+      l.setAttribute('x1', '2');
+      l.setAttribute('y1', '8');
+      l.setAttribute('x2', '3');
+      l.setAttribute('y2', '2');
+      l.setAttribute('stroke', '#5A9E4A');
+      l.setAttribute('stroke-width', '1');
+      p.appendChild(l);
+      var l2 = createSVGElement('line');
+      l2.setAttribute('x1', '7');
+      l2.setAttribute('y1', '9');
+      l2.setAttribute('x2', '8');
+      l2.setAttribute('y2', '4');
+      l2.setAttribute('stroke', '#4E8E3E');
+      l2.setAttribute('stroke-width', '0.8');
+      p.appendChild(l2);
+    });
+
+    // Gravel pattern - small circles
+    addPattern(defs, 'pattern-gravel', 8, 8, '#B0A896', function (p) {
+      var c1 = createSVGElement('circle');
+      c1.setAttribute('cx', '2');
+      c1.setAttribute('cy', '2');
+      c1.setAttribute('r', '1.5');
+      c1.setAttribute('fill', '#A09886');
+      p.appendChild(c1);
+      var c2 = createSVGElement('circle');
+      c2.setAttribute('cx', '6');
+      c2.setAttribute('cy', '6');
+      c2.setAttribute('r', '1.2');
+      c2.setAttribute('fill', '#C0B8A6');
+      p.appendChild(c2);
+    });
+
+    // Path pattern - bricks
+    addPattern(defs, 'pattern-path', 16, 8, '#A09080', function (p) {
+      var r1 = createSVGElement('rect');
+      r1.setAttribute('x', '0');
+      r1.setAttribute('y', '0');
+      r1.setAttribute('width', '7');
+      r1.setAttribute('height', '3.5');
+      r1.setAttribute('fill', '#B09E8E');
+      r1.setAttribute('rx', '0.5');
+      p.appendChild(r1);
+      var r2 = createSVGElement('rect');
+      r2.setAttribute('x', '8');
+      r2.setAttribute('y', '0');
+      r2.setAttribute('width', '7');
+      r2.setAttribute('height', '3.5');
+      r2.setAttribute('fill', '#968474');
+      r2.setAttribute('rx', '0.5');
+      p.appendChild(r2);
+      var r3 = createSVGElement('rect');
+      r3.setAttribute('x', '4');
+      r3.setAttribute('y', '4.5');
+      r3.setAttribute('width', '7');
+      r3.setAttribute('height', '3.5');
+      r3.setAttribute('fill', '#B09E8E');
+      r3.setAttribute('rx', '0.5');
+      p.appendChild(r3);
+    });
+
+    // Water pattern - waves
+    addPattern(defs, 'pattern-water', 20, 10, '#5B9BD5', function (p) {
+      var path = createSVGElement('path');
+      path.setAttribute('d', 'M0 5 Q5 2, 10 5 T20 5');
+      path.setAttribute('stroke', '#4A8AC4');
+      path.setAttribute('stroke-width', '1.2');
+      path.setAttribute('fill', 'none');
+      p.appendChild(path);
+    });
+
+    // Terrace pattern - tiles
+    addPattern(defs, 'pattern-terrace', 14, 14, '#8C7B6B', function (p) {
+      var r1 = createSVGElement('rect');
+      r1.setAttribute('x', '0.5');
+      r1.setAttribute('y', '0.5');
+      r1.setAttribute('width', '6');
+      r1.setAttribute('height', '6');
+      r1.setAttribute('fill', '#9C8B7B');
+      r1.setAttribute('rx', '1');
+      p.appendChild(r1);
+      var r2 = createSVGElement('rect');
+      r2.setAttribute('x', '7.5');
+      r2.setAttribute('y', '7.5');
+      r2.setAttribute('width', '6');
+      r2.setAttribute('height', '6');
+      r2.setAttribute('fill', '#9C8B7B');
+      r2.setAttribute('rx', '1');
+      p.appendChild(r2);
+    });
+  }
+
+  function addPattern(defs, id, w, h, bgColor, addChildren) {
+    var pattern = createSVGElement('pattern');
+    pattern.setAttribute('id', id);
+    pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+    pattern.setAttribute('width', w);
+    pattern.setAttribute('height', h);
+
+    // Background
+    var bg = createSVGElement('rect');
+    bg.setAttribute('width', w);
+    bg.setAttribute('height', h);
+    bg.setAttribute('fill', bgColor);
+    pattern.appendChild(bg);
+
+    addChildren(pattern);
+    defs.appendChild(pattern);
+  }
+
+  // =====================================================
+  // Render
+  // =====================================================
+  function renderAll() {
+    renderAreas();
+    renderElements();
+    updateViewBox();
+    updateStats();
+  }
+
+  function renderAreas() {
+    var layer = dom.layerAreas;
+    layer.innerHTML = '';
+
+    gardenData.layers.forEach(function (area) {
+      if (!area.points || area.points.length < 3) return;
+
+      var polygon = createSVGElement('polygon');
+      var pointsStr = area.points.map(function (p) { return p[0] + ',' + p[1]; }).join(' ');
+      polygon.setAttribute('points', pointsStr);
+      polygon.setAttribute('class', 'area-polygon');
+      polygon.setAttribute('data-id', area.id);
+
+      var surface = getSurfaceType(area.surfaceType);
+      polygon.setAttribute('fill', 'url(#' + surface.pattern + ')');
+      polygon.setAttribute('stroke', surface.color);
+      polygon.setAttribute('fill-opacity', '0.85');
+
+      if (state.selectedElement === area.id) {
+        polygon.classList.add('selected');
+      }
+
+      polygon.addEventListener('mousedown', onAreaMouseDown);
+      polygon.addEventListener('click', onAreaClick);
+      layer.appendChild(polygon);
+    });
+  }
+
+  function renderElements() {
+    var layer = dom.layerElements;
+    layer.innerHTML = '';
+
+    gardenData.elements.forEach(function (el) {
+      var g = createSVGElement('g');
+      g.setAttribute('class', 'element-group');
+      g.setAttribute('data-id', el.id);
+      g.setAttribute('transform', 'translate(' + el.x + ',' + el.y + ')');
+
+      if (state.selectedElement === el.id) {
+        g.classList.add('selected');
+      }
+
+      var circle = createSVGElement('circle');
+      circle.setAttribute('cx', '0');
+      circle.setAttribute('cy', '0');
+      circle.setAttribute('r', '18');
+      circle.setAttribute('fill', el.color || '#E0E0E0');
+      circle.setAttribute('fill-opacity', '0.8');
+      circle.setAttribute('stroke', el.color || '#BDBDBD');
+      circle.setAttribute('stroke-width', '1.5');
+      circle.setAttribute('class', 'element-circle');
+      g.appendChild(circle);
+
+      var text = createSVGElement('text');
+      text.setAttribute('x', '0');
+      text.setAttribute('y', '5');
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('font-size', '18');
+      text.setAttribute('pointer-events', 'none');
+      text.textContent = el.icon || '?';
+      g.appendChild(text);
+
+      // Name label below
+      var label = createSVGElement('text');
+      label.setAttribute('x', '0');
+      label.setAttribute('y', '30');
+      label.setAttribute('class', 'element-label');
+      label.textContent = el.name;
+      g.appendChild(label);
+
+      g.addEventListener('mousedown', onElementMouseDown);
+      g.addEventListener('click', onElementClick);
+      layer.appendChild(g);
+    });
+  }
+
+  function renderDrawing() {
+    var layer = dom.layerDrawing;
+    layer.innerHTML = '';
+
+    if (drawPoints.length === 0) return;
+
+    // Draw existing lines
+    if (drawPoints.length > 1) {
+      var polyline = createSVGElement('polyline');
+      var pts = drawPoints.map(function (p) { return p.x + ',' + p.y; }).join(' ');
+      polyline.setAttribute('points', pts);
+      polyline.setAttribute('class', 'draw-line');
+      layer.appendChild(polyline);
+    }
+
+    // Draw points
+    drawPoints.forEach(function (p, i) {
+      var circle = createSVGElement('circle');
+      circle.setAttribute('cx', p.x);
+      circle.setAttribute('cy', p.y);
+      circle.setAttribute('r', i === 0 ? 6 : 4);
+      circle.setAttribute('class', 'draw-point');
+      circle.setAttribute('fill', i === 0 ? 'var(--primary)' : 'var(--primary-light)');
+      circle.setAttribute('stroke', 'white');
+      circle.setAttribute('stroke-width', '2');
+      layer.appendChild(circle);
+    });
+
+    // Preview line to mouse
+    if (drawPreviewLine) {
+      var lastPt = drawPoints[drawPoints.length - 1];
+      var line = createSVGElement('line');
+      line.setAttribute('x1', lastPt.x);
+      line.setAttribute('y1', lastPt.y);
+      line.setAttribute('x2', drawPreviewLine.x);
+      line.setAttribute('y2', drawPreviewLine.y);
+      line.setAttribute('class', 'draw-preview-line');
+      layer.appendChild(line);
+    }
+  }
+
+  function updateViewBox() {
+    var cw = gardenData.canvasSize.width;
+    var ch = gardenData.canvasSize.height;
+
+    var vbX = -state.panX / state.zoom;
+    var vbY = -state.panY / state.zoom;
+    var vbW = cw / state.zoom;
+    var vbH = ch / state.zoom;
+
+    dom.canvas.setAttribute('viewBox', vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH);
+  }
+
+  function updateStats() {
+    if (dom.statusAreas) {
+      dom.statusAreas.textContent = gardenData.layers.length + ' Flächen';
+    }
+    if (dom.statusElements) {
+      dom.statusElements.textContent = gardenData.elements.length + ' Elemente';
+    }
+  }
+
+  // =====================================================
+  // Undo / Redo
+  // =====================================================
+  function pushUndo() {
+    undoStack.push(cloneData(gardenData));
+    if (undoStack.length > MAX_UNDO) {
+      undoStack.shift();
+    }
+    redoStack = [];
+    updateUndoRedoButtons();
+  }
+
+  function undo() {
+    if (undoStack.length === 0) return;
+    redoStack.push(cloneData(gardenData));
+    gardenData = undoStack.pop();
+    renderAll();
+    autoSave();
+    updateUndoRedoButtons();
+    setStatus('Rückgängig');
+  }
+
+  function redo() {
+    if (redoStack.length === 0) return;
+    undoStack.push(cloneData(gardenData));
+    gardenData = redoStack.pop();
+    renderAll();
+    autoSave();
+    updateUndoRedoButtons();
+    setStatus('Wiederholt');
+  }
+
+  function updateUndoRedoButtons() {
+    if (dom.undoBtn) dom.undoBtn.disabled = undoStack.length === 0;
+    if (dom.redoBtn) dom.redoBtn.disabled = redoStack.length === 0;
+  }
+
+  // =====================================================
+  // Tool Management
+  // =====================================================
+  function setTool(tool) {
+    state.tool = tool;
+
+    // Clear drawing state when leaving draw mode
+    if (tool !== 'draw') {
+      drawPoints = [];
+      drawPreviewLine = null;
+      renderDrawing();
+    }
+
+    // Deselect element when changing tools
+    if (tool !== 'select') {
+      state.selectedElement = null;
+      renderAll();
+    }
+
+    // Deselect plant/structure when changing to non-place tool
+    if (tool !== 'select') {
+      deselectPlantStructure();
+    }
+
+    // Update toolbar buttons
+    var btns = document.querySelectorAll('.tool-btn');
+    btns.forEach(function (btn) {
+      btn.classList.toggle('active', btn.dataset.tool === tool);
+    });
+
+    // Update canvas cursor
+    dom.canvasArea.setAttribute('data-tool', tool);
+
+    updateStatusForTool();
+  }
+
+  function updateStatusForTool() {
+    switch (state.tool) {
+      case 'select':
+        if (state.selectedPlant) {
+          setStatus('Klicke auf den Canvas, um ' + state.selectedPlant.name + ' zu platzieren');
+        } else if (state.selectedStructure) {
+          setStatus('Klicke auf den Canvas, um ' + state.selectedStructure.name + ' zu platzieren');
+        } else {
+          setStatus('Klicke auf ein Element zum Auswählen');
+        }
+        break;
+      case 'draw':
+        setStatus('Klicke, um Punkte zu setzen. Doppelklick oder Klick auf Startpunkt schließt die Fläche. Fläche: ' + getSurfaceType(state.selectedSurface).name);
+        break;
+      case 'move':
+        setStatus('Ziehe Elemente zum Verschieben');
+        break;
+      case 'delete':
+        setStatus('Klicke auf ein Element zum Löschen');
+        break;
+    }
+  }
+
+  function setStatus(text) {
+    if (dom.statusText) dom.statusText.textContent = text;
+  }
+
+  function deselectPlantStructure() {
+    state.selectedPlant = null;
+    state.selectedStructure = null;
+    var items = document.querySelectorAll('.palette-element.active');
+    items.forEach(function (el) { el.classList.remove('active'); });
+  }
+
+  // =====================================================
+  // Canvas Events
+  // =====================================================
+  function onCanvasClick(e) {
+    if (e.target === dom.canvas || e.target.closest('#canvasContent') === dom.canvasContent) {
+      var pt = mouseToSVG(e);
+
+      if (state.tool === 'draw') {
+        handleDrawClick(pt, e);
+      } else if (state.tool === 'select') {
+        // Place plant/structure if one is selected
+        if (state.selectedPlant) {
+          placePlant(pt);
+        } else if (state.selectedStructure) {
+          placeStructure(pt);
+        } else {
+          // Deselect if clicking empty canvas
+          if (!e.target.closest('.area-polygon') && !e.target.closest('.element-group')) {
+            state.selectedElement = null;
+            renderAll();
+          }
+        }
       }
     }
   }
 
-  function renderGrid() {
-    dom.gridContainer.innerHTML = '';
-    dom.gridContainer.style.gridTemplateColumns = 'repeat(' + gridSize.cols + ', 1fr)';
-    dom.gridContainer.style.gridTemplateRows = 'repeat(' + gridSize.rows + ', 1fr)';
+  function onCanvasMouseMove(e) {
+    if (state.tool === 'draw' && drawPoints.length > 0) {
+      drawPreviewLine = mouseToSVG(e);
+      renderDrawing();
+    }
 
-    for (let r = 0; r < gridSize.rows; r++) {
-      for (let c = 0; c < gridSize.cols; c++) {
-        var cell = document.createElement('div');
-        cell.className = 'garden-cell';
-        cell.dataset.row = r;
-        cell.dataset.col = c;
+    if (dragState) {
+      handleDrag(e);
+    }
+  }
 
-        var data = gridState[r][c];
-        if (data) {
-          cell.classList.add('garden-cell--occupied');
-          cell.style.backgroundColor = data.color + '33'; // with alpha
-          cell.title = data.name;
-          var icon = document.createElement('span');
-          icon.className = 'cell-icon';
-          icon.textContent = data.icon;
-          cell.appendChild(icon);
-        }
+  function onCanvasMouseUp() {
+    if (dragState) {
+      endDrag();
+    }
+  }
 
-        cell.addEventListener('mousedown', onCellMouseDown);
-        cell.addEventListener('mouseenter', onCellMouseEnter);
-        cell.addEventListener('touchstart', onCellTouchStart, { passive: false });
-        cell.addEventListener('touchmove', onCellTouchMove, { passive: false });
-
-        dom.gridContainer.appendChild(cell);
-      }
+  function onCanvasDblClick(e) {
+    if (state.tool === 'draw' && drawPoints.length >= 3) {
+      closePolygon();
     }
   }
 
   // =====================================================
-  // Cell Interaction
+  // Drawing
   // =====================================================
-  function onCellMouseDown(e) {
-    e.preventDefault();
-    isPainting = true;
-    handleCellAction(this);
-  }
-
-  function onCellMouseEnter(e) {
-    if (!isPainting) return;
-    handleCellAction(this);
-  }
-
-  function onCellTouchStart(e) {
-    e.preventDefault();
-    isPainting = true;
-    handleCellAction(this);
-  }
-
-  function onCellTouchMove(e) {
-    e.preventDefault();
-    var touch = e.touches[0];
-    var el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (el && el.classList.contains('garden-cell')) {
-      handleCellAction(el);
-    }
-  }
-
-  function handleCellAction(cellEl) {
-    var r = parseInt(cellEl.dataset.row);
-    var c = parseInt(cellEl.dataset.col);
-    var current = gridState[r][c];
-
-    if (selectedElement) {
-      // Place element
-      gridState[r][c] = {
-        type: selectedElement.type,
-        id: selectedElement.id,
-        name: selectedElement.name,
-        icon: selectedElement.icon,
-        color: selectedElement.color
-      };
-      updateCell(cellEl, gridState[r][c]);
-      updateInfo('Platziert: ' + selectedElement.name + ' (' + r + ', ' + c + ')');
-    } else if (current) {
-      // Remove element
-      gridState[r][c] = null;
-      clearCell(cellEl);
-      updateInfo('Entfernt: ' + current.name + ' (' + r + ', ' + c + ')');
-    }
-  }
-
-  function updateCell(cellEl, data) {
-    cellEl.className = 'garden-cell garden-cell--occupied';
-    cellEl.style.backgroundColor = data.color + '33';
-    cellEl.title = data.name;
-    cellEl.innerHTML = '';
-    var icon = document.createElement('span');
-    icon.className = 'cell-icon';
-    icon.textContent = data.icon;
-    cellEl.appendChild(icon);
-  }
-
-  function clearCell(cellEl) {
-    cellEl.className = 'garden-cell';
-    cellEl.style.backgroundColor = '';
-    cellEl.title = '';
-    cellEl.innerHTML = '';
-  }
-
-  document.addEventListener('mouseup', function () {
-    isPainting = false;
-  });
-  document.addEventListener('touchend', function () {
-    isPainting = false;
-  });
-
-  // =====================================================
-  // Palette
-  // =====================================================
-  function renderPalette() {
-    dom.palette.innerHTML = '';
-
-    // Static categories
-    Object.keys(GARDEN_ELEMENTS).forEach(function (cat) {
-      var section = createPaletteSection(CATEGORY_LABELS[cat], GARDEN_ELEMENTS[cat], cat);
-      dom.palette.appendChild(section);
-    });
-
-    // Plants section (loaded from API)
-    var plantSection = document.createElement('div');
-    plantSection.className = 'palette-section';
-    plantSection.id = 'palettePlants';
-
-    var title = document.createElement('h4');
-    title.className = 'palette-section-title';
-    title.textContent = CATEGORY_LABELS.plants;
-    plantSection.appendChild(title);
-
-    var items = document.createElement('div');
-    items.className = 'palette-items';
-    items.id = 'palettePlantItems';
-
-    var loading = document.createElement('div');
-    loading.className = 'palette-loading';
-    loading.textContent = 'Pflanzen laden...';
-    loading.id = 'plantsLoading';
-    items.appendChild(loading);
-
-    plantSection.appendChild(items);
-    dom.palette.appendChild(plantSection);
-
-    loadPlants();
-  }
-
-  function createPaletteSection(label, items, category) {
-    var section = document.createElement('div');
-    section.className = 'palette-section';
-
-    var title = document.createElement('h4');
-    title.className = 'palette-section-title';
-    title.textContent = label;
-    section.appendChild(title);
-
-    var container = document.createElement('div');
-    container.className = 'palette-items';
-
-    items.forEach(function (item) {
-      var el = createPaletteItem(item, category);
-      container.appendChild(el);
-    });
-
-    section.appendChild(container);
-    return section;
-  }
-
-  function createPaletteItem(item, category) {
-    var el = document.createElement('div');
-    el.className = 'palette-item';
-    el.dataset.id = item.id;
-    el.dataset.type = category;
-
-    var iconEl = document.createElement('span');
-    iconEl.className = 'palette-item-icon';
-    iconEl.style.backgroundColor = item.color + '33';
-    iconEl.textContent = item.icon;
-    el.appendChild(iconEl);
-
-    var nameEl = document.createElement('span');
-    nameEl.className = 'palette-item-name';
-    nameEl.textContent = item.name;
-    el.appendChild(nameEl);
-
-    el.addEventListener('click', function () {
-      selectPaletteItem(el, {
-        type: category,
-        id: item.id,
-        name: item.name,
-        icon: item.icon,
-        color: item.color
-      });
-    });
-
-    return el;
-  }
-
-  function selectPaletteItem(el, data) {
-    // Deselect if clicking same item
-    if (selectedElement && selectedElement.id === data.id && selectedElement.type === data.type) {
-      selectedElement = null;
-      el.classList.remove('palette-item--selected');
-      updateInfo('Kein Element ausgew\u00E4hlt. Klicke auf eine Zelle, um ein Element zu entfernen.');
-      return;
-    }
-
-    // Deselect all
-    var allItems = dom.palette.querySelectorAll('.palette-item--selected');
-    allItems.forEach(function (item) { item.classList.remove('palette-item--selected'); });
-
-    selectedElement = data;
-    el.classList.add('palette-item--selected');
-    updateInfo('Ausgew\u00E4hlt: ' + data.icon + ' ' + data.name + ' \u2014 Klicke oder ziehe \u00FCber das Raster zum Platzieren.');
-  }
-
-  // =====================================================
-  // Load Plants from API
-  // =====================================================
-  function loadPlants() {
-    fetch('/api/v1/plants')
-      .then(function (res) {
-        if (!res.ok) throw new Error('Failed to load plants');
-        return res.json();
-      })
-      .then(function (data) {
-        var plants = Array.isArray(data) ? data : (data.plants || []);
-        var container = document.getElementById('palettePlantItems');
-        var loading = document.getElementById('plantsLoading');
-        if (loading) loading.remove();
-
-        // Map API plants to palette items
-        plantElements = plants.map(function (p) {
-          return {
-            id: 'plant-' + (p.id || p.name.toLowerCase().replace(/\s+/g, '-')),
-            name: p.name,
-            icon: p.icon || '\u{1F33F}',
-            color: '#E8D5B7'
-          };
-        });
-
-        if (plantElements.length === 0) {
-          var empty = document.createElement('div');
-          empty.className = 'palette-loading';
-          empty.textContent = 'Keine Pflanzen vorhanden';
-          container.appendChild(empty);
-          return;
-        }
-
-        plantElements.forEach(function (item) {
-          var el = createPaletteItem(item, 'plant');
-          container.appendChild(el);
-        });
-      })
-      .catch(function () {
-        var loading = document.getElementById('plantsLoading');
-        if (loading) {
-          loading.textContent = 'Pflanzen konnten nicht geladen werden';
-        }
-      });
-  }
-
-  // =====================================================
-  // Grid Size
-  // =====================================================
-  function onGridSizeChange() {
-    var val = dom.gridSizeSelect.value;
-    var parts = val.split('x');
-    var newSize = { rows: parseInt(parts[0]), cols: parseInt(parts[1]) };
-
-    // Check if grid has content
-    var hasContent = gridState.some(function (row) {
-      return row.some(function (cell) { return cell !== null; });
-    });
-
-    if (hasContent) {
-      if (!confirm('Rastergr\u00F6\u00DFe \u00E4ndern? Inhalte au\u00DFerhalb des neuen Rasters gehen verloren.')) {
-        dom.gridSizeSelect.value = gridSize.rows + 'x' + gridSize.cols;
+  function handleDrawClick(pt, e) {
+    // Check if clicking close to first point to close polygon
+    if (drawPoints.length >= 3) {
+      var first = drawPoints[0];
+      if (dist(pt, first) < CLOSE_POLYGON_DISTANCE / state.zoom) {
+        closePolygon();
         return;
       }
     }
 
-    // Preserve existing cells that fit
-    var oldState = gridState;
-    gridSize = newSize;
-    initGrid();
+    drawPoints.push(pt);
+    drawPreviewLine = null;
+    renderDrawing();
 
-    for (var r = 0; r < Math.min(oldState.length, gridSize.rows); r++) {
-      for (var c = 0; c < Math.min(oldState[r].length, gridSize.cols); c++) {
-        gridState[r][c] = oldState[r][c];
+    if (drawPoints.length === 1) {
+      setStatus('Punkt gesetzt. Weiter klicken für weitere Punkte. Mind. 3 Punkte für eine Fläche.');
+    } else {
+      setStatus(drawPoints.length + ' Punkte. Doppelklick oder Klick auf Startpunkt zum Schließen.');
+    }
+  }
+
+  function closePolygon() {
+    if (drawPoints.length < 3) return;
+
+    pushUndo();
+
+    var area = {
+      id: generateId(),
+      type: 'area',
+      surfaceType: state.selectedSurface,
+      points: drawPoints.map(function (p) { return [Math.round(p.x), Math.round(p.y)]; }),
+      closed: true
+    };
+
+    gardenData.layers.push(area);
+    drawPoints = [];
+    drawPreviewLine = null;
+
+    renderAll();
+    renderDrawing();
+    autoSave();
+
+    setStatus('Fläche erstellt: ' + getSurfaceType(area.surfaceType).name);
+  }
+
+  // =====================================================
+  // Area Events
+  // =====================================================
+  function onAreaClick(e) {
+    e.stopPropagation();
+    var id = this.getAttribute('data-id');
+
+    if (state.tool === 'delete') {
+      deleteAreaById(id);
+    } else if (state.tool === 'select') {
+      state.selectedElement = (state.selectedElement === id) ? null : id;
+      renderAll();
+    }
+  }
+
+  function onAreaMouseDown(e) {
+    e.stopPropagation();
+    var id = this.getAttribute('data-id');
+
+    if (state.tool === 'move') {
+      startAreaDrag(e, id);
+    }
+  }
+
+  function deleteAreaById(id) {
+    pushUndo();
+    gardenData.layers = gardenData.layers.filter(function (l) { return l.id !== id; });
+    state.selectedElement = null;
+    renderAll();
+    autoSave();
+    setStatus('Fläche gelöscht');
+  }
+
+  // =====================================================
+  // Element Events
+  // =====================================================
+  function onElementClick(e) {
+    e.stopPropagation();
+    var g = this.closest ? this : this.parentNode;
+    var id = g.getAttribute('data-id');
+
+    if (state.tool === 'delete') {
+      deleteElementById(id);
+    } else if (state.tool === 'select') {
+      state.selectedElement = (state.selectedElement === id) ? null : id;
+      renderAll();
+    }
+  }
+
+  function onElementMouseDown(e) {
+    e.stopPropagation();
+    var g = this.closest ? this : this.parentNode;
+    var id = g.getAttribute('data-id');
+
+    if (state.tool === 'move' || state.tool === 'select') {
+      startElementDrag(e, id);
+    }
+  }
+
+  function deleteElementById(id) {
+    pushUndo();
+    gardenData.elements = gardenData.elements.filter(function (el) { return el.id !== id; });
+    state.selectedElement = null;
+    renderAll();
+    autoSave();
+    setStatus('Element gelöscht');
+  }
+
+  // =====================================================
+  // Drag & Drop
+  // =====================================================
+  function startElementDrag(e, id) {
+    var el = gardenData.elements.find(function (el) { return el.id === id; });
+    if (!el) return;
+
+    var pt = mouseToSVG(e);
+    dragState = {
+      type: 'element',
+      id: id,
+      startX: pt.x,
+      startY: pt.y,
+      origX: el.x,
+      origY: el.y
+    };
+
+    state.selectedElement = id;
+    dom.canvasArea.classList.add('dragging');
+    renderAll();
+  }
+
+  function startAreaDrag(e, id) {
+    var area = gardenData.layers.find(function (l) { return l.id === id; });
+    if (!area) return;
+
+    var pt = mouseToSVG(e);
+    dragState = {
+      type: 'area',
+      id: id,
+      startX: pt.x,
+      startY: pt.y,
+      origPoints: area.points.map(function (p) { return [p[0], p[1]]; })
+    };
+
+    state.selectedElement = id;
+    dom.canvasArea.classList.add('dragging');
+    renderAll();
+  }
+
+  function handleDrag(e) {
+    if (!dragState) return;
+    var pt = mouseToSVG(e);
+    var dx = pt.x - dragState.startX;
+    var dy = pt.y - dragState.startY;
+
+    if (dragState.type === 'element') {
+      var el = gardenData.elements.find(function (el) { return el.id === dragState.id; });
+      if (el) {
+        el.x = Math.round(dragState.origX + dx);
+        el.y = Math.round(dragState.origY + dy);
+        renderElements();
+      }
+    } else if (dragState.type === 'area') {
+      var area = gardenData.layers.find(function (l) { return l.id === dragState.id; });
+      if (area) {
+        area.points = dragState.origPoints.map(function (p) {
+          return [Math.round(p[0] + dx), Math.round(p[1] + dy)];
+        });
+        renderAreas();
       }
     }
+  }
 
-    renderGrid();
-    updateInfo('Rastergr\u00F6\u00DFe ge\u00E4ndert: ' + gridSize.rows + ' x ' + gridSize.cols);
+  function endDrag() {
+    if (!dragState) return;
+
+    var hasMoved = false;
+    if (dragState.type === 'element') {
+      var el = gardenData.elements.find(function (el) { return el.id === dragState.id; });
+      if (el && (el.x !== dragState.origX || el.y !== dragState.origY)) {
+        hasMoved = true;
+      }
+    } else if (dragState.type === 'area') {
+      hasMoved = true; // simplification
+    }
+
+    if (hasMoved) {
+      // Insert undo BEFORE the drag started
+      var undoData = cloneData(gardenData);
+      if (dragState.type === 'element') {
+        var elUndo = undoData.elements.find(function (el) { return el.id === dragState.id; });
+        if (elUndo) {
+          elUndo.x = dragState.origX;
+          elUndo.y = dragState.origY;
+        }
+      } else if (dragState.type === 'area') {
+        var areaUndo = undoData.layers.find(function (l) { return l.id === dragState.id; });
+        if (areaUndo) {
+          areaUndo.points = dragState.origPoints;
+        }
+      }
+      undoStack.push(undoData);
+      if (undoStack.length > MAX_UNDO) undoStack.shift();
+      redoStack = [];
+      updateUndoRedoButtons();
+      autoSave();
+    }
+
+    dragState = null;
+    dom.canvasArea.classList.remove('dragging');
+  }
+
+  // =====================================================
+  // Plant & Structure Placement
+  // =====================================================
+  function placePlant(pt) {
+    if (!state.selectedPlant) return;
+    pushUndo();
+
+    var element = {
+      id: generateId(),
+      type: 'plant',
+      name: state.selectedPlant.name,
+      icon: state.selectedPlant.icon,
+      x: Math.round(pt.x),
+      y: Math.round(pt.y),
+      color: state.selectedPlant.color
+    };
+
+    gardenData.elements.push(element);
+    renderAll();
+    autoSave();
+    setStatus(state.selectedPlant.name + ' platziert');
+  }
+
+  function placeStructure(pt) {
+    if (!state.selectedStructure) return;
+    pushUndo();
+
+    var element = {
+      id: generateId(),
+      type: 'structure',
+      name: state.selectedStructure.name,
+      icon: state.selectedStructure.icon,
+      x: Math.round(pt.x),
+      y: Math.round(pt.y),
+      color: state.selectedStructure.color
+    };
+
+    gardenData.elements.push(element);
+    renderAll();
+    autoSave();
+    setStatus(state.selectedStructure.name + ' platziert');
   }
 
   // =====================================================
   // Zoom
   // =====================================================
   function setZoom(level) {
-    zoomLevel = Math.max(0.5, Math.min(2, level));
-    dom.gridWrapper.style.transform = 'scale(' + zoomLevel + ')';
-    dom.zoomLevel.textContent = Math.round(zoomLevel * 100) + '%';
+    state.zoom = Math.max(0.25, Math.min(3, level));
+    updateViewBox();
+    dom.zoomLevel.textContent = Math.round(state.zoom * 100) + '%';
+  }
+
+  function zoomIn() {
+    setZoom(state.zoom + 0.15);
+  }
+
+  function zoomOut() {
+    setZoom(state.zoom - 0.15);
+  }
+
+  function zoomReset() {
+    state.zoom = 1;
+    state.panX = 0;
+    state.panY = 0;
+    updateViewBox();
+    dom.zoomLevel.textContent = '100%';
   }
 
   // =====================================================
-  // Save / Load (localStorage)
+  // Pan (middle mouse / touch)
+  // =====================================================
+  var panState = null;
+
+  function onCanvasWheel(e) {
+    e.preventDefault();
+    if (e.ctrlKey) {
+      // Zoom
+      var delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setZoom(state.zoom + delta);
+    } else {
+      // Pan
+      state.panX -= e.deltaX;
+      state.panY -= e.deltaY;
+      updateViewBox();
+    }
+  }
+
+  // =====================================================
+  // Save / Load
   // =====================================================
   function getAllGardens() {
     try {
@@ -415,199 +891,431 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gardens));
   }
 
-  function serializeGrid() {
-    var cells = [];
-    for (var r = 0; r < gridSize.rows; r++) {
-      for (var c = 0; c < gridSize.cols; c++) {
-        if (gridState[r][c]) {
-          cells.push({
-            row: r,
-            col: c,
-            type: gridState[r][c].type,
-            id: gridState[r][c].id,
-            name: gridState[r][c].name,
-            icon: gridState[r][c].icon,
-            color: gridState[r][c].color
-          });
-        }
-      }
-    }
-    return cells;
-  }
-
-  function deserializeGrid(gardenData) {
-    gridSize = gardenData.gridSize;
-    dom.gridSizeSelect.value = gridSize.rows + 'x' + gridSize.cols;
-    initGrid();
-
-    gardenData.cells.forEach(function (cell) {
-      if (cell.row < gridSize.rows && cell.col < gridSize.cols) {
-        gridState[cell.row][cell.col] = {
-          type: cell.type,
-          id: cell.id,
-          name: cell.name,
-          icon: cell.icon,
-          color: cell.color
-        };
-      }
-    });
-
-    renderGrid();
-  }
-
-  function showSaveDialog() {
-    dom.saveDialog.hidden = false;
-    var nameInput = dom.saveDialog.querySelector('#gardenNameInput');
-    var gardens = getAllGardens();
-
-    // If editing existing garden, pre-fill name
-    if (currentGardenId) {
-      var existing = gardens.find(function (g) { return g.id === currentGardenId; });
-      if (existing) {
-        nameInput.value = existing.name;
-      }
-    } else {
-      nameInput.value = '';
-    }
-    nameInput.focus();
-  }
-
-  function hideSaveDialog() {
-    dom.saveDialog.hidden = true;
-  }
-
-  function doSave() {
-    var nameInput = dom.saveDialog.querySelector('#gardenNameInput');
-    var name = nameInput.value.trim();
-    if (!name) {
-      nameInput.focus();
-      return;
-    }
-
+  function saveCurrentGarden() {
     var gardens = getAllGardens();
     var now = new Date().toISOString();
-    var cells = serializeGrid();
+
+    gardenData.name = dom.gardenName.value.trim() || 'Mein Garten';
 
     if (currentGardenId) {
-      // Update existing
       var idx = gardens.findIndex(function (g) { return g.id === currentGardenId; });
       if (idx >= 0) {
-        gardens[idx].name = name;
-        gardens[idx].gridSize = { rows: gridSize.rows, cols: gridSize.cols };
-        gardens[idx].cells = cells;
+        gardens[idx].data = cloneData(gardenData);
+        gardens[idx].name = gardenData.name;
         gardens[idx].updatedAt = now;
+      } else {
+        // ID not found, create new
+        currentGardenId = generateId();
+        gardens.push({
+          id: currentGardenId,
+          name: gardenData.name,
+          data: cloneData(gardenData),
+          createdAt: now,
+          updatedAt: now
+        });
       }
     } else {
-      // New garden
-      var garden = {
-        id: 'garden_' + Date.now(),
-        name: name,
-        gridSize: { rows: gridSize.rows, cols: gridSize.cols },
-        cells: cells,
+      currentGardenId = generateId();
+      gardens.push({
+        id: currentGardenId,
+        name: gardenData.name,
+        data: cloneData(gardenData),
         createdAt: now,
         updatedAt: now
-      };
-      currentGardenId = garden.id;
-      gardens.push(garden);
+      });
     }
 
     saveGardens(gardens);
-    hideSaveDialog();
-    updateInfo('Garten "' + name + '" gespeichert.');
+    renderSavedGardens();
+    setStatus('Garten "' + gardenData.name + '" gespeichert');
   }
 
-  function showLoadDialog() {
-    dom.loadDialog.hidden = false;
-    renderLoadList();
+  function autoSave() {
+    if (!currentGardenId) return;
+    var gardens = getAllGardens();
+    var now = new Date().toISOString();
+    gardenData.name = dom.gardenName.value.trim() || 'Mein Garten';
+
+    var idx = gardens.findIndex(function (g) { return g.id === currentGardenId; });
+    if (idx >= 0) {
+      gardens[idx].data = cloneData(gardenData);
+      gardens[idx].name = gardenData.name;
+      gardens[idx].updatedAt = now;
+      saveGardens(gardens);
+    }
   }
 
-  function hideLoadDialog() {
-    dom.loadDialog.hidden = true;
+  function loadGarden(id) {
+    var gardens = getAllGardens();
+    var garden = gardens.find(function (g) { return g.id === id; });
+    if (!garden) return;
+
+    // Migration check
+    var data = garden.data;
+    if (!data.version || data.version === 1) {
+      data = migrateV1toV2(data);
+      garden.data = data;
+      saveGardens(gardens);
+    }
+
+    gardenData = cloneData(data);
+    currentGardenId = id;
+    dom.gardenName.value = gardenData.name || 'Mein Garten';
+
+    // Reset state
+    state.selectedElement = null;
+    drawPoints = [];
+    drawPreviewLine = null;
+    undoStack = [];
+    redoStack = [];
+    updateUndoRedoButtons();
+
+    renderAll();
+    renderDrawing();
+    renderSavedGardens();
+    setStatus('Garten "' + gardenData.name + '" geladen');
   }
 
-  function renderLoadList() {
-    var list = dom.loadDialog.querySelector('#gardenLoadList');
-    list.innerHTML = '';
+  function deleteGarden(id) {
+    var gardens = getAllGardens().filter(function (g) { return g.id !== id; });
+    saveGardens(gardens);
+
+    if (currentGardenId === id) {
+      currentGardenId = null;
+      gardenData = createEmptyGarden();
+      dom.gardenName.value = gardenData.name;
+      undoStack = [];
+      redoStack = [];
+      updateUndoRedoButtons();
+      renderAll();
+    }
+
+    renderSavedGardens();
+    setStatus('Garten gelöscht');
+  }
+
+  function newGarden() {
+    currentGardenId = null;
+    gardenData = createEmptyGarden();
+    dom.gardenName.value = gardenData.name;
+    state.selectedElement = null;
+    drawPoints = [];
+    drawPreviewLine = null;
+    undoStack = [];
+    redoStack = [];
+    updateUndoRedoButtons();
+
+    renderAll();
+    renderDrawing();
+    renderSavedGardens();
+    setStatus('Neuer Garten erstellt');
+  }
+
+  // =====================================================
+  // Migration v1 (grid) to v2 (SVG)
+  // =====================================================
+  function migrateV1toV2(oldData) {
+    var newData = createEmptyGarden();
+    newData.name = oldData.name || 'Migrierter Garten';
+
+    // Grid data: cells array with { row, col, type, id, name, icon, color }
+    if (oldData.cells && Array.isArray(oldData.cells)) {
+      var cellSize = 48;
+      oldData.cells.forEach(function (cell) {
+        var element = {
+          id: generateId(),
+          type: 'plant',
+          name: cell.name || 'Element',
+          icon: cell.icon || '🌿',
+          x: (cell.col || 0) * cellSize + cellSize / 2,
+          y: (cell.row || 0) * cellSize + cellSize / 2,
+          color: cell.color || '#E0E0E0'
+        };
+        newData.elements.push(element);
+      });
+
+      // Adjust canvas size based on grid
+      if (oldData.gridSize) {
+        newData.canvasSize.width = Math.max(DEFAULT_CANVAS.width, (oldData.gridSize.cols || 12) * cellSize + 100);
+        newData.canvasSize.height = Math.max(DEFAULT_CANVAS.height, (oldData.gridSize.rows || 12) * cellSize + 100);
+      }
+    }
+
+    newData.version = 2;
+    return newData;
+  }
+
+  // =====================================================
+  // Export (SVG to PNG)
+  // =====================================================
+  function exportPNG() {
+    setStatus('Exportiere als PNG...');
+
+    var svgClone = dom.canvas.cloneNode(true);
+    // Reset viewBox to full canvas
+    svgClone.setAttribute('viewBox', '0 0 ' + gardenData.canvasSize.width + ' ' + gardenData.canvasSize.height);
+    svgClone.setAttribute('width', gardenData.canvasSize.width);
+    svgClone.setAttribute('height', gardenData.canvasSize.height);
+
+    // Remove drawing layer from clone
+    var drawLayer = svgClone.querySelector('#layerDrawing');
+    if (drawLayer) drawLayer.innerHTML = '';
+
+    // Inline styles for export
+    var allElements = svgClone.querySelectorAll('*');
+    allElements.forEach(function (el) {
+      var cs = window.getComputedStyle(el);
+      if (el.tagName === 'polygon' || el.tagName === 'circle' || el.tagName === 'line' || el.tagName === 'rect' || el.tagName === 'text' || el.tagName === 'path') {
+        // These elements need computed fills and strokes
+      }
+    });
+
+    var svgData = new XMLSerializer().serializeToString(svgClone);
+    var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    var url = URL.createObjectURL(svgBlob);
+
+    var img = new Image();
+    img.onload = function () {
+      var canvas = document.createElement('canvas');
+      canvas.width = gardenData.canvasSize.width;
+      canvas.height = gardenData.canvasSize.height;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#F5F3EE';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      canvas.toBlob(function (blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (gardenData.name || 'garten') + '.png';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        setStatus('PNG exportiert: ' + a.download);
+      }, 'image/png');
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      setStatus('Export fehlgeschlagen');
+    };
+    img.src = url;
+  }
+
+  // =====================================================
+  // Sidebar Rendering
+  // =====================================================
+  function renderSurfacePalette() {
+    var container = dom.surfacePalette;
+    container.innerHTML = '';
+
+    SURFACE_TYPES.forEach(function (surface) {
+      var item = document.createElement('div');
+      item.className = 'surface-item';
+      if (state.selectedSurface === surface.id) {
+        item.classList.add('active');
+      }
+      item.dataset.surface = surface.id;
+
+      var swatch = document.createElement('span');
+      swatch.className = 'surface-swatch';
+      swatch.style.backgroundColor = surface.color;
+      item.appendChild(swatch);
+
+      var label = document.createElement('span');
+      label.className = 'surface-label';
+      label.textContent = surface.name;
+      item.appendChild(label);
+
+      item.addEventListener('click', function () {
+        state.selectedSurface = surface.id;
+        renderSurfacePalette();
+
+        // Auto-switch to draw tool
+        if (state.tool !== 'draw') {
+          setTool('draw');
+        }
+        updateStatusForTool();
+      });
+
+      container.appendChild(item);
+    });
+  }
+
+  function renderPlantPalette(filter) {
+    var container = dom.plantPalette;
+    container.innerHTML = '';
+
+    var filtered = PLANTS;
+    if (filter) {
+      var f = filter.toLowerCase();
+      filtered = PLANTS.filter(function (p) {
+        return p.name.toLowerCase().indexOf(f) !== -1;
+      });
+    }
+
+    if (filtered.length === 0) {
+      var empty = document.createElement('div');
+      empty.className = 'saved-gardens-empty';
+      empty.textContent = 'Keine Pflanzen gefunden';
+      container.appendChild(empty);
+      return;
+    }
+
+    filtered.forEach(function (plant) {
+      var el = document.createElement('div');
+      el.className = 'palette-element';
+      if (state.selectedPlant && state.selectedPlant.id === plant.id) {
+        el.classList.add('active');
+      }
+
+      var icon = document.createElement('span');
+      icon.className = 'palette-element-icon';
+      icon.style.backgroundColor = plant.color;
+      icon.textContent = plant.icon;
+      el.appendChild(icon);
+
+      var info = document.createElement('div');
+      info.className = 'palette-element-info';
+
+      var name = document.createElement('span');
+      name.className = 'palette-element-name';
+      name.textContent = plant.name;
+      info.appendChild(name);
+
+      var detail = document.createElement('span');
+      detail.className = 'palette-element-detail';
+      detail.textContent = plant.info;
+      info.appendChild(detail);
+
+      el.appendChild(info);
+
+      el.addEventListener('click', function () {
+        if (state.selectedPlant && state.selectedPlant.id === plant.id) {
+          deselectPlantStructure();
+          updateStatusForTool();
+          return;
+        }
+        deselectPlantStructure();
+        state.selectedPlant = plant;
+        el.classList.add('active');
+        setTool('select');
+        setStatus('Klicke auf den Canvas, um ' + plant.name + ' zu platzieren');
+      });
+
+      container.appendChild(el);
+    });
+  }
+
+  function renderStructurePalette() {
+    var container = dom.structurePalette;
+    container.innerHTML = '';
+
+    STRUCTURES.forEach(function (structure) {
+      var el = document.createElement('div');
+      el.className = 'palette-element';
+      if (state.selectedStructure && state.selectedStructure.id === structure.id) {
+        el.classList.add('active');
+      }
+
+      var icon = document.createElement('span');
+      icon.className = 'palette-element-icon';
+      icon.style.backgroundColor = structure.color;
+      icon.textContent = structure.icon;
+      el.appendChild(icon);
+
+      var info = document.createElement('div');
+      info.className = 'palette-element-info';
+
+      var name = document.createElement('span');
+      name.className = 'palette-element-name';
+      name.textContent = structure.name;
+      info.appendChild(name);
+
+      el.appendChild(info);
+
+      el.addEventListener('click', function () {
+        if (state.selectedStructure && state.selectedStructure.id === structure.id) {
+          deselectPlantStructure();
+          updateStatusForTool();
+          return;
+        }
+        deselectPlantStructure();
+        state.selectedStructure = structure;
+        el.classList.add('active');
+        setTool('select');
+        setStatus('Klicke auf den Canvas, um ' + structure.name + ' zu platzieren');
+      });
+
+      container.appendChild(el);
+    });
+  }
+
+  function renderSavedGardens() {
+    var container = dom.savedGardensList;
+    container.innerHTML = '';
+
     var gardens = getAllGardens();
 
     if (gardens.length === 0) {
       var empty = document.createElement('div');
-      empty.className = 'garden-load-empty';
-      empty.textContent = 'Keine gespeicherten G\u00E4rten vorhanden.';
-      list.appendChild(empty);
-      return;
-    }
-
-    gardens.forEach(function (garden) {
-      var item = document.createElement('div');
-      item.className = 'garden-load-item';
-
-      var info = document.createElement('div');
-      var nameLine = document.createElement('div');
-      nameLine.className = 'garden-load-item-name';
-      nameLine.textContent = garden.name;
-      info.appendChild(nameLine);
-
-      var meta = document.createElement('div');
-      meta.className = 'garden-load-item-meta';
-      meta.textContent = garden.gridSize.rows + 'x' + garden.gridSize.cols +
-        ' | ' + garden.cells.length + ' Elemente' +
-        ' | ' + new Date(garden.updatedAt).toLocaleDateString('de-DE');
-      info.appendChild(meta);
-
-      item.appendChild(info);
-
-      var deleteBtn = document.createElement('button');
-      deleteBtn.className = 'garden-load-item-delete';
-      deleteBtn.innerHTML = '&times;';
-      deleteBtn.title = 'L\u00F6schen';
-      deleteBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (confirm('Garten "' + garden.name + '" wirklich l\u00F6schen?')) {
-          var gardens = getAllGardens().filter(function (g) { return g.id !== garden.id; });
-          saveGardens(gardens);
-          if (currentGardenId === garden.id) currentGardenId = null;
-          renderLoadList();
+      empty.className = 'saved-gardens-empty';
+      empty.textContent = 'Keine gespeicherten Gärten';
+      container.appendChild(empty);
+    } else {
+      gardens.forEach(function (garden) {
+        var item = document.createElement('div');
+        item.className = 'saved-garden-item';
+        if (currentGardenId === garden.id) {
+          item.classList.add('active');
         }
+
+        var infoDiv = document.createElement('div');
+        infoDiv.style.minWidth = '0';
+
+        var nameDiv = document.createElement('div');
+        nameDiv.className = 'saved-garden-name';
+        nameDiv.textContent = garden.name || 'Unbenannt';
+        infoDiv.appendChild(nameDiv);
+
+        var metaDiv = document.createElement('div');
+        metaDiv.className = 'saved-garden-meta';
+        metaDiv.textContent = new Date(garden.updatedAt).toLocaleDateString('de-DE');
+        infoDiv.appendChild(metaDiv);
+
+        item.appendChild(infoDiv);
+
+        var deleteBtn = document.createElement('button');
+        deleteBtn.className = 'saved-garden-delete';
+        deleteBtn.innerHTML = '&times;';
+        deleteBtn.title = 'Löschen';
+        deleteBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (confirm('Garten "' + (garden.name || 'Unbenannt') + '" wirklich löschen?')) {
+            deleteGarden(garden.id);
+          }
+        });
+        item.appendChild(deleteBtn);
+
+        item.addEventListener('click', function () {
+          loadGarden(garden.id);
+        });
+
+        container.appendChild(item);
       });
-      item.appendChild(deleteBtn);
-
-      item.addEventListener('click', function () {
-        currentGardenId = garden.id;
-        deserializeGrid(garden);
-        hideLoadDialog();
-        updateInfo('Garten "' + garden.name + '" geladen.');
-      });
-
-      list.appendChild(item);
-    });
-  }
-
-  // =====================================================
-  // Clear
-  // =====================================================
-  function clearGrid() {
-    if (!confirm('Gesamtes Raster l\u00F6schen? Alle platzierten Elemente werden entfernt.')) {
-      return;
     }
-    initGrid();
-    renderGrid();
-    currentGardenId = null;
-    updateInfo('Raster gel\u00F6scht.');
+
+    // New garden button
+    var newBtn = document.createElement('button');
+    newBtn.className = 'saved-garden-new-btn';
+    newBtn.textContent = '+ Neuer Garten';
+    newBtn.addEventListener('click', function () {
+      newGarden();
+    });
+    container.appendChild(newBtn);
   }
 
   // =====================================================
-  // Info bar
-  // =====================================================
-  function updateInfo(text) {
-    dom.infoText.innerHTML = '';
-    var strong = document.createElement('strong');
-    strong.textContent = text;
-    dom.infoText.appendChild(strong);
-  }
-
-  // =====================================================
-  // Theme toggle (reuse existing logic)
+  // Theme Toggle
   // =====================================================
   function initTheme() {
     var themeToggle = document.getElementById('themeToggle');
@@ -631,83 +1339,249 @@
   }
 
   // =====================================================
-  // Keyboard shortcuts
+  // Keyboard
   // =====================================================
   function initKeyboard() {
     document.addEventListener('keydown', function (e) {
-      // Escape: deselect element or close dialogs
-      if (e.key === 'Escape') {
-        if (!dom.saveDialog.hidden) { hideSaveDialog(); return; }
-        if (!dom.loadDialog.hidden) { hideLoadDialog(); return; }
-        if (selectedElement) {
-          selectedElement = null;
-          var allItems = dom.palette.querySelectorAll('.palette-item--selected');
-          allItems.forEach(function (item) { item.classList.remove('palette-item--selected'); });
-          updateInfo('Auswahl aufgehoben.');
+      // Don't handle when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        if (e.key === 'Escape') {
+          e.target.blur();
         }
+        return;
       }
-      // Ctrl+S: save
-      if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        showSaveDialog();
+
+      switch (e.key) {
+        case 'v':
+        case 'V':
+          setTool('select');
+          break;
+        case 'd':
+        case 'D':
+          setTool('draw');
+          break;
+        case 'm':
+        case 'M':
+          setTool('move');
+          break;
+        case 'x':
+        case 'X':
+          setTool('delete');
+          break;
+        case 'Escape':
+          if (drawPoints.length > 0) {
+            drawPoints = [];
+            drawPreviewLine = null;
+            renderDrawing();
+            setStatus('Zeichnung abgebrochen');
+          } else {
+            state.selectedElement = null;
+            deselectPlantStructure();
+            renderAll();
+            setStatus('Auswahl aufgehoben');
+          }
+          break;
+        case 'Delete':
+        case 'Backspace':
+          if (state.selectedElement) {
+            // Delete selected element
+            var isArea = gardenData.layers.some(function (l) { return l.id === state.selectedElement; });
+            if (isArea) {
+              deleteAreaById(state.selectedElement);
+            } else {
+              deleteElementById(state.selectedElement);
+            }
+          }
+          break;
+        case 'z':
+        case 'Z':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+          }
+          break;
+        case 'y':
+        case 'Y':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            redo();
+          }
+          break;
+        case 's':
+        case 'S':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            saveCurrentGarden();
+          }
+          break;
+        case '+':
+        case '=':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            zoomIn();
+          }
+          break;
+        case '-':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            zoomOut();
+          }
+          break;
+        case '0':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            zoomReset();
+          }
+          break;
       }
+    });
+  }
+
+  // =====================================================
+  // Sidebar Toggle (mobile)
+  // =====================================================
+  function initSidebarToggle() {
+    var toggle = document.getElementById('sidebarToggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('click', function () {
+      dom.sidebar.classList.toggle('open');
+    });
+
+    // Close sidebar when clicking canvas on mobile
+    dom.canvasArea.addEventListener('click', function (e) {
+      if (dom.sidebar.classList.contains('open') && window.innerWidth <= 900) {
+        dom.sidebar.classList.remove('open');
+      }
+    });
+  }
+
+  // Hamburger nav toggle
+  function initHamburgerNav() {
+    var hamburger = document.getElementById('hamburgerBtn');
+    var navContainer = document.querySelector('.garden-app .nav-container');
+    if (!hamburger || !navContainer) return;
+
+    hamburger.addEventListener('click', function () {
+      navContainer.classList.toggle('nav-open');
+      var expanded = navContainer.classList.contains('nav-open');
+      hamburger.setAttribute('aria-expanded', expanded);
     });
   }
 
   // =====================================================
   // Init
   // =====================================================
+  function cacheDom() {
+    dom.canvas = document.getElementById('gardenCanvas');
+    dom.canvasArea = document.getElementById('gardenCanvasArea');
+    dom.canvasContent = document.getElementById('canvasContent');
+    dom.svgDefs = document.getElementById('svgDefs');
+    dom.layerAreas = document.getElementById('layerAreas');
+    dom.layerElements = document.getElementById('layerElements');
+    dom.layerDrawing = document.getElementById('layerDrawing');
+    dom.gardenName = document.getElementById('gardenNameInput');
+    dom.sidebar = document.getElementById('gardenSidebar');
+    dom.surfacePalette = document.getElementById('surfacePalette');
+    dom.plantPalette = document.getElementById('plantPalette');
+    dom.structurePalette = document.getElementById('structurePalette');
+    dom.savedGardensList = document.getElementById('savedGardensList');
+    dom.plantSearch = document.getElementById('plantSearch');
+    dom.statusText = document.getElementById('statusText');
+    dom.statusAreas = document.getElementById('statusAreas');
+    dom.statusElements = document.getElementById('statusElements');
+    dom.zoomLevel = document.getElementById('zoomLevel');
+    dom.undoBtn = document.getElementById('undoBtn');
+    dom.redoBtn = document.getElementById('redoBtn');
+  }
+
+  function bindEvents() {
+    // Tool buttons
+    document.querySelectorAll('.tool-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        setTool(btn.dataset.tool);
+      });
+    });
+
+    // Canvas events
+    dom.canvasArea.addEventListener('click', onCanvasClick);
+    dom.canvasArea.addEventListener('mousemove', onCanvasMouseMove);
+    dom.canvasArea.addEventListener('mouseup', onCanvasMouseUp);
+    dom.canvasArea.addEventListener('dblclick', onCanvasDblClick);
+    dom.canvasArea.addEventListener('wheel', onCanvasWheel, { passive: false });
+
+    // Prevent context menu on canvas
+    dom.canvasArea.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    });
+
+    // Header buttons
+    dom.undoBtn.addEventListener('click', undo);
+    dom.redoBtn.addEventListener('click', redo);
+    document.getElementById('saveBtn').addEventListener('click', saveCurrentGarden);
+    document.getElementById('exportBtn').addEventListener('click', exportPNG);
+
+    // Zoom buttons
+    document.getElementById('zoomIn').addEventListener('click', zoomIn);
+    document.getElementById('zoomOut').addEventListener('click', zoomOut);
+    document.getElementById('zoomReset').addEventListener('click', zoomReset);
+
+    // Plant search
+    dom.plantSearch.addEventListener('input', function () {
+      renderPlantPalette(this.value);
+    });
+
+    // Garden name auto-save
+    dom.gardenName.addEventListener('change', function () {
+      gardenData.name = this.value.trim() || 'Mein Garten';
+      autoSave();
+      renderSavedGardens();
+    });
+
+    // Global mouseup for drag end
+    document.addEventListener('mouseup', function () {
+      if (dragState) endDrag();
+    });
+  }
+
+  function loadLastGarden() {
+    var gardens = getAllGardens();
+    if (gardens.length > 0) {
+      // Load most recently updated
+      gardens.sort(function (a, b) {
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      });
+      loadGarden(gardens[0].id);
+    }
+  }
+
   function init() {
     cacheDom();
     initTheme();
+    initPatterns();
     initKeyboard();
+    initSidebarToggle();
+    initHamburgerNav();
+    bindEvents();
 
-    // Grid size select
-    GRID_SIZES.forEach(function (size) {
-      var opt = document.createElement('option');
-      opt.value = size.rows + 'x' + size.cols;
-      opt.textContent = size.label;
-      if (size.rows === gridSize.rows && size.cols === gridSize.cols) {
-        opt.selected = true;
-      }
-      dom.gridSizeSelect.appendChild(opt);
-    });
-    dom.gridSizeSelect.addEventListener('change', onGridSizeChange);
+    // Render sidebars
+    renderSurfacePalette();
+    renderPlantPalette();
+    renderStructurePalette();
+    renderSavedGardens();
 
-    // Buttons
-    dom.saveBtn.addEventListener('click', showSaveDialog);
-    dom.loadBtn.addEventListener('click', showLoadDialog);
-    dom.clearBtn.addEventListener('click', clearGrid);
-    dom.zoomIn.addEventListener('click', function () { setZoom(zoomLevel + 0.1); });
-    dom.zoomOut.addEventListener('click', function () { setZoom(zoomLevel - 0.1); });
+    // Load last garden or show empty
+    loadLastGarden();
+    renderAll();
 
-    // Save dialog buttons
-    dom.saveDialog.querySelector('#gardenSaveConfirm').addEventListener('click', doSave);
-    dom.saveDialog.querySelector('#gardenSaveCancel').addEventListener('click', hideSaveDialog);
-    dom.saveDialog.querySelector('#gardenNameInput').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); doSave(); }
-    });
-
-    // Load dialog buttons
-    dom.loadDialog.querySelector('#gardenLoadClose').addEventListener('click', hideLoadDialog);
-
-    // Backdrop clicks close dialogs
-    dom.saveDialog.addEventListener('click', function (e) {
-      if (e.target === dom.saveDialog) hideSaveDialog();
-    });
-    dom.loadDialog.addEventListener('click', function (e) {
-      if (e.target === dom.loadDialog) hideLoadDialog();
-    });
-
-    // Build grid and palette
-    initGrid();
-    renderGrid();
-    renderPalette();
-
-    updateInfo('W\u00E4hle ein Element aus der Seitenleiste und klicke auf das Raster zum Platzieren.');
+    setStatus('Bereit - Wähle ein Werkzeug oder platziere Pflanzen');
   }
 
-  // Start when DOM is ready
+  // Start
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
