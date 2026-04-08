@@ -79,6 +79,12 @@ if (USE_BUNDLES) {
 
 app.use('/public', express.static(path.join(PROJECT_ROOT, 'public'), { maxAge: '1d' }));
 
+// Vendor-Dateien (Workbox etc.) — lang cachen, aendert sich nur bei Versionswechsel
+app.use('/vendor', express.static(path.join(PROJECT_ROOT, 'public', 'vendor'), { maxAge: '30d' }));
+
+// Icons
+app.use('/icons', express.static(path.join(PROJECT_ROOT, 'public', 'icons'), { maxAge: '7d' }));
+
 // Serve /src (CSS/JS needed in dev since HTML references ../src/)
 app.use('/src', express.static(path.join(PROJECT_ROOT, 'src'), { maxAge: '1d' }));
 
@@ -87,6 +93,18 @@ if (process.env.NODE_ENV !== 'production') {
     app.use('/tests', express.static(path.join(PROJECT_ROOT, 'tests')));
     app.use('/docs', express.static(path.join(PROJECT_ROOT, 'docs')));
 }
+
+// Service Worker: Muss vom Root serviert werden, kein Cache (damit Updates sofort greifen)
+app.get('/sw.js', (req, res) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set('Service-Worker-Allowed', '/');
+    res.sendFile(path.join(PROJECT_ROOT, 'public', 'sw.js'));
+});
+
+// Manifest vom Root servieren
+app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(PROJECT_ROOT, 'public', 'manifest.json'));
+});
 
 // HTML page routes (with and without .html extension)
 // In production with bundles, serve pre-processed HTML from dist/
