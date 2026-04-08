@@ -141,18 +141,25 @@
           </div>
         </aside>
 
-        <!-- Canvas Area -->
-        <div class="garden-canvas-area" id="gardenCanvasArea">
-          <svg class="garden-canvas" id="gardenCanvas" xmlns="http://www.w3.org/2000/svg">
-            <defs id="svgDefs">
-              <!-- SVG Patterns defined by JS -->
-            </defs>
-            <g id="canvasContent">
-              <g id="layerAreas"></g>
-              <g id="layerElements"></g>
-              <g id="layerDrawing"></g>
-            </g>
-          </svg>
+        <!-- Canvas Area with Rulers -->
+        <div class="garden-canvas-wrapper">
+          <canvas class="garden-ruler-corner" id="rulerCorner" width="32" height="24"></canvas>
+          <canvas class="garden-ruler-top" id="rulerTop" height="24"></canvas>
+          <canvas class="garden-ruler-left" id="rulerLeft" width="32"></canvas>
+          <div class="garden-canvas-area" id="gardenCanvasArea">
+            <svg class="garden-canvas" id="gardenCanvas" xmlns="http://www.w3.org/2000/svg">
+              <defs id="svgDefs">
+                <!-- SVG Patterns defined by JS -->
+              </defs>
+              <g id="canvasContent">
+                <g id="layerGrid"></g>
+                <g id="layerAreas"></g>
+                <g id="layerElements"></g>
+                <g id="layerDrawing"></g>
+              </g>
+            </svg>
+            <div class="garden-tooltip" id="gardenTooltip" role="tooltip"></div>
+          </div>
         </div>
       </div>
 
@@ -165,8 +172,16 @@
           <span class="status-stat" id="statusAreas">0 Flächen</span>
           <span class="status-separator">|</span>
           <span class="status-stat" id="statusElements">0 Elemente</span>
+          <span class="status-separator">|</span>
+          <span class="status-stat" id="statusCanvasSize">12.0 x 8.0 m</span>
         </div>
         <div class="statusbar-right">
+          <select class="grid-scale-select" id="gridScaleSelect" aria-label="Rastergröße" title="Rastergröße">
+            <option value="0.25">0.25m</option>
+            <option value="0.5" selected>0.5m</option>
+            <option value="1">1m</option>
+          </select>
+          <span class="header-separator"></span>
           <button type="button" class="zoom-btn" id="zoomOut" title="Verkleinern" aria-label="Verkleinern">−</button>
           <span class="zoom-level" id="zoomLevel">100%</span>
           <button type="button" class="zoom-btn" id="zoomIn" title="Vergrößern" aria-label="Vergrößern">+</button>
