@@ -66,7 +66,10 @@ const sharedJs = [
     'src/js/rate-limiter.js',
     'src/js/logger.js',
     'src/js/error-handler.js',
-    'src/js/api.js'
+    'src/js/api.js',
+    'src/js/offline-store.js',
+    'src/js/sync-manager.js',
+    'src/js/offline-ui.js'
 ];
 
 // ── Per-page JS bundles ──────────────────────────────────────────────
@@ -153,7 +156,10 @@ const jsBundles = {
     ],
     // garden.html
     'garden-bundle.js': [
-        'src/js/garden-planner.js'
+        'src/js/garden-planner.js',
+        'src/js/offline-store.js',
+        'src/js/sync-manager.js',
+        'src/js/offline-ui.js'
     ]
 };
 
@@ -231,6 +237,12 @@ for (const file of htmlFiles) {
         '$1/dist/js/auth-check.js$2'
     );
 
+    // Replace pwa-register.js path for production
+    html = html.replace(
+        /(<script\s+src=")\.\.\/src\/js\/pwa-register\.js(">\s*<\/script>)/g,
+        '$1/dist/js/pwa-register.js$2'
+    );
+
     // Replace all other ../src/js/*.js script tags with single bundle
     // Find the FIRST and LAST src/js script tag, replace the whole block
     const scriptPattern = /^[ \t]*<script\s+src="\.\.\/src\/js\/[^"]+"><\/script>[ \t]*\n?/gm;
@@ -246,6 +258,54 @@ for (const file of htmlFiles) {
 
     writeBundle(file, html);
 }
+
+// Copy PWA files to dist/
+console.log('\nPWA files:');
+const pwaFiles = [
+    { src: 'public/sw.js', dest: 'sw.js' },
+    { src: 'public/manifest.json', dest: 'manifest.json' },
+    { src: 'public/offline.html', dest: 'offline.html' }
+];
+for (const file of pwaFiles) {
+    const content = readSource(file.src);
+    if (content) writeBundle(file.dest, content);
+}
+
+// Copy icons directory
+const iconsSourceDir = path.join(ROOT, 'public', 'icons');
+if (fs.existsSync(iconsSourceDir)) {
+    ensureDir(path.join(DIST, 'icons'));
+    const iconFiles = fs.readdirSync(iconsSourceDir);
+    for (const iconFile of iconFiles) {
+        const content = fs.readFileSync(path.join(iconsSourceDir, iconFile));
+        fs.writeFileSync(path.join(DIST, 'icons', iconFile), content);
+        console.log(`  icons/${iconFile}`);
+    }
+}
+
+// Copy vendor directory
+const vendorSourceDir = path.join(ROOT, 'public', 'vendor');
+if (fs.existsSync(vendorSourceDir)) {
+    const copyDir = (src, dest) => {
+        ensureDir(dest);
+        const entries = fs.readdirSync(src, { withFileTypes: true });
+        for (const entry of entries) {
+            const srcPath = path.join(src, entry.name);
+            const destPath = path.join(dest, entry.name);
+            if (entry.isDirectory()) {
+                copyDir(srcPath, destPath);
+            } else {
+                fs.copyFileSync(srcPath, destPath);
+                console.log(`  vendor/${entry.name}`);
+            }
+        }
+    };
+    copyDir(vendorSourceDir, path.join(DIST, 'vendor'));
+}
+
+// Copy pwa-register.js (loaded separately like auth-check.js)
+const pwaRegisterContent = readSource('src/js/pwa-register.js');
+if (pwaRegisterContent) writeBundle(path.join('js', 'pwa-register.js'), pwaRegisterContent);
 
 // ── Summary ──────────────────────────────────────────────────────────
 
