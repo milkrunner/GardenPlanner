@@ -6177,3 +6177,229 @@ footer {
   opacity: 0.6;
   margin-left: var(--space-xs);
 }
+
+/* ==========================================
+   View Toggle (#238)
+   ========================================== */
+
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: background var(--duration-normal) ease, color var(--duration-normal) ease;
+}
+
+.view-toggle-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text);
+}
+
+.view-toggle-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+[data-theme="dark"] .view-toggle-btn {
+  background: var(--bg-tertiary);
+  color: var(--text-light);
+}
+
+[data-theme="dark"] .view-toggle-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .view-toggle-btn.active {
+  background: var(--primary);
+  color: var(--bg);
+}
+
+/* ==========================================
+   Tile View Layout (#238)
+   ========================================== */
+
+.tasks-list.tile-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-lg);
+}
+
+.tile-view .task-card {
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--space-xl);
+  border-left: 5px solid var(--primary);
+  cursor: default;
+  margin-bottom: 0;
+  min-height: 180px;
+  position: relative;
+}
+
+.tile-view .task-card.completed {
+  border-left-color: var(--success);
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .tile-view .task-card.completed {
+  opacity: 0.6;
+}
+
+.tile-view .task-card.archived {
+  border-left-color: #9ca3af;
+}
+
+/* Status indicator bar at top of tile */
+.tile-view .task-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -5px;
+  right: 0;
+  height: 4px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--warning);
+}
+
+.tile-view .task-card.completed::before {
+  background: var(--success);
+}
+
+/* Title in tile view: larger, more prominent */
+.tile-view .task-title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1.3;
+  display: block;
+  margin-bottom: var(--space-sm);
+}
+
+/* Meta info in tile view */
+.tile-view .task-meta {
+  font-size: var(--text-base);
+  margin-top: var(--space-sm);
+  gap: var(--space-md);
+}
+
+/* Description in tile view */
+.tile-view .task-description {
+  font-size: var(--text-base);
+  margin-top: var(--space-sm);
+  line-height: 1.5;
+}
+
+/* Hide drag handle in tile view */
+.tile-view .drag-handle {
+  display: none;
+}
+
+/* Status badge for tile view */
+.tile-view .task-info {
+  flex: 1;
+}
+
+.tile-view .task-info::after {
+  content: attr(data-status-label);
+  display: inline-block;
+  margin-top: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.tile-view .task-card.completed .task-info::after {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+/* Actions in tile view: bottom row */
+.tile-view .task-actions {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+  justify-content: flex-end;
+  width: 100%;
+}
+
+/* Location badge style in tile view */
+.tile-view .task-meta span {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+[data-theme="dark"] .tile-view .task-meta span {
+  background: var(--border);
+}
+
+/* Empty state in tile view */
+.tile-view .empty-state {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================
+   Tile View Responsive (#238)
+   ========================================== */
+
+@media (max-width: 640px) {
+  .tasks-list.tile-view {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .tile-view .task-card {
+    padding: var(--space-lg);
+    min-height: auto;
+  }
+
+  .tile-view .task-title {
+    font-size: var(--text-lg);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .tasks-list.tile-view {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .tasks-list.tile-view {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1441px) {
+  .tasks-list.tile-view {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Reduced motion for tile view */
+@media (prefers-reduced-motion: reduce) {
+  .view-toggle-btn {
+    transition: none;
+  }
+
+  .tile-view .task-card {
+    animation: none;
+  }
+}

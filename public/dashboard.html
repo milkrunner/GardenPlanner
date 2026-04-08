@@ -145,6 +145,14 @@
           <div class="tasks-header">
             <h2 id="tasksHeaderTitle">Alle Aufgaben</h2>
             <div class="tasks-header-actions">
+              <div class="view-toggle" role="group" aria-label="Ansicht wechseln">
+                <button type="button" class="view-toggle-btn active" data-view="list" title="Listenansicht" aria-label="Listenansicht">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <button type="button" class="view-toggle-btn" data-view="tiles" title="Kachelansicht" aria-label="Kachelansicht">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                </button>
+              </div>
               <button id="toggleArchiveBtn" class="btn btn-secondary">
                 📦 Archiv anzeigen
               </button>
