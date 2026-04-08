@@ -327,12 +327,124 @@
     layer.appendChild(rect);
   }
 
+  function renderRulers() {
+    renderRulerTop();
+    renderRulerLeft();
+    renderRulerCorner();
+  }
+
+  function renderRulerTop() {
+    var canvas = dom.rulerTop;
+    if (!canvas) return;
+    var parent = canvas.parentElement;
+    if (!parent) return;
+    canvas.width = parent.offsetWidth - 32;
+    var ctx = canvas.getContext('2d');
+    var h = canvas.height;
+    var ppm = pixelsPerMeter();
+
+    ctx.fillStyle = '#365E3D';
+    ctx.fillRect(0, 0, canvas.width, h);
+
+    ctx.strokeStyle = 'white';
+    ctx.fillStyle = 'white';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+
+    var offsetPx = state.panX * state.zoom;
+    var meterStep = getRulerStep();
+
+    var startM = Math.floor(-offsetPx / (ppm * state.zoom) / meterStep) * meterStep;
+    var endM = Math.ceil((canvas.width - offsetPx) / (ppm * state.zoom) / meterStep) * meterStep;
+
+    for (var m = startM; m <= endM; m += meterStep) {
+      var x = m * ppm * state.zoom + offsetPx;
+      if (x < 0 || x > canvas.width) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(x, h - 8);
+      ctx.lineTo(x, h);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (m >= 0) {
+        ctx.fillText(m + 'm', x, h - 10);
+      }
+    }
+  }
+
+  function renderRulerLeft() {
+    var canvas = dom.rulerLeft;
+    if (!canvas) return;
+    var parent = canvas.parentElement;
+    if (!parent) return;
+    canvas.height = parent.offsetHeight - 24;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var ppm = pixelsPerMeter();
+
+    ctx.fillStyle = '#365E3D';
+    ctx.fillRect(0, 0, w, canvas.height);
+
+    ctx.strokeStyle = 'white';
+    ctx.fillStyle = 'white';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'right';
+
+    var offsetPx = state.panY * state.zoom;
+    var meterStep = getRulerStep();
+
+    var startM = Math.floor(-offsetPx / (ppm * state.zoom) / meterStep) * meterStep;
+    var endM = Math.ceil((canvas.height - offsetPx) / (ppm * state.zoom) / meterStep) * meterStep;
+
+    for (var m = startM; m <= endM; m += meterStep) {
+      var y = m * ppm * state.zoom + offsetPx;
+      if (y < 0 || y > canvas.height) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(w - 8, y);
+      ctx.lineTo(w, y);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (m >= 0) {
+        ctx.fillText(m + 'm', w - 10, y + 3);
+      }
+    }
+  }
+
+  function renderRulerCorner() {
+    var canvas = dom.rulerCorner;
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#365E3D';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function getRulerStep() {
+    var ppm = pixelsPerMeter();
+    var pixelsPerMeterOnScreen = ppm * state.zoom;
+    if (pixelsPerMeterOnScreen > 150) return 0.5;
+    if (pixelsPerMeterOnScreen > 40) return 1;
+    if (pixelsPerMeterOnScreen > 20) return 2;
+    return 5;
+  }
+
+  function updateCanvasSizeDisplay() {
+    if (!dom.statusCanvasSize) return;
+    var wm = pixelsToMeters(gardenData.canvasSize.width).toFixed(1);
+    var hm = pixelsToMeters(gardenData.canvasSize.height).toFixed(1);
+    dom.statusCanvasSize.textContent = wm + ' x ' + hm + ' m';
+  }
+
   function renderAll() {
     renderGrid();
     renderAreas();
     renderElements();
     updateViewBox();
     updateStats();
+    renderRulers();
+    updateCanvasSizeDisplay();
   }
 
   function renderAreas() {
@@ -903,6 +1015,7 @@
     state.zoom = Math.max(0.25, Math.min(3, level));
     updateViewBox();
     dom.zoomLevel.textContent = Math.round(state.zoom * 100) + '%';
+    renderRulers();
   }
 
   function zoomIn() {
@@ -919,6 +1032,7 @@
     state.panY = 0;
     updateViewBox();
     dom.zoomLevel.textContent = '100%';
+    renderRulers();
   }
 
   // =====================================================
@@ -932,11 +1046,13 @@
       // Zoom
       var delta = e.deltaY > 0 ? -0.1 : 0.1;
       setZoom(state.zoom + delta);
+      renderRulers();
     } else {
       // Pan
       state.panX -= e.deltaX;
       state.panY -= e.deltaY;
       updateViewBox();
+      renderRulers();
     }
   }
 
@@ -1673,6 +1789,7 @@
 
     // Load last garden or show empty
     loadLastGarden();
+    window.addEventListener('resize', function () { renderRulers(); });
     renderAll();
 
     setStatus('Bereit - Wähle ein Werkzeug oder platziere Pflanzen');
