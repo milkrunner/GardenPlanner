@@ -875,12 +875,17 @@
   }
 
   function deleteAreaById(id) {
-    pushUndo();
-    gardenData.layers = gardenData.layers.filter(function (l) { return l.id !== id; });
-    state.selectedElement = null;
-    renderAll();
-    autoSave();
-    setStatus('Fläche gelöscht');
+    var area = gardenData.layers.find(function (l) { return l.id === id; });
+    var surfaceName = area ? getSurfaceType(area.surfaceType).name : 'Fl\u00e4che';
+    gardenConfirm('Fl\u00e4che l\u00f6schen', 'Fl\u00e4che "' + surfaceName + '" l\u00f6schen?').then(function (ok) {
+      if (!ok) return;
+      pushUndo();
+      gardenData.layers = gardenData.layers.filter(function (l) { return l.id !== id; });
+      state.selectedElement = null;
+      renderAll();
+      autoSave();
+      setStatus('Fl\u00e4che gel\u00f6scht');
+    });
   }
 
   // =====================================================
@@ -1114,6 +1119,43 @@
       updateViewBox();
       renderRulers();
     }
+  }
+
+  // =====================================================
+  // Confirm Dialog
+  // =====================================================
+  function gardenConfirm(title, message) {
+    return new Promise(function (resolve) {
+      var overlay = document.createElement('div');
+      overlay.className = 'garden-confirm-overlay';
+      overlay.innerHTML = '<div class="garden-confirm-card">' +
+        '<div class="garden-confirm-title">' + title + '</div>' +
+        '<div class="garden-confirm-message">' + message + '</div>' +
+        '<div class="garden-confirm-actions">' +
+        '<button class="garden-confirm-cancel" type="button">Abbrechen</button>' +
+        '<button class="garden-confirm-delete" type="button">L\u00f6schen</button>' +
+        '</div></div>';
+
+      function close(result) {
+        overlay.remove();
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+
+      function onKey(e) {
+        if (e.key === 'Escape') close(false);
+      }
+
+      overlay.querySelector('.garden-confirm-cancel').addEventListener('click', function () { close(false); });
+      overlay.querySelector('.garden-confirm-delete').addEventListener('click', function () { close(true); });
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) close(false);
+      });
+      document.addEventListener('keydown', onKey);
+
+      document.body.appendChild(overlay);
+      overlay.querySelector('.garden-confirm-delete').focus();
+    });
   }
 
   // =====================================================
@@ -1531,9 +1573,9 @@
         deleteBtn.title = 'Löschen';
         deleteBtn.addEventListener('click', function (e) {
           e.stopPropagation();
-          if (confirm('Garten "' + (garden.name || 'Unbenannt') + '" wirklich löschen?')) {
-            deleteGarden(garden.id);
-          }
+          gardenConfirm('Garten l\u00f6schen', 'Garten "' + (garden.name || 'Unbenannt') + '" wirklich l\u00f6schen? Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden.').then(function (ok) {
+            if (ok) deleteGarden(garden.id);
+          });
         });
         item.appendChild(deleteBtn);
 
