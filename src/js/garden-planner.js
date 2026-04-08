@@ -122,6 +122,15 @@
   // Convert mouse event to SVG coordinates
   function mouseToSVG(e) {
     var svg = dom.canvas;
+    var pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    var ctm = svg.getScreenCTM();
+    if (ctm) {
+      var transformed = pt.matrixTransform(ctm.inverse());
+      return { x: transformed.x, y: transformed.y };
+    }
+    // Fallback
     var rect = svg.getBoundingClientRect();
     var x = (e.clientX - rect.left) / state.zoom - state.panX / state.zoom;
     var y = (e.clientY - rect.top) / state.zoom - state.panY / state.zoom;
