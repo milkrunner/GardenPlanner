@@ -100,6 +100,20 @@ registerRoute(
     })
 );
 
+// Wetter-API: Network-First, Fallback auf Stale-Cache
+registerRoute(
+    function(routeData) {
+        return routeData.url.origin.includes('open-meteo.com');
+    },
+    new NetworkFirst({
+        cacheName: 'weather-api-' + CACHE_VERSION,
+        plugins: [
+            new CacheableResponsePlugin({ statuses: [0, 200] }),
+            new ExpirationPlugin({ maxAgeSeconds: 24 * 60 * 60 })
+        ]
+    })
+);
+
 // Task-API: Network-First, Fallback auf Cache
 registerRoute(
     function(routeData) {
@@ -145,17 +159,12 @@ var navigationRoute = new NavigationRoute(navigationHandler, {
 });
 registerRoute(navigationRoute);
 
-// Fallback to offline.html when navigation fails and nothing in cache
-self.addEventListener('fetch', function(event) {
-    if (event.request.mode === 'navigate') {
-        event.respondWith(
-            fetch(event.request).catch(function() {
-                return caches.match(event.request).then(function(cached) {
-                    return cached || caches.match('/offline.html');
-                });
-            })
-        );
+// Fallback to offline.html when any navigation request fails
+workbox.routing.setCatchHandler(function(params) {
+    if (params.event.request.destination === 'document') {
+        return caches.match('/offline.html');
     }
+    return Response.error();
 });
 
 // --- Lifecycle ---

@@ -43,14 +43,15 @@ var SyncManager = (function () {
         }).then(function (response) {
             if (response.status === 409) {
                 // Conflict — server has a newer version
-                return response.json().then(function (serverTask) {
+                return response.json().then(function (body) {
+                    var serverTask = body.serverTask;
                     // Put the server version into IndexedDB
                     return window.OfflineStore.putTask(serverTask).then(function () {
                         return {
                             conflict: {
                                 conflict: true,
                                 taskId: entry.taskId,
-                                taskTitle: entry.data.title || '',
+                                taskTitle: serverTask.title,
                                 localChanges: entry.data,
                                 serverTask: serverTask
                             }

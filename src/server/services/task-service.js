@@ -207,6 +207,9 @@ async function updateTask(id, body) {
     // Konflikt-Erkennung fuer Offline-Sync
     if (body.lastKnownUpdate) {
         const clientUpdate = new Date(body.lastKnownUpdate).getTime();
+        if (isNaN(clientUpdate)) {
+            return { error: true, status: 400, errors: ['lastKnownUpdate ist kein gueltiges Datum'] };
+        }
         const serverUpdate = new Date(existing.updatedAt).getTime();
         if (serverUpdate > clientUpdate) {
             return {
