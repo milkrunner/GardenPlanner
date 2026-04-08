@@ -151,6 +151,49 @@
     };
   }
 
+  function calcPolygonArea(points) {
+    var n = points.length;
+    var area = 0;
+    for (var i = 0; i < n; i++) {
+      var j = (i + 1) % n;
+      area += points[i][0] * points[j][1];
+      area -= points[j][0] * points[i][1];
+    }
+    return Math.abs(area) / 2;
+  }
+
+  function calcPolygonPerimeter(points) {
+    var perimeter = 0;
+    for (var i = 0; i < points.length; i++) {
+      var j = (i + 1) % points.length;
+      var dx = points[j][0] - points[i][0];
+      var dy = points[j][1] - points[i][1];
+      perimeter += Math.sqrt(dx * dx + dy * dy);
+    }
+    return perimeter;
+  }
+
+  function showTooltip(name, area, perimeter) {
+    var tip = dom.tooltip;
+    if (!tip) return;
+    tip.innerHTML = '<div class="garden-tooltip-title">' + name + '</div>' +
+      '<div class="garden-tooltip-stat">Fl\u00e4che: ' + area + '</div>' +
+      '<div class="garden-tooltip-stat">Umfang: ' + perimeter + '</div>';
+    tip.style.display = 'block';
+  }
+
+  function hideTooltip() {
+    if (dom.tooltip) dom.tooltip.style.display = 'none';
+  }
+
+  function moveTooltip(e) {
+    var tip = dom.tooltip;
+    if (!tip || tip.style.display === 'none') return;
+    var container = dom.canvasArea.getBoundingClientRect();
+    tip.style.left = (e.clientX - container.left + 12) + 'px';
+    tip.style.top = (e.clientY - container.top + 12) + 'px';
+  }
+
   // =====================================================
   // SVG Patterns
   // =====================================================
@@ -471,6 +514,23 @@
 
       polygon.addEventListener('mousedown', onAreaMouseDown);
       polygon.addEventListener('click', onAreaClick);
+      (function(areaData) {
+        polygon.addEventListener('mouseenter', function () {
+          if (state.tool !== 'select' || dragState) return;
+          var surface = getSurfaceType(areaData.surfaceType);
+          var areaPx = calcPolygonArea(areaData.points);
+          var areaM2 = areaPx / (pixelsPerMeter() * pixelsPerMeter());
+          var perimPx = calcPolygonPerimeter(areaData.points);
+          var perimM = perimPx / pixelsPerMeter();
+          showTooltip(surface.name, areaM2.toFixed(1) + ' m\u00B2', perimM.toFixed(1) + ' m');
+        });
+        polygon.addEventListener('mouseleave', function () {
+          hideTooltip();
+        });
+        polygon.addEventListener('mousemove', function (ev) {
+          moveTooltip(ev);
+        });
+      })(area);
       layer.appendChild(polygon);
     });
   }
