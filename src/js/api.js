@@ -54,23 +54,142 @@ const TaskAPI = {
         if (filters.employee) params.set("employee", filters.employee);
         if (filters.location) params.set("location", filters.location);
         const qs = params.toString();
-        return this._fetch(`/tasks${qs ? `?${qs}` : ""}`);
+        try {
+            const result = await this._fetch(`/tasks${qs ? `?${qs}` : ""}`);
+            // Mirror to IndexedDB (fire-and-forget)
+            if (window.OfflineStore) {
+                const tasks = Array.isArray(result) ? result : (result && result.data ? result.data : []);
+                window.OfflineStore.putAllTasks(tasks).catch(() => {});
+            }
+            return result;
+        } catch (err) {
+            if (!navigator.onLine && window.OfflineStore) {
+                const cached = await window.OfflineStore.getAllTasks();
+                // Apply filters client-side
+                return cached.filter(task => {
+                    if (filters.status && task.status !== filters.status) return false;
+                    if (filters.employee && task.employee !== filters.employee) return false;
+                    if (filters.location && task.location !== filters.location) return false;
+                    return true;
+                });
+            }
+            throw err;
+        }
     },
 
     async getTask(id) {
-        return this._fetch(`/tasks/${encodeURIComponent(id)}`);
+        try {
+            const task = await this._fetch(`/tasks/${encodeURIComponent(id)}`);
+            // Mirror to IndexedDB (fire-and-forget)
+            if (window.OfflineStore) {
+                window.OfflineStore.putTask(task).catch(() => {});
+            }
+            return task;
+        } catch (err) {
+            if (!navigator.onLine && window.OfflineStore) {
+                return window.OfflineStore.getTask(id);
+            }
+            throw err;
+        }
     },
 
     async createTask(taskData) {
-        return this._fetch("/tasks", { method: "POST", body: JSON.stringify(taskData) });
+        try {
+            const task = await this._fetch("/tasks", { method: "POST", body: JSON.stringify(taskData) });
+            // Mirror to IndexedDB (fire-and-forget)
+            if (window.OfflineStore) {
+                window.OfflineStore.putTask(task).catch(() => {});
+            }
+            return task;
+        } catch (err) {
+            if (!navigator.onLine && window.OfflineStore) {
+                const now = new Date().toISOString();
+                const offlineTask = {
+                    ...taskData,
+                    id: 'offline-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                    status: taskData.status || 'pending',
+                    priority: taskData.priority || 'medium',
+                    recurrence: taskData.recurrence || 'none',
+                    createdAt: now,
+                    updatedAt: now,
+                    _pendingSync: true,
+                };
+                await window.OfflineStore.putTask(offlineTask);
+                await window.OfflineStore.addToSyncQueue({
+                    type: 'create',
+                    taskId: offlineTask.id,
+                    data: taskData,
+                    timestamp: now,
+                });
+                if (window.SyncManager) {
+                    window.SyncManager.registerBackgroundSync();
+                }
+                return offlineTask;
+            }
+            throw err;
+        }
     },
 
     async updateTask(id, taskData) {
-        return this._fetch(`/tasks/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(taskData) });
+        try {
+            const task = await this._fetch(`/tasks/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(taskData) });
+            // Mirror to IndexedDB (fire-and-forget)
+            if (window.OfflineStore) {
+                window.OfflineStore.putTask(task).catch(() => {});
+            }
+            return task;
+        } catch (err) {
+            if (!navigator.onLine && window.OfflineStore) {
+                const now = new Date().toISOString();
+                const existing = await window.OfflineStore.getTask(id) || {};
+                const merged = {
+                    ...existing,
+                    ...taskData,
+                    id: id,
+                    updatedAt: now,
+                    _pendingSync: true,
+                };
+                await window.OfflineStore.putTask(merged);
+                await window.OfflineStore.addToSyncQueue({
+                    type: 'update',
+                    taskId: id,
+                    data: taskData,
+                    timestamp: existing.updatedAt || now,
+                });
+                if (window.SyncManager) {
+                    window.SyncManager.registerBackgroundSync();
+                }
+                return merged;
+            }
+            throw err;
+        }
     },
 
     async deleteTask(id) {
-        return this._fetch(`/tasks/${encodeURIComponent(id)}`, { method: "DELETE" });
+        try {
+            const result = await this._fetch(`/tasks/${encodeURIComponent(id)}`, { method: "DELETE" });
+            // Remove from IndexedDB (fire-and-forget)
+            if (window.OfflineStore) {
+                window.OfflineStore.deleteTask(id).catch(() => {});
+            }
+            return result;
+        } catch (err) {
+            if (!navigator.onLine && window.OfflineStore) {
+                const now = new Date().toISOString();
+                await window.OfflineStore.deleteTask(id);
+                await window.OfflineStore.addToSyncQueue({
+                    type: 'delete',
+                    taskId: id,
+                    data: null,
+                    timestamp: now,
+                });
+                if (window.SyncManager) {
+                    window.SyncManager.registerBackgroundSync();
+                }
+                return null;
+            }
+            throw err;
+        }
     },
 
     async archiveTask(id) {
