@@ -863,18 +863,38 @@
   // Area Events
   // =====================================================
   function onAreaClick(e) {
-    e.stopPropagation();
     var id = this.getAttribute('data-id');
+
+    if (state.tool === 'draw') {
+      // Im Zeichenmodus: Click durchlassen damit onCanvasClick Punkte setzen kann
+      return;
+    }
+
+    e.stopPropagation();
 
     if (state.tool === 'delete') {
       deleteAreaById(id);
     } else if (state.tool === 'select') {
+      // Pflanzen/Strukturen platzieren geht auch auf Flaechen
+      if (state.selectedPlant) {
+        var pt = mouseToSVG(e);
+        pt = snapToGrid(pt);
+        placePlant(pt);
+        return;
+      }
+      if (state.selectedStructure) {
+        var pt2 = mouseToSVG(e);
+        pt2 = snapToGrid(pt2);
+        placeStructure(pt2);
+        return;
+      }
       state.selectedElement = (state.selectedElement === id) ? null : id;
       renderAll();
     }
   }
 
   function onAreaMouseDown(e) {
+    if (state.tool === 'draw') return; // Im Zeichenmodus: durchlassen
     e.stopPropagation();
     var id = this.getAttribute('data-id');
 
