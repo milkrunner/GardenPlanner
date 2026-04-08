@@ -14,6 +14,9 @@
   var DEFAULT_CANVAS = { width: 1200, height: 800 };
   var SNAP_DISTANCE = 12;
   var CLOSE_POLYGON_DISTANCE = 14;
+  var PIXELS_PER_GRID = 50;
+  var GRID_SCALES = [0.25, 0.5, 1];
+  var DEFAULT_GRID_SCALE = 0.5;
 
   var SURFACE_TYPES = [
     { id: 'bed', name: 'Beet', color: '#8B6F47', pattern: 'pattern-bed', icon: '🌱' },
@@ -58,7 +61,9 @@
     selectedElement: null,    // currently selected element ID
     zoom: 1,
     panX: 0,
-    panY: 0
+    panY: 0,
+    gridVisible: true,
+    gridScale: DEFAULT_GRID_SCALE
   };
 
   var gardenData = createEmptyGarden();
@@ -129,12 +134,92 @@
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function pixelsPerMeter() {
+    return PIXELS_PER_GRID / state.gridScale;
+  }
+
+  function pixelsToMeters(px) {
+    return px / pixelsPerMeter();
+  }
+
+  function snapToGrid(point, forceOff) {
+    if (forceOff) return point;
+    var step = PIXELS_PER_GRID;
+    return {
+      x: Math.round(point.x / step) * step,
+      y: Math.round(point.y / step) * step
+    };
+  }
+
+  function calcPolygonArea(points) {
+    var n = points.length;
+    var area = 0;
+    for (var i = 0; i < n; i++) {
+      var j = (i + 1) % n;
+      area += points[i][0] * points[j][1];
+      area -= points[j][0] * points[i][1];
+    }
+    return Math.abs(area) / 2;
+  }
+
+  function calcPolygonPerimeter(points) {
+    var perimeter = 0;
+    for (var i = 0; i < points.length; i++) {
+      var j = (i + 1) % points.length;
+      var dx = points[j][0] - points[i][0];
+      var dy = points[j][1] - points[i][1];
+      perimeter += Math.sqrt(dx * dx + dy * dy);
+    }
+    return perimeter;
+  }
+
+  function showTooltip(name, area, perimeter) {
+    var tip = dom.tooltip;
+    if (!tip) return;
+    tip.innerHTML = '<div class="garden-tooltip-title">' + name + '</div>' +
+      '<div class="garden-tooltip-stat">Fl\u00e4che: ' + area + '</div>' +
+      '<div class="garden-tooltip-stat">Umfang: ' + perimeter + '</div>';
+    tip.style.display = 'block';
+  }
+
+  function hideTooltip() {
+    if (dom.tooltip) dom.tooltip.style.display = 'none';
+  }
+
+  function moveTooltip(e) {
+    var tip = dom.tooltip;
+    if (!tip || tip.style.display === 'none') return;
+    var container = dom.canvasArea.getBoundingClientRect();
+    tip.style.left = (e.clientX - container.left + 12) + 'px';
+    tip.style.top = (e.clientY - container.top + 12) + 'px';
+  }
+
   // =====================================================
   // SVG Patterns
   // =====================================================
   function initPatterns() {
     var defs = dom.svgDefs;
     defs.innerHTML = '';
+
+    // Grid pattern
+    addPattern(defs, 'pattern-grid', PIXELS_PER_GRID, PIXELS_PER_GRID, 'transparent', function (p) {
+      var line1 = createSVGElement('line');
+      line1.setAttribute('x1', '0');
+      line1.setAttribute('y1', '0');
+      line1.setAttribute('x2', String(PIXELS_PER_GRID));
+      line1.setAttribute('y2', '0');
+      line1.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+      line1.setAttribute('stroke-width', '0.5');
+      p.appendChild(line1);
+      var line2 = createSVGElement('line');
+      line2.setAttribute('x1', '0');
+      line2.setAttribute('y1', '0');
+      line2.setAttribute('x2', '0');
+      line2.setAttribute('y2', String(PIXELS_PER_GRID));
+      line2.setAttribute('stroke', 'rgba(0,0,0,0.07)');
+      line2.setAttribute('stroke-width', '0.5');
+      p.appendChild(line2);
+    });
 
     // Bed pattern - soil dots
     addPattern(defs, 'pattern-bed', 12, 12, '#8B6F47', function (p) {
@@ -268,11 +353,141 @@
   // =====================================================
   // Render
   // =====================================================
+  function renderGrid() {
+    var layer = dom.layerGrid;
+    if (!layer) return;
+    layer.innerHTML = '';
+    if (!state.gridVisible) return;
+
+    var w = gardenData.canvasSize.width;
+    var h = gardenData.canvasSize.height;
+    var rect = createSVGElement('rect');
+    rect.setAttribute('x', '0');
+    rect.setAttribute('y', '0');
+    rect.setAttribute('width', String(w));
+    rect.setAttribute('height', String(h));
+    rect.setAttribute('fill', 'url(#pattern-grid)');
+    layer.appendChild(rect);
+  }
+
+  function renderRulers() {
+    renderRulerTop();
+    renderRulerLeft();
+    renderRulerCorner();
+  }
+
+  function renderRulerTop() {
+    var canvas = dom.rulerTop;
+    if (!canvas) return;
+    var parent = canvas.parentElement;
+    if (!parent) return;
+    canvas.width = parent.offsetWidth - 32;
+    var ctx = canvas.getContext('2d');
+    var h = canvas.height;
+    var ppm = pixelsPerMeter();
+
+    ctx.fillStyle = '#365E3D';
+    ctx.fillRect(0, 0, canvas.width, h);
+
+    ctx.strokeStyle = 'white';
+    ctx.fillStyle = 'white';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'center';
+
+    var offsetPx = state.panX * state.zoom;
+    var meterStep = getRulerStep();
+
+    var startM = Math.floor(-offsetPx / (ppm * state.zoom) / meterStep) * meterStep;
+    var endM = Math.ceil((canvas.width - offsetPx) / (ppm * state.zoom) / meterStep) * meterStep;
+
+    for (var m = startM; m <= endM; m += meterStep) {
+      var x = m * ppm * state.zoom + offsetPx;
+      if (x < 0 || x > canvas.width) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(x, h - 8);
+      ctx.lineTo(x, h);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (m >= 0) {
+        ctx.fillText(m + 'm', x, h - 10);
+      }
+    }
+  }
+
+  function renderRulerLeft() {
+    var canvas = dom.rulerLeft;
+    if (!canvas) return;
+    var parent = canvas.parentElement;
+    if (!parent) return;
+    canvas.height = parent.offsetHeight - 24;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var ppm = pixelsPerMeter();
+
+    ctx.fillStyle = '#365E3D';
+    ctx.fillRect(0, 0, w, canvas.height);
+
+    ctx.strokeStyle = 'white';
+    ctx.fillStyle = 'white';
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'right';
+
+    var offsetPx = state.panY * state.zoom;
+    var meterStep = getRulerStep();
+
+    var startM = Math.floor(-offsetPx / (ppm * state.zoom) / meterStep) * meterStep;
+    var endM = Math.ceil((canvas.height - offsetPx) / (ppm * state.zoom) / meterStep) * meterStep;
+
+    for (var m = startM; m <= endM; m += meterStep) {
+      var y = m * ppm * state.zoom + offsetPx;
+      if (y < 0 || y > canvas.height) continue;
+
+      ctx.beginPath();
+      ctx.moveTo(w - 8, y);
+      ctx.lineTo(w, y);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      if (m >= 0) {
+        ctx.fillText(m + 'm', w - 10, y + 3);
+      }
+    }
+  }
+
+  function renderRulerCorner() {
+    var canvas = dom.rulerCorner;
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#365E3D';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function getRulerStep() {
+    var ppm = pixelsPerMeter();
+    var pixelsPerMeterOnScreen = ppm * state.zoom;
+    if (pixelsPerMeterOnScreen > 150) return 0.5;
+    if (pixelsPerMeterOnScreen > 40) return 1;
+    if (pixelsPerMeterOnScreen > 20) return 2;
+    return 5;
+  }
+
+  function updateCanvasSizeDisplay() {
+    if (!dom.statusCanvasSize) return;
+    var wm = pixelsToMeters(gardenData.canvasSize.width).toFixed(1);
+    var hm = pixelsToMeters(gardenData.canvasSize.height).toFixed(1);
+    dom.statusCanvasSize.textContent = wm + ' x ' + hm + ' m';
+  }
+
   function renderAll() {
+    renderGrid();
     renderAreas();
     renderElements();
     updateViewBox();
     updateStats();
+    renderRulers();
+    updateCanvasSizeDisplay();
   }
 
   function renderAreas() {
@@ -299,6 +514,23 @@
 
       polygon.addEventListener('mousedown', onAreaMouseDown);
       polygon.addEventListener('click', onAreaClick);
+      (function(areaData) {
+        polygon.addEventListener('mouseenter', function () {
+          if (state.tool !== 'select' || dragState) return;
+          var surface = getSurfaceType(areaData.surfaceType);
+          var areaPx = calcPolygonArea(areaData.points);
+          var areaM2 = areaPx / (pixelsPerMeter() * pixelsPerMeter());
+          var perimPx = calcPolygonPerimeter(areaData.points);
+          var perimM = perimPx / pixelsPerMeter();
+          showTooltip(surface.name, areaM2.toFixed(1) + ' m\u00B2', perimM.toFixed(1) + ' m');
+        });
+        polygon.addEventListener('mouseleave', function () {
+          hideTooltip();
+        });
+        polygon.addEventListener('mousemove', function (ev) {
+          moveTooltip(ev);
+        });
+      })(area);
       layer.appendChild(polygon);
     });
   }
@@ -573,6 +805,7 @@
   // Drawing
   // =====================================================
   function handleDrawClick(pt, e) {
+    pt = snapToGrid(pt, e.shiftKey);
     // Check if clicking close to first point to close polygon
     if (drawPoints.length >= 3) {
       var first = drawPoints[0];
@@ -642,12 +875,17 @@
   }
 
   function deleteAreaById(id) {
-    pushUndo();
-    gardenData.layers = gardenData.layers.filter(function (l) { return l.id !== id; });
-    state.selectedElement = null;
-    renderAll();
-    autoSave();
-    setStatus('Fläche gelöscht');
+    var area = gardenData.layers.find(function (l) { return l.id === id; });
+    var surfaceName = area ? getSurfaceType(area.surfaceType).name : 'Fl\u00e4che';
+    gardenConfirm('Fl\u00e4che l\u00f6schen', 'Fl\u00e4che "' + surfaceName + '" l\u00f6schen?').then(function (ok) {
+      if (!ok) return;
+      pushUndo();
+      gardenData.layers = gardenData.layers.filter(function (l) { return l.id !== id; });
+      state.selectedElement = null;
+      renderAll();
+      autoSave();
+      setStatus('Fl\u00e4che gel\u00f6scht');
+    });
   }
 
   // =====================================================
@@ -728,8 +966,10 @@
   function handleDrag(e) {
     if (!dragState) return;
     var pt = mouseToSVG(e);
-    var dx = pt.x - dragState.startX;
-    var dy = pt.y - dragState.startY;
+    var snapped = snapToGrid(pt, false);
+    var startSnapped = snapToGrid({ x: dragState.startX, y: dragState.startY }, false);
+    var dx = snapped.x - startSnapped.x;
+    var dy = snapped.y - startSnapped.y;
 
     if (dragState.type === 'element') {
       var el = gardenData.elements.find(function (el) { return el.id === dragState.id; });
@@ -793,6 +1033,7 @@
   // =====================================================
   function placePlant(pt) {
     if (!state.selectedPlant) return;
+    pt = snapToGrid(pt);
     pushUndo();
 
     var element = {
@@ -813,6 +1054,7 @@
 
   function placeStructure(pt) {
     if (!state.selectedStructure) return;
+    pt = snapToGrid(pt);
     pushUndo();
 
     var element = {
@@ -838,6 +1080,7 @@
     state.zoom = Math.max(0.25, Math.min(3, level));
     updateViewBox();
     dom.zoomLevel.textContent = Math.round(state.zoom * 100) + '%';
+    renderRulers();
   }
 
   function zoomIn() {
@@ -854,6 +1097,7 @@
     state.panY = 0;
     updateViewBox();
     dom.zoomLevel.textContent = '100%';
+    renderRulers();
   }
 
   // =====================================================
@@ -867,12 +1111,51 @@
       // Zoom
       var delta = e.deltaY > 0 ? -0.1 : 0.1;
       setZoom(state.zoom + delta);
+      renderRulers();
     } else {
       // Pan
       state.panX -= e.deltaX;
       state.panY -= e.deltaY;
       updateViewBox();
+      renderRulers();
     }
+  }
+
+  // =====================================================
+  // Confirm Dialog
+  // =====================================================
+  function gardenConfirm(title, message) {
+    return new Promise(function (resolve) {
+      var overlay = document.createElement('div');
+      overlay.className = 'garden-confirm-overlay';
+      overlay.innerHTML = '<div class="garden-confirm-card">' +
+        '<div class="garden-confirm-title">' + title + '</div>' +
+        '<div class="garden-confirm-message">' + message + '</div>' +
+        '<div class="garden-confirm-actions">' +
+        '<button class="garden-confirm-cancel" type="button">Abbrechen</button>' +
+        '<button class="garden-confirm-delete" type="button">L\u00f6schen</button>' +
+        '</div></div>';
+
+      function close(result) {
+        overlay.remove();
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      }
+
+      function onKey(e) {
+        if (e.key === 'Escape') close(false);
+      }
+
+      overlay.querySelector('.garden-confirm-cancel').addEventListener('click', function () { close(false); });
+      overlay.querySelector('.garden-confirm-delete').addEventListener('click', function () { close(true); });
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) close(false);
+      });
+      document.addEventListener('keydown', onKey);
+
+      document.body.appendChild(overlay);
+      overlay.querySelector('.garden-confirm-delete').focus();
+    });
   }
 
   // =====================================================
@@ -1290,9 +1573,9 @@
         deleteBtn.title = 'Löschen';
         deleteBtn.addEventListener('click', function (e) {
           e.stopPropagation();
-          if (confirm('Garten "' + (garden.name || 'Unbenannt') + '" wirklich löschen?')) {
-            deleteGarden(garden.id);
-          }
+          gardenConfirm('Garten l\u00f6schen', 'Garten "' + (garden.name || 'Unbenannt') + '" wirklich l\u00f6schen? Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden.').then(function (ok) {
+            if (ok) deleteGarden(garden.id);
+          });
         });
         item.appendChild(deleteBtn);
 
@@ -1437,6 +1720,12 @@
             zoomReset();
           }
           break;
+        case 'g':
+        case 'G':
+          state.gridVisible = !state.gridVisible;
+          renderAll();
+          setStatus('Raster ' + (state.gridVisible ? 'eingeblendet' : 'ausgeblendet'));
+          break;
       }
     });
   }
@@ -1497,6 +1786,13 @@
     dom.zoomLevel = document.getElementById('zoomLevel');
     dom.undoBtn = document.getElementById('undoBtn');
     dom.redoBtn = document.getElementById('redoBtn');
+    dom.layerGrid = document.getElementById('layerGrid');
+    dom.rulerTop = document.getElementById('rulerTop');
+    dom.rulerLeft = document.getElementById('rulerLeft');
+    dom.rulerCorner = document.getElementById('rulerCorner');
+    dom.tooltip = document.getElementById('gardenTooltip');
+    dom.gridScaleSelect = document.getElementById('gridScaleSelect');
+    dom.statusCanvasSize = document.getElementById('statusCanvasSize');
   }
 
   function bindEvents() {
@@ -1542,6 +1838,17 @@
       renderSavedGardens();
     });
 
+    // Grid scale change
+    if (dom.gridScaleSelect) {
+      dom.gridScaleSelect.value = String(state.gridScale);
+      dom.gridScaleSelect.addEventListener('change', function () {
+        state.gridScale = parseFloat(this.value);
+        localStorage.setItem('gardenplanner_gridScale', String(state.gridScale));
+        initPatterns();
+        renderAll();
+      });
+    }
+
     // Global mouseup for drag end
     document.addEventListener('mouseup', function () {
       if (dragState) endDrag();
@@ -1561,6 +1868,14 @@
 
   function init() {
     cacheDom();
+
+    // Restore grid scale
+    var savedScale = localStorage.getItem('gardenplanner_gridScale');
+    if (savedScale && GRID_SCALES.indexOf(parseFloat(savedScale)) !== -1) {
+      state.gridScale = parseFloat(savedScale);
+      if (dom.gridScaleSelect) dom.gridScaleSelect.value = String(state.gridScale);
+    }
+
     initTheme();
     initPatterns();
     initKeyboard();
@@ -1576,6 +1891,7 @@
 
     // Load last garden or show empty
     loadLastGarden();
+    window.addEventListener('resize', function () { renderRulers(); });
     renderAll();
 
     setStatus('Bereit - Wähle ein Werkzeug oder platziere Pflanzen');

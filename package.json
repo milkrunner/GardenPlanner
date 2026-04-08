@@ -1,6 +1,6 @@
 {
   "name": "gartenplaner",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Gartenplaner - Garden task management with REST API",
   "main": "server.js",
   "scripts": {

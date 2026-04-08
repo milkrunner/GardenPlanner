@@ -758,3 +758,173 @@
     height: 32px;
   }
 }
+
+/* =============================================
+   Grid, Rulers, Tooltip, Confirm Dialog
+   ============================================= */
+
+/* Canvas Wrapper — CSS Grid fuer Lineale */
+.garden-canvas-wrapper {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  grid-template-rows: 24px 1fr;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.garden-ruler-corner {
+  grid-column: 1;
+  grid-row: 1;
+  background: var(--primary);
+  display: block;
+}
+
+.garden-ruler-top {
+  grid-column: 2;
+  grid-row: 1;
+  background: var(--primary);
+  display: block;
+  width: 100%;
+}
+
+.garden-ruler-left {
+  grid-column: 1;
+  grid-row: 2;
+  background: var(--primary);
+  display: block;
+  height: 100%;
+}
+
+.garden-canvas-area {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Tooltip */
+.garden-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(28, 25, 23, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  z-index: 100;
+  display: none;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.garden-tooltip-title {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.garden-tooltip-stat {
+  color: #A8A29E;
+}
+
+/* Confirm Dialog */
+.garden-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: gardenFadeIn var(--duration-fast) ease;
+}
+
+.garden-confirm-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  max-width: 400px;
+  width: 90%;
+  box-shadow: var(--shadow-xl);
+}
+
+.garden-confirm-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-sm);
+  color: var(--text);
+}
+
+.garden-confirm-message {
+  color: var(--text-light);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  margin-bottom: var(--space-lg);
+}
+
+.garden-confirm-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.garden-confirm-cancel {
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.garden-confirm-cancel:hover {
+  background: var(--bg-tertiary);
+}
+
+.garden-confirm-delete {
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--error);
+  color: white;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.garden-confirm-delete:hover {
+  opacity: 0.9;
+}
+
+.garden-confirm-cancel:focus-visible,
+.garden-confirm-delete:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes gardenFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Grid Scale Select */
+.grid-scale-select {
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  height: 26px;
+}
+
+.grid-scale-select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+
+/* Dark mode adjustments for rulers */
+[data-theme="dark"] .garden-ruler-corner,
+[data-theme="dark"] .garden-ruler-top,
+[data-theme="dark"] .garden-ruler-left {
+  background: var(--primary-light);
+}
