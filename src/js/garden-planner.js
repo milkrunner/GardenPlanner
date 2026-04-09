@@ -48,6 +48,8 @@
   var plantCategories = [];
   var currentPlantCategory = '';
   var showPlantFavoritesOnly = false;
+  var showSeasonalOnly = false;
+  var selectedSeasonMonth = new Date().getMonth(); // 0-11
   var API_BASE = '/api/v1';
 
   var STRUCTURES = [
@@ -71,7 +73,8 @@
     panX: 0,
     panY: 0,
     gridVisible: true,
-    gridScale: DEFAULT_GRID_SCALE
+    gridScale: DEFAULT_GRID_SCALE,
+    multiSelected: []  // Mehrfach-Auswahl (#255)
   };
 
   var gardenData = createEmptyGarden();
@@ -565,16 +568,27 @@
       if (state.selectedElement === el.id) {
         g.classList.add('selected');
       }
+      // Mehrfach-Auswahl markierung (#255)
+      if (state.multiSelected && state.multiSelected.indexOf(el.id) !== -1) {
+        g.classList.add('multi-selected');
+      }
+
+      // Saisonale Darstellung (#253): Pflanzen ausserhalb der Saison abdunkeln
+      var plantDef = findPlantDef(el);
+      var outOfSeason = plantDef && !isPlantInSeason(plantDef, selectedSeasonMonth);
 
       var circle = createSVGElement('circle');
       circle.setAttribute('cx', '0');
       circle.setAttribute('cy', '0');
       circle.setAttribute('r', '18');
       circle.setAttribute('fill', el.color || '#E0E0E0');
-      circle.setAttribute('fill-opacity', '0.8');
-      circle.setAttribute('stroke', el.color || '#BDBDBD');
+      circle.setAttribute('fill-opacity', outOfSeason ? '0.3' : '0.8');
+      circle.setAttribute('stroke', outOfSeason ? '#999' : (el.color || '#BDBDBD'));
       circle.setAttribute('stroke-width', '1.5');
       circle.setAttribute('class', 'element-circle');
+      if (outOfSeason) {
+        circle.setAttribute('stroke-dasharray', '3 2');
+      }
       g.appendChild(circle);
 
       var text = createSVGElement('text');
@@ -583,6 +597,7 @@
       text.setAttribute('text-anchor', 'middle');
       text.setAttribute('font-size', '18');
       text.setAttribute('pointer-events', 'none');
+      if (outOfSeason) text.setAttribute('opacity', '0.4');
       text.textContent = el.icon || '?';
       g.appendChild(text);
 
@@ -591,11 +606,46 @@
       label.setAttribute('x', '0');
       label.setAttribute('y', '30');
       label.setAttribute('class', 'element-label');
+      if (outOfSeason) label.setAttribute('opacity', '0.4');
       label.textContent = el.name;
       g.appendChild(label);
 
       g.addEventListener('mousedown', onElementMouseDown);
       g.addEventListener('click', onElementClick);
+
+      // Erweiterten Tooltip mit Saisondetails anzeigen (#253)
+      (function(element, pDef, oos) {
+        g.addEventListener('mouseenter', function () {
+          if (state.tool !== 'select' || dragState) return;
+          var tipHtml = '<div class="garden-tooltip-title">' + escapeText(element.name) + '</div>';
+          if (pDef) {
+            var seasonLabels = { spring: 'Fr\u00fchling', summer: 'Sommer', autumn: 'Herbst', winter: 'Winter' };
+            if (pDef.season && pDef.season.length > 0) {
+              var seasons = pDef.season.map(function (s) { return seasonLabels[s] || s; }).join(', ');
+              tipHtml += '<div class="garden-tooltip-stat">Saison: ' + escapeText(seasons) + '</div>';
+            }
+            if (pDef.germination) {
+              tipHtml += '<div class="garden-tooltip-stat">Keimung: ' + escapeText(pDef.germination) + '</div>';
+            }
+            if (pDef.harvest) {
+              tipHtml += '<div class="garden-tooltip-stat">Ernte: ' + escapeText(pDef.harvest) + '</div>';
+            }
+            if (oos) {
+              tipHtml += '<div class="garden-tooltip-stat" style="color:#ef4444;font-weight:600">Nicht in Saison (' + MONTH_NAMES[selectedSeasonMonth] + ')</div>';
+            } else if (pDef.season && pDef.season.length > 0) {
+              tipHtml += '<div class="garden-tooltip-stat" style="color:#22c55e;font-weight:600">In Saison (' + MONTH_NAMES[selectedSeasonMonth] + ')</div>';
+            }
+          }
+          var tip = dom.tooltip;
+          if (tip) {
+            tip.innerHTML = tipHtml;
+            tip.style.display = 'block';
+          }
+        });
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('mousemove', moveTooltip);
+      })(el, plantDef, outOfSeason);
+
       layer.appendChild(g);
     });
   }
@@ -1695,6 +1745,42 @@
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // =====================================================
+  // Saisonale Ansicht (#253)
+  // =====================================================
+
+  var MONTH_NAMES = ['Januar', 'Februar', 'M\u00e4rz', 'April', 'Mai', 'Juni',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+  var SEASON_FOR_MONTH = [
+    'winter', 'winter', 'spring', 'spring', 'spring', 'summer',
+    'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'
+  ];
+
+  /**
+   * Prueft ob eine Pflanze im angegebenen Monat Saison hat.
+   */
+  function isPlantInSeason(plant, month) {
+    if (!plant.season || plant.season.length === 0) return true;
+    var season = SEASON_FOR_MONTH[month];
+    return plant.season.indexOf(season) !== -1;
+  }
+
+  /**
+   * Findet die interne Pflanzendefinition fuer ein Canvas-Element.
+   */
+  function findPlantDef(el) {
+    if (el.type !== 'plant') return null;
+    for (var i = 0; i < PLANTS.length; i++) {
+      if (PLANTS[i].name === el.name) return PLANTS[i];
+    }
+    // Fallback
+    for (var j = 0; j < FALLBACK_PLANTS.length; j++) {
+      if (FALLBACK_PLANTS[j].name === el.name) return FALLBACK_PLANTS[j];
+    }
+    return null;
+  }
+
   /**
    * Zeigt den Pflanzen-Tooltip an einer bestimmten Position.
    */
@@ -1745,6 +1831,13 @@
       var favs = getPlantFavorites();
       filtered = filtered.filter(function (p) {
         return favs.indexOf(p.id) !== -1;
+      });
+    }
+
+    // Saisonaler Filter (#253)
+    if (showSeasonalOnly) {
+      filtered = filtered.filter(function (p) {
+        return isPlantInSeason(p, selectedSeasonMonth);
       });
     }
 
@@ -2130,6 +2223,8 @@
     dom.plantSearch = document.getElementById('plantSearch');
     dom.plantCategoryFilters = document.getElementById('plantCategoryFilters');
     dom.plantFavoritesToggle = document.getElementById('plantFavoritesToggle');
+    dom.plantSeasonalToggle = document.getElementById('plantSeasonalToggle');
+    dom.seasonMonthSelect = document.getElementById('seasonMonthSelect');
 
     // Tooltip-Element fuer Pflanzen dynamisch erstellen
     var tooltipEl = document.createElement('div');
@@ -2288,6 +2383,26 @@
         showPlantFavoritesOnly = !showPlantFavoritesOnly;
         dom.plantFavoritesToggle.classList.toggle('active', showPlantFavoritesOnly);
         dom.plantFavoritesToggle.setAttribute('aria-pressed', String(showPlantFavoritesOnly));
+        renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+      });
+    }
+
+    // Saisonaler Filter binden (#253)
+    if (dom.plantSeasonalToggle) {
+      dom.plantSeasonalToggle.addEventListener('click', function () {
+        showSeasonalOnly = !showSeasonalOnly;
+        dom.plantSeasonalToggle.classList.toggle('active', showSeasonalOnly);
+        dom.plantSeasonalToggle.setAttribute('aria-pressed', String(showSeasonalOnly));
+        renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+      });
+    }
+
+    // Saisonwechsel-Dropdown binden (#253)
+    if (dom.seasonMonthSelect) {
+      dom.seasonMonthSelect.value = String(selectedSeasonMonth);
+      dom.seasonMonthSelect.addEventListener('change', function () {
+        selectedSeasonMonth = parseInt(this.value, 10);
+        renderElements();
         renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
       });
     }

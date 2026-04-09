@@ -132,6 +132,7 @@
               <!-- Filled by JS -->
             </div>
             <div class="plant-palette-controls">
+              <button class="plant-seasonal-toggle" id="plantSeasonalToggle" aria-pressed="false" title="Nur saisongerechte Pflanzen anzeigen">&#9788; Jetzt pflanzen</button>
               <button class="plant-favorites-toggle" id="plantFavoritesToggle" aria-pressed="false" title="Nur Favoriten anzeigen">&#9829; Favoriten</button>
             </div>
             <div class="plant-palette" id="plantPalette">
@@ -189,6 +190,22 @@
           <span class="status-stat" id="statusElements">0 Elemente</span>
           <span class="status-separator">|</span>
           <span class="status-stat" id="statusCanvasSize">12.0 x 8.0 m</span>
+          <span class="status-separator">|</span>
+          <label class="season-month-label" for="seasonMonthSelect">Saison:</label>
+          <select class="season-month-select" id="seasonMonthSelect" aria-label="Saison-Monat" title="Monat fuer saisonale Ansicht">
+            <option value="0">Januar</option>
+            <option value="1">Februar</option>
+            <option value="2">Maerz</option>
+            <option value="3">April</option>
+            <option value="4">Mai</option>
+            <option value="5">Juni</option>
+            <option value="6">Juli</option>
+            <option value="7">August</option>
+            <option value="8">September</option>
+            <option value="9">Oktober</option>
+            <option value="10">November</option>
+            <option value="11">Dezember</option>
+          </select>
         </div>
         <div class="statusbar-right">
           <select class="grid-scale-select" id="gridScaleSelect" aria-label="Rastergröße" title="Rastergröße">
