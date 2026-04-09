@@ -179,6 +179,7 @@ async function createTask(body) {
             completed: typeof st === 'object' ? !!st.completed : false
         })) : [],
         photos: [],
+        dependencies: Array.isArray(sanitized.dependencies) ? sanitized.dependencies : [],
         sortOrder: Date.now()
     };
 
@@ -281,6 +282,9 @@ async function updateTask(id, body) {
             text: typeof st === 'string' ? st : (st.text || ''),
             completed: typeof st === 'object' ? !!st.completed : false
         })) : [];
+    }
+    if (sanitized.dependencies !== undefined) {
+        updatedFields.dependencies = Array.isArray(sanitized.dependencies) ? sanitized.dependencies : [];
     }
     if (sanitized.photos !== undefined) {
         const newPhotos = [];

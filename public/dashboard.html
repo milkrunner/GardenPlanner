@@ -347,6 +347,15 @@
             <textarea id="editTaskDescription" rows="4"></textarea>
           </div>
 
+          <!-- Dependencies Section (#242) -->
+          <div class="form-group">
+            <label for="editTaskDependencies">Blockiert durch (Abhaengigkeiten)</label>
+            <select id="editTaskDependencies" multiple class="dependencies-select" aria-label="Aufgaben-Abhaengigkeiten auswaehlen">
+              <!-- Dynamisch befuellt -->
+            </select>
+            <small class="form-hint">Shift+Klick oder Ctrl+Klick fuer Mehrfachauswahl</small>
+          </div>
+
           <!-- Subtasks Section -->
           <div class="form-group">
             <label>Teilaufgaben / Checkliste</label>

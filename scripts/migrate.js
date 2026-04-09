@@ -65,6 +65,19 @@ async function migrate() {
         END $$
     `);
 
+    // Add dependencies column if it doesn't exist (#242)
+    await query(`
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'tasks' AND column_name = 'dependencies'
+            ) THEN
+                ALTER TABLE tasks ADD COLUMN dependencies JSONB DEFAULT '[]';
+            END IF;
+        END $$
+    `);
+
     console.log('Tables created.');
 
     const { rows } = await query('SELECT count(*) as cnt FROM tasks');

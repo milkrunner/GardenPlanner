@@ -246,6 +246,23 @@ GartenPlaner.prototype.openEditModal = function (id) {
 	document.getElementById("editTaskLocation").value = task.location || "";
 	document.getElementById("editTaskDescription").value = task.description || "";
 
+	// Abhaengigkeiten-Auswahl befuellen (#242)
+	var depSelect = document.getElementById("editTaskDependencies");
+	if (depSelect) {
+		depSelect.innerHTML = "";
+		var currentDeps = task.dependencies || [];
+		this.tasks.forEach(function (t) {
+			if (t.id === task.id) return; // Eigene Aufgabe nicht als Abhaengigkeit
+			var opt = document.createElement("option");
+			opt.value = t.id;
+			opt.textContent = Security.escapeHtml(t.title);
+			if (currentDeps.indexOf(t.id) !== -1) {
+				opt.selected = true;
+			}
+			depSelect.appendChild(opt);
+		});
+	}
+
 	// Subtasks rendern
 	this.renderSubtasksInModal(task);
 
