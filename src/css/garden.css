@@ -344,6 +344,126 @@
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
+/* Plant Category Filters */
+.plant-category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.plant-category-btn {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full, 999px);
+  background: var(--bg-secondary);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  white-space: nowrap;
+}
+
+.plant-category-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary);
+}
+
+.plant-category-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Plant Palette Controls */
+.plant-palette-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.plant-favorites-toggle {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.plant-favorites-toggle:hover {
+  background: var(--bg-tertiary);
+}
+
+.plant-favorites-toggle.active {
+  background: var(--accent, #e74c3c);
+  color: #fff;
+  border-color: var(--accent, #e74c3c);
+}
+
+/* Plant Tooltip */
+.plant-tooltip {
+  position: absolute;
+  z-index: 100;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  font-size: 0.72rem;
+  max-width: 220px;
+  line-height: 1.4;
+  display: none;
+}
+
+.plant-tooltip.visible {
+  display: block;
+}
+
+.plant-tooltip-title {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.plant-tooltip-props {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  color: var(--text-light);
+}
+
+.plant-tooltip-props dt {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Plant Favorite Button (inline) */
+.palette-element-fav {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-light);
+  opacity: 0.4;
+  transition: opacity var(--duration-fast), color var(--duration-fast);
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.palette-element-fav:hover {
+  opacity: 0.8;
+}
+
+.palette-element-fav.active {
+  color: var(--accent, #e74c3c);
+  opacity: 1;
+}
+
 /* Plant & Structure Palette */
 .plant-palette,
 .structure-palette {

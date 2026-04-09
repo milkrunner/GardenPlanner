@@ -27,20 +27,28 @@
     { id: 'terrace', name: 'Terrasse', color: '#8C7B6B', pattern: 'pattern-terrace', icon: '🏡' }
   ];
 
-  var PLANTS = [
-    { id: 'tomate', name: 'Tomate', icon: '\u{1F345}', color: '#FFCDD2', info: 'Sonnig, Mai-Sep' },
-    { id: 'salat', name: 'Salat', icon: '\u{1F96C}', color: '#C8E6C9', info: 'Halbschatten, Mrz-Okt' },
-    { id: 'sonnenblume', name: 'Sonnenblume', icon: '\u{1F33B}', color: '#FFE0B2', info: 'Sonnig, Apr-Sep' },
-    { id: 'lavendel', name: 'Lavendel', icon: '\u{1F490}', color: '#D1C4E9', info: 'Sonnig, mehrjährig' },
-    { id: 'rose', name: 'Rose', icon: '\u{1F339}', color: '#FFCCBC', info: 'Sonnig, mehrjährig' },
-    { id: 'gurke', name: 'Gurke', icon: '\u{1F952}', color: '#C5E1A5', info: 'Sonnig, Mai-Aug' },
-    { id: 'blaubeere', name: 'Blaubeere', icon: '\u{1FAD0}', color: '#BBDEFB', info: 'Halbschatten, mehrj.' },
-    { id: 'basilikum', name: 'Basilikum', icon: '\u{1F33F}', color: '#F0F4C3', info: 'Sonnig, Mai-Sep' },
-    { id: 'erdbeere', name: 'Erdbeere', icon: '\u{1F353}', color: '#FFCDD2', info: 'Sonnig, Apr-Jul' },
-    { id: 'paprika', name: 'Paprika', icon: '\u{1FAD1}', color: '#C8E6C9', info: 'Sonnig, Mai-Sep' },
-    { id: 'karotte', name: 'Karotte', icon: '\u{1F955}', color: '#FFE0B2', info: 'Sonnig, Mrz-Okt' },
-    { id: 'zucchini', name: 'Zucchini', icon: '\u{1F952}', color: '#C5E1A5', info: 'Sonnig, Mai-Aug' }
+  // Hardcodierte Pflanzen als Offline-Fallback
+  var FALLBACK_PLANTS = [
+    { id: 'tomate', name: 'Tomate', icon: '\u{1F345}', color: '#FFCDD2', info: 'Sonnig, Mai-Sep', category: 'Gem\u00fcse', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'salat', name: 'Salat', icon: '\u{1F96C}', color: '#C8E6C9', info: 'Halbschatten, Mrz-Okt', category: 'Gem\u00fcse', difficulty: 'easy', sun: 'partial', water: 'medium', season: ['spring', 'summer', 'autumn'] },
+    { id: 'sonnenblume', name: 'Sonnenblume', icon: '\u{1F33B}', color: '#FFE0B2', info: 'Sonnig, Apr-Sep', category: 'Blumen', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'lavendel', name: 'Lavendel', icon: '\u{1F490}', color: '#D1C4E9', info: 'Sonnig, mehrj\u00e4hrig', category: 'Kr\u00e4uter', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring', 'summer'] },
+    { id: 'rose', name: 'Rose', icon: '\u{1F339}', color: '#FFCCBC', info: 'Sonnig, mehrj\u00e4hrig', category: 'Blumen', difficulty: 'medium', sun: 'full', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'gurke', name: 'Gurke', icon: '\u{1F952}', color: '#C5E1A5', info: 'Sonnig, Mai-Aug', category: 'Gem\u00fcse', difficulty: 'easy', sun: 'full', water: 'high', season: ['spring', 'summer'] },
+    { id: 'blaubeere', name: 'Blaubeere', icon: '\u{1FAD0}', color: '#BBDEFB', info: 'Halbschatten, mehrj.', category: 'Obst', difficulty: 'medium', sun: 'partial', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'basilikum', name: 'Basilikum', icon: '\u{1F33F}', color: '#F0F4C3', info: 'Sonnig, Mai-Sep', category: 'Kr\u00e4uter', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'erdbeere', name: 'Erdbeere', icon: '\u{1F353}', color: '#FFCDD2', info: 'Sonnig, Apr-Jul', category: 'Obst', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'paprika', name: 'Paprika', icon: '\u{1FAD1}', color: '#C8E6C9', info: 'Sonnig, Mai-Sep', category: 'Gem\u00fcse', difficulty: 'medium', sun: 'full', water: 'medium', season: ['spring', 'summer'] },
+    { id: 'karotte', name: 'Karotte', icon: '\u{1F955}', color: '#FFE0B2', info: 'Sonnig, Mrz-Okt', category: 'Gem\u00fcse', difficulty: 'easy', sun: 'full', water: 'low', season: ['spring', 'summer', 'autumn'] },
+    { id: 'zucchini', name: 'Zucchini', icon: '\u{1F952}', color: '#C5E1A5', info: 'Sonnig, Mai-Aug', category: 'Gem\u00fcse', difficulty: 'easy', sun: 'full', water: 'medium', season: ['spring', 'summer'] }
   ];
+
+  // Dynamisch geladene Pflanzen (wird beim Init von der API befuellt)
+  var PLANTS = FALLBACK_PLANTS;
+  var plantCategories = [];
+  var currentPlantCategory = '';
+  var showPlantFavoritesOnly = false;
+  var API_BASE = '/api/v1';
 
   var STRUCTURES = [
     { id: 'bank', name: 'Gartenbank', icon: '\u{1FA91}', color: '#D7CCC8' },
@@ -1503,15 +1511,240 @@
     });
   }
 
+  // =====================================================
+  // Pflanzen-API Integration (#247)
+  // =====================================================
+
+  /**
+   * Mappt eine API-Pflanze auf das interne Format fuer die Palette.
+   * Felder wie color und info werden aus den API-Daten generiert.
+   */
+  function mapApiPlantToInternal(apiPlant) {
+    var sunLabels = { full: 'Sonnig', partial: 'Halbschatten', shade: 'Schatten' };
+    var seasonLabels = { spring: 'Fr\u00fchl.', summer: 'Sommer', autumn: 'Herbst', winter: 'Winter' };
+    var sunText = sunLabels[apiPlant.sun] || apiPlant.sun || '';
+    var seasonText = (apiPlant.season || []).map(function (s) { return seasonLabels[s] || s; }).join(', ');
+    var infoText = sunText + (seasonText ? ', ' + seasonText : '');
+
+    // Farbe aus Kategorie oder Difficulty ableiten
+    var colorMap = {
+      'Gem\u00fcse': '#C8E6C9',
+      'Kr\u00e4uter': '#F0F4C3',
+      'Obst': '#FFCDD2',
+      'Blumen': '#FFE0B2',
+      'Stauden': '#D1C4E9',
+      'B\u00e4ume': '#BCAAA4'
+    };
+    var color = colorMap[apiPlant.category] || '#E0E0E0';
+
+    return {
+      id: apiPlant.id,
+      name: apiPlant.name,
+      icon: apiPlant.icon || '\u{1F33F}',
+      color: color,
+      info: infoText,
+      category: apiPlant.category || '',
+      difficulty: apiPlant.difficulty || '',
+      sun: apiPlant.sun || '',
+      water: apiPlant.water || '',
+      season: apiPlant.season || [],
+      spacing: apiPlant.spacing || '',
+      companions: apiPlant.companions || [],
+      avoid: apiPlant.avoid || [],
+      tips: apiPlant.tips || ''
+    };
+  }
+
+  /**
+   * Laedt Pflanzen von der API. Bei Fehler wird der Fallback verwendet.
+   */
+  async function loadPlantsFromApi() {
+    try {
+      var res = await fetch(API_BASE + '/plants');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) throw new Error('Keine Pflanzen');
+      PLANTS = data.map(mapApiPlantToInternal);
+    } catch (err) {
+      console.warn('Pflanzen-API nicht erreichbar, verwende Fallback:', err.message);
+      PLANTS = FALLBACK_PLANTS;
+    }
+  }
+
+  /**
+   * Laedt Kategorien von der API.
+   */
+  async function loadPlantCategoriesFromApi() {
+    try {
+      var res = await fetch(API_BASE + '/plant-categories');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      if (Array.isArray(data)) {
+        plantCategories = data;
+      }
+    } catch (err) {
+      // Kategorien aus den geladenen Pflanzen ableiten
+      var cats = {};
+      PLANTS.forEach(function (p) {
+        if (p.category) cats[p.category] = true;
+      });
+      plantCategories = Object.keys(cats).sort();
+    }
+  }
+
+  // Favoriten-System (kompatibel mit plants.js)
+  function getPlantFavorites() {
+    try {
+      var stored = localStorage.getItem('plant_favorites');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function savePlantFavorites(favorites) {
+    localStorage.setItem('plant_favorites', JSON.stringify(favorites));
+  }
+
+  function togglePlantFavorite(plantId) {
+    var favorites = getPlantFavorites();
+    var index = favorites.indexOf(plantId);
+    if (index === -1) {
+      favorites.push(plantId);
+    } else {
+      favorites.splice(index, 1);
+    }
+    savePlantFavorites(favorites);
+    return index === -1; // true wenn jetzt Favorit
+  }
+
+  /**
+   * Rendert die Kategorie-Filter-Buttons.
+   */
+  function renderPlantCategoryFilters() {
+    var container = dom.plantCategoryFilters;
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Alle-Button
+    var allBtn = document.createElement('button');
+    allBtn.className = 'plant-category-btn' + (currentPlantCategory === '' ? ' active' : '');
+    allBtn.textContent = 'Alle';
+    allBtn.addEventListener('click', function () {
+      currentPlantCategory = '';
+      renderPlantCategoryFilters();
+      renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+    });
+    container.appendChild(allBtn);
+
+    plantCategories.forEach(function (cat) {
+      var btn = document.createElement('button');
+      btn.className = 'plant-category-btn' + (currentPlantCategory === cat ? ' active' : '');
+      btn.textContent = cat;
+      btn.addEventListener('click', function () {
+        currentPlantCategory = cat;
+        renderPlantCategoryFilters();
+        renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  /**
+   * Baut den Tooltip-Text fuer eine Pflanze zusammen.
+   */
+  function buildPlantTooltipHtml(plant) {
+    var diffLabels = { easy: 'Einfach', medium: 'Mittel', hard: 'Schwer' };
+    var sunLabels = { full: 'Volle Sonne', partial: 'Halbschatten', shade: 'Schatten' };
+    var waterLabels = { low: 'Wenig', medium: 'Mittel', high: 'Viel' };
+    var seasonLabels = { spring: 'Fr\u00fchling', summer: 'Sommer', autumn: 'Herbst', winter: 'Winter' };
+
+    var html = '<div class="plant-tooltip-title">' + escapeText(plant.name) + '</div>';
+    html += '<dl class="plant-tooltip-props">';
+    if (plant.category) {
+      html += '<dt>Kategorie</dt><dd>' + escapeText(plant.category) + '</dd>';
+    }
+    if (plant.difficulty) {
+      html += '<dt>Schwierigkeit</dt><dd>' + escapeText(diffLabels[plant.difficulty] || plant.difficulty) + '</dd>';
+    }
+    if (plant.sun) {
+      html += '<dt>Sonne</dt><dd>' + escapeText(sunLabels[plant.sun] || plant.sun) + '</dd>';
+    }
+    if (plant.water) {
+      html += '<dt>Wasser</dt><dd>' + escapeText(waterLabels[plant.water] || plant.water) + '</dd>';
+    }
+    if (plant.season && plant.season.length > 0) {
+      var seasons = plant.season.map(function (s) { return seasonLabels[s] || s; }).join(', ');
+      html += '<dt>Saison</dt><dd>' + escapeText(seasons) + '</dd>';
+    }
+    if (plant.spacing) {
+      html += '<dt>Abstand</dt><dd>' + escapeText(plant.spacing) + '</dd>';
+    }
+    if (plant.companions && plant.companions.length > 0) {
+      html += '<dt>Gute Nachbarn</dt><dd>' + escapeText(plant.companions.join(', ')) + '</dd>';
+    }
+    html += '</dl>';
+    return html;
+  }
+
+  /**
+   * Einfaches HTML-Escaping fuer Tooltip-Texte.
+   */
+  function escapeText(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /**
+   * Zeigt den Pflanzen-Tooltip an einer bestimmten Position.
+   */
+  function showPlantTooltip(plant, referenceEl) {
+    var tooltip = dom.plantTooltip;
+    if (!tooltip) return;
+    tooltip.innerHTML = buildPlantTooltipHtml(plant);
+    tooltip.classList.add('visible');
+
+    // Position relativ zum Element
+    var rect = referenceEl.getBoundingClientRect();
+    var sidebarRect = dom.sidebar ? dom.sidebar.getBoundingClientRect() : { left: 0 };
+    tooltip.style.left = (rect.right - sidebarRect.left + 8) + 'px';
+    tooltip.style.top = (rect.top - sidebarRect.top) + 'px';
+  }
+
+  function hidePlantTooltip() {
+    var tooltip = dom.plantTooltip;
+    if (tooltip) {
+      tooltip.classList.remove('visible');
+    }
+  }
+
   function renderPlantPalette(filter) {
     var container = dom.plantPalette;
     container.innerHTML = '';
 
     var filtered = PLANTS;
+
+    // Kategorie-Filter
+    if (currentPlantCategory) {
+      filtered = filtered.filter(function (p) {
+        return p.category === currentPlantCategory;
+      });
+    }
+
+    // Text-Suche
     if (filter) {
       var f = filter.toLowerCase();
-      filtered = PLANTS.filter(function (p) {
-        return p.name.toLowerCase().indexOf(f) !== -1;
+      filtered = filtered.filter(function (p) {
+        return p.name.toLowerCase().indexOf(f) !== -1 ||
+               (p.category && p.category.toLowerCase().indexOf(f) !== -1);
+      });
+    }
+
+    // Favoriten-Filter
+    if (showPlantFavoritesOnly) {
+      var favs = getPlantFavorites();
+      filtered = filtered.filter(function (p) {
+        return favs.indexOf(p.id) !== -1;
       });
     }
 
@@ -1522,6 +1755,8 @@
       container.appendChild(empty);
       return;
     }
+
+    var favorites = getPlantFavorites();
 
     filtered.forEach(function (plant) {
       var el = document.createElement('div');
@@ -1550,6 +1785,34 @@
       info.appendChild(detail);
 
       el.appendChild(info);
+
+      // Favoriten-Button
+      var isFav = favorites.indexOf(plant.id) !== -1;
+      var favBtn = document.createElement('button');
+      favBtn.className = 'palette-element-fav' + (isFav ? ' active' : '');
+      favBtn.innerHTML = '&#9829;';
+      favBtn.title = isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzuf\u00fcgen';
+      favBtn.setAttribute('aria-label', favBtn.title);
+      favBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var nowFav = togglePlantFavorite(plant.id);
+        favBtn.classList.toggle('active', nowFav);
+        favBtn.title = nowFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzuf\u00fcgen';
+        favBtn.setAttribute('aria-label', favBtn.title);
+        // Wenn Favoriten-Filter aktiv und gerade entfernt: Palette neu rendern
+        if (showPlantFavoritesOnly && !nowFav) {
+          renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+        }
+      });
+      el.appendChild(favBtn);
+
+      // Tooltip bei Hover
+      el.addEventListener('mouseenter', function () {
+        showPlantTooltip(plant, el);
+      });
+      el.addEventListener('mouseleave', function () {
+        hidePlantTooltip();
+      });
 
       el.addEventListener('click', function () {
         if (state.selectedPlant && state.selectedPlant.id === plant.id) {
@@ -1865,6 +2128,18 @@
     dom.structurePalette = document.getElementById('structurePalette');
     dom.savedGardensList = document.getElementById('savedGardensList');
     dom.plantSearch = document.getElementById('plantSearch');
+    dom.plantCategoryFilters = document.getElementById('plantCategoryFilters');
+    dom.plantFavoritesToggle = document.getElementById('plantFavoritesToggle');
+
+    // Tooltip-Element fuer Pflanzen dynamisch erstellen
+    var tooltipEl = document.createElement('div');
+    tooltipEl.className = 'plant-tooltip';
+    tooltipEl.id = 'gardenPlantTooltip';
+    if (dom.sidebar) {
+      dom.sidebar.style.position = 'relative';
+      dom.sidebar.appendChild(tooltipEl);
+    }
+    dom.plantTooltip = tooltipEl;
     dom.statusText = document.getElementById('statusText');
     dom.statusAreas = document.getElementById('statusAreas');
     dom.statusElements = document.getElementById('statusElements');
@@ -1986,7 +2261,7 @@
     }
   }
 
-  function init() {
+  async function init() {
     cacheDom();
 
     // Restore grid scale
@@ -2003,8 +2278,23 @@
     initHamburgerNav();
     bindEvents();
 
+    // Pflanzen von API laden (mit Fallback auf hardcodierte Liste)
+    await loadPlantsFromApi();
+    await loadPlantCategoriesFromApi();
+
+    // Favoriten-Toggle binden
+    if (dom.plantFavoritesToggle) {
+      dom.plantFavoritesToggle.addEventListener('click', function () {
+        showPlantFavoritesOnly = !showPlantFavoritesOnly;
+        dom.plantFavoritesToggle.classList.toggle('active', showPlantFavoritesOnly);
+        dom.plantFavoritesToggle.setAttribute('aria-pressed', String(showPlantFavoritesOnly));
+        renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+      });
+    }
+
     // Render sidebars
     renderSurfacePalette();
+    renderPlantCategoryFilters();
     renderPlantPalette();
     renderStructurePalette();
     renderSavedGardens();
@@ -2014,7 +2304,7 @@
     window.addEventListener('resize', function () { renderRulers(); });
     renderAll();
 
-    setStatus('Bereit - Wähle ein Werkzeug oder platziere Pflanzen');
+    setStatus('Bereit \u2014 W\u00e4hle ein Werkzeug oder platziere Pflanzen');
   }
 
   // Start
