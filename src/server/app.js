@@ -125,7 +125,7 @@ app.get('/api/version', (req, res) => {
 // In production with bundles, serve pre-processed HTML from dist/
 const HTML_ROOT = USE_BUNDLES ? DIST_DIR : path.join(PROJECT_ROOT, 'public');
 
-const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants', 'garden', 'login', 'admin'];
+const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants', 'garden', 'calendar', 'login', 'admin'];
 pages.forEach(page => {
     app.get(`/${page}`, (req, res) => {
         res.sendFile(path.join(HTML_ROOT, `${page}.html`));

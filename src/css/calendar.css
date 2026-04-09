@@ -1,0 +1,391 @@
+/* =============================================
+   Pflanzkalender - Timeline/Gantt Styles (#245)
+   ============================================= */
+
+/* Recommendations Section */
+.calendar-recommendations {
+  margin-bottom: var(--space-lg);
+}
+
+.calendar-recommendations h2 {
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-md);
+  color: var(--text);
+}
+
+.recommendation-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.recommendation-card {
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: box-shadow var(--duration-normal), border-color var(--duration-normal);
+}
+
+.recommendation-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.recommendation-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.recommendation-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.recommendation-name {
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--text);
+}
+
+.recommendation-phase {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 999px);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.recommendation-phase--sow {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.recommendation-phase--care {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.recommendation-phase--harvest {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+[data-theme="dark"] .recommendation-phase--sow {
+  background: #14532d;
+  color: #86efac;
+}
+
+[data-theme="dark"] .recommendation-phase--care {
+  background: #713f12;
+  color: #fde047;
+}
+
+[data-theme="dark"] .recommendation-phase--harvest {
+  background: #7c2d12;
+  color: #fdba74;
+}
+
+.recommendation-details {
+  font-size: var(--text-sm);
+  color: var(--text-light);
+  margin-bottom: var(--space-sm);
+  line-height: 1.5;
+}
+
+.recommendation-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+  font-family: var(--font-body);
+}
+
+.recommendation-action:hover {
+  background: var(--primary-dark);
+}
+
+.recommendation-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-light);
+  font-style: italic;
+  padding: var(--space-lg);
+}
+
+/* Controls */
+.calendar-controls {
+  display: flex;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.calendar-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-filter-group label {
+  font-size: var(--text-sm);
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.calendar-filter-group select,
+.calendar-filter-group input {
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-width: 160px;
+}
+
+.calendar-filter-group select:focus,
+.calendar-filter-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Timeline/Gantt */
+.calendar-timeline {
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin-bottom: var(--space-lg);
+}
+
+.timeline-header {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg-tertiary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.timeline-plant-col {
+  min-width: 180px;
+  max-width: 180px;
+  padding: 10px 14px;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--text);
+  border-right: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.timeline-months {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  flex: 1;
+  min-width: 600px;
+}
+
+.timeline-months span {
+  padding: 10px 4px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-light);
+  border-right: 1px solid var(--border);
+}
+
+.timeline-months span:last-child {
+  border-right: none;
+}
+
+.timeline-months span.current-month {
+  background: rgba(54, 94, 61, 0.1);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.timeline-body {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.timeline-row {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--duration-fast);
+}
+
+.timeline-row:hover {
+  background: var(--bg-tertiary);
+}
+
+.timeline-row:last-child {
+  border-bottom: none;
+}
+
+.timeline-row-plant {
+  min-width: 180px;
+  max-width: 180px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-right: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.timeline-row-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.timeline-row-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-row-bars {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  flex: 1;
+  min-width: 600px;
+  align-items: center;
+}
+
+.timeline-cell {
+  height: 28px;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+
+.timeline-cell:last-child {
+  border-right: none;
+}
+
+.timeline-cell.current-month {
+  background: rgba(54, 94, 61, 0.05);
+}
+
+.timeline-bar {
+  position: absolute;
+  top: 4px;
+  left: 2px;
+  right: 2px;
+  height: 20px;
+  border-radius: 4px;
+  opacity: 0.85;
+}
+
+.timeline-bar--sow {
+  background: #22c55e;
+}
+
+.timeline-bar--care {
+  background: #eab308;
+}
+
+.timeline-bar--harvest {
+  background: #f97316;
+}
+
+.timeline-empty {
+  text-align: center;
+  color: var(--text-light);
+  font-style: italic;
+  padding: var(--space-lg);
+}
+
+/* Legend */
+.calendar-legend {
+  margin-bottom: var(--space-lg);
+}
+
+.calendar-legend h3 {
+  font-size: var(--text-sm);
+  color: var(--text-light);
+  margin-bottom: var(--space-sm);
+}
+
+.legend-items {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+.legend-swatch {
+  width: 20px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.legend-sow {
+  background: #22c55e;
+}
+
+.legend-care {
+  background: #eab308;
+}
+
+.legend-harvest {
+  background: #f97316;
+}
+
+.legend-marker {
+  width: 20px;
+  height: 14px;
+  background: rgba(54, 94, 61, 0.15);
+  border: 1px solid var(--primary);
+  border-radius: 3px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .recommendation-list {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-controls {
+    flex-direction: column;
+  }
+
+  .calendar-filter-group select,
+  .calendar-filter-group input {
+    min-width: unset;
+    width: 100%;
+  }
+
+  .timeline-plant-col,
+  .timeline-row-plant {
+    min-width: 120px;
+    max-width: 120px;
+  }
+}
