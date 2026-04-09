@@ -607,7 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Fetch and display app version
 	var versionEl = document.getElementById('appVersion');
 	if (versionEl) {
-		fetch('/api/version')
+		fetch('/api/v1/version')
 			.then(function(r) { return r.json(); })
 			.then(function(data) {
 				if (data.version) versionEl.textContent = 'v' + data.version;
