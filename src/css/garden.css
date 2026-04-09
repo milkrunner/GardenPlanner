@@ -762,6 +762,19 @@
   opacity: 0.7;
 }
 
+/* Mehrfach-Auswahl (#255) */
+.garden-canvas .element-group.multi-selected .element-circle {
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-dasharray: 6 3;
+}
+
+.garden-canvas .area-polygon.multi-selected {
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-dasharray: 6 3;
+}
+
 .garden-canvas .element-circle {
   transition: stroke 0.15s;
 }
