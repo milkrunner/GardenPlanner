@@ -14,7 +14,7 @@
 # Node
 node_modules/
 
-# Data directory (runtime storage)
+# Data directory (runtime storage, includes photos and logs)
 data/
 
 # Build outputs

@@ -15,6 +15,7 @@ const { listCategories } = require('./services/plant-service');
 const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
+const photosRouter = require('./routes/photos');
 const authRouter = require('./routes/auth');
 const adminRouter = require('./routes/admin');
 const { requireAdmin } = require('./middleware/require-admin');
@@ -144,12 +145,17 @@ app.delete('/api/v1/tasks/:id', writeLimiter);
 app.post('/api/v1/tasks/:id/archive', writeLimiter);
 app.post('/api/v1/tasks/:id/unarchive', writeLimiter);
 app.delete('/api/v1/archived-tasks/:id', writeLimiter);
+app.post('/api/tasks/:id/photos', writeLimiter);
+app.delete('/api/tasks/:id/photos/:filename', writeLimiter);
+app.post('/api/v1/tasks/:id/photos', writeLimiter);
+app.delete('/api/v1/tasks/:id/photos/:filename', writeLimiter);
 
 // --- API Routes ---
 
 app.use('/api/tasks', tasksRouter);
 app.use('/api', archiveRouter);
 app.use('/api/plants', plantsRouter);
+app.use('/api', photosRouter);
 
 // GET /api/plant-categories - List unique categories
 app.get('/api/plant-categories', (req, res) => {
@@ -161,6 +167,7 @@ app.get('/api/plant-categories', (req, res) => {
 app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1', archiveRouter);
 app.use('/api/v1/plants', plantsRouter);
+app.use('/api/v1', photosRouter);
 
 // GET /api/v1/plant-categories - List unique categories (versioned)
 app.get('/api/v1/plant-categories', (req, res) => {
