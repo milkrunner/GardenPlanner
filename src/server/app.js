@@ -158,6 +158,11 @@ app.post('/api/v1/tasks/:id/photos', writeLimiter);
 app.delete('/api/v1/tasks/:id/photos/:filename', writeLimiter);
 app.post('/api/tasks/:id/photos', writeLimiter);
 app.delete('/api/tasks/:id/photos/:filename', writeLimiter);
+// Batch operations (#244)
+app.patch('/api/v1/tasks/batch', writeLimiter);
+app.delete('/api/v1/tasks/batch', writeLimiter);
+app.patch('/api/tasks/batch', writeLimiter);
+app.delete('/api/tasks/batch', writeLimiter);
 // Garden write operations (#251)
 app.post('/api/v1/gardens', writeLimiter);
 app.put('/api/v1/gardens/:id', writeLimiter);

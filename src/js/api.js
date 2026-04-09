@@ -264,6 +264,32 @@ const TaskAPI = {
     async deleteArchivedTask(id) {
         return this._fetch(`/archived-tasks/${encodeURIComponent(id)}`, { method: "DELETE" });
     },
+
+    /**
+     * Batch-Update fuer mehrere Aufgaben (#244).
+     * @param {string[]} ids - Array von Task-UUIDs
+     * @param {string} action - 'status' | 'priority' | 'archive'
+     * @param {string} [value] - Neuer Wert
+     * @returns {Promise<{updated: number, message: string}>}
+     */
+    async batchUpdate(ids, action, value) {
+        return this._fetch('/tasks/batch', {
+            method: 'PATCH',
+            body: JSON.stringify({ ids, action, value })
+        });
+    },
+
+    /**
+     * Batch-Loeschung fuer mehrere Aufgaben (#244).
+     * @param {string[]} ids - Array von Task-UUIDs
+     * @returns {Promise<{deleted: number, message: string}>}
+     */
+    async batchDelete(ids) {
+        return this._fetch('/tasks/batch', {
+            method: 'DELETE',
+            body: JSON.stringify({ ids })
+        });
+    },
 };
 
 window.TaskAPI = TaskAPI;

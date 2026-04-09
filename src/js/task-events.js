@@ -153,6 +153,17 @@ GartenPlaner.prototype.setupBulkActionListeners = function () {
 	if (bulkDeleteBtn) {
 		bulkDeleteBtn.addEventListener("click", () => this.bulkDeleteTasksAction());
 	}
+
+	// Prioritaet-Aendern (#244)
+	const bulkPrioritySelect = document.getElementById("bulkPrioritySelect");
+	if (bulkPrioritySelect) {
+		bulkPrioritySelect.addEventListener("change", (e) => {
+			if (e.target.value) {
+				this.bulkChangePriorityAction(e.target.value);
+				e.target.value = "";
+			}
+		});
+	}
 };
 
 // Subtask-Methoden für CREATE (neue Aufgabe)
