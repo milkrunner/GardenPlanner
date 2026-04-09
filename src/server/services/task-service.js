@@ -45,6 +45,7 @@ const { audit } = require('../logger');
 const { PAGINATION } = require('../config');
 const { validateTask, sanitizeTaskData } = require('../validation/task-validator');
 const store = require('../storage/postgres-store');
+const { saveBase64Photo, deletePhoto } = require('./photo-service');
 
 // --- Pagination helper ---
 
@@ -177,9 +178,22 @@ async function createTask(body) {
             text: typeof st === 'string' ? st : (st.text || ''),
             completed: typeof st === 'object' ? !!st.completed : false
         })) : [],
-        photos: Array.isArray(sanitized.photos) ? sanitized.photos.filter(p => typeof p === 'string' && p.startsWith('data:image/')).slice(0, 3) : [],
+        photos: [],
         sortOrder: Date.now()
     };
+
+    // Convert Base64 photos to file-based storage (backwards compatible)
+    if (Array.isArray(sanitized.photos)) {
+        for (const photo of sanitized.photos.slice(0, 3)) {
+            if (typeof photo === 'string' && photo.startsWith('data:image/')) {
+                const filename = await saveBase64Photo(photo);
+                if (filename) task.photos.push(filename);
+            } else if (typeof photo === 'string' && !photo.includes('/') && !photo.includes('\\')) {
+                // Already a filename reference
+                task.photos.push(photo);
+            }
+        }
+    }
 
     const created = await store.createTask(task);
     audit('task_created', { taskId: created.id, title: sanitized.title, employee: sanitized.employee });
@@ -269,7 +283,27 @@ async function updateTask(id, body) {
         })) : [];
     }
     if (sanitized.photos !== undefined) {
-        updatedFields.photos = Array.isArray(sanitized.photos) ? sanitized.photos.filter(p => typeof p === 'string' && p.startsWith('data:image/')).slice(0, 3) : [];
+        const newPhotos = [];
+        if (Array.isArray(sanitized.photos)) {
+            for (const photo of sanitized.photos.slice(0, 3)) {
+                if (typeof photo === 'string' && photo.startsWith('data:image/')) {
+                    // Convert Base64 to file (backwards compatible)
+                    const filename = await saveBase64Photo(photo);
+                    if (filename) newPhotos.push(filename);
+                } else if (typeof photo === 'string' && !photo.includes('/') && !photo.includes('\\')) {
+                    // Already a filename reference
+                    newPhotos.push(photo);
+                }
+            }
+        }
+        // Delete photos that were removed
+        const existingPhotos = Array.isArray(existing.photos) ? existing.photos : [];
+        for (const oldPhoto of existingPhotos) {
+            if (!newPhotos.includes(oldPhoto) && !oldPhoto.startsWith('data:')) {
+                deletePhoto(oldPhoto);
+            }
+        }
+        updatedFields.photos = newPhotos;
     }
 
     if (changes.length > 0) {
@@ -300,6 +334,15 @@ async function deleteTask(id) {
     const existing = await store.getTaskById(id);
     if (!existing) {
         return { error: true, status: 404, message: 'Task not found' };
+    }
+
+    // Clean up photo files
+    if (Array.isArray(existing.photos)) {
+        for (const photo of existing.photos) {
+            if (typeof photo === 'string' && !photo.startsWith('data:')) {
+                deletePhoto(photo);
+            }
+        }
     }
 
     await store.deleteTask(id);
@@ -364,6 +407,15 @@ async function deleteArchivedTask(id) {
     const existing = await store.getTaskById(id);
     if (!existing) {
         return { error: true, status: 404, message: 'Archived task not found' };
+    }
+
+    // Clean up photo files
+    if (Array.isArray(existing.photos)) {
+        for (const photo of existing.photos) {
+            if (typeof photo === 'string' && !photo.startsWith('data:')) {
+                deletePhoto(photo);
+            }
+        }
     }
 
     await store.deleteTask(id);

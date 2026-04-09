@@ -202,14 +202,25 @@ describe('validateTask', () => {
         expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('String')]));
     });
 
-    test('rejects photo without data:image/ prefix', () => {
-        const result = validateTask({ ...validTask, photos: ['not-a-data-url'] });
+    test('accepts photo filename reference', () => {
+        const result = validateTask({ ...validTask, photos: ['abc-123.jpg'] });
+        expect(result.valid).toBe(true);
+    });
+
+    test('rejects photo with path traversal', () => {
+        const result = validateTask({ ...validTask, photos: ['../etc/passwd'] });
         expect(result.valid).toBe(false);
-        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Data-URL')]));
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Dateiname')]));
     });
 
     test('accepts exactly 3 photos', () => {
         const photos = Array.from({ length: 3 }, () => 'data:image/jpeg;base64,/9j/4AAQ');
+        const result = validateTask({ ...validTask, photos });
+        expect(result.valid).toBe(true);
+    });
+
+    test('accepts mix of Base64 and filename references', () => {
+        const photos = ['data:image/jpeg;base64,/9j/4AAQ', 'abc-123.jpg'];
         const result = validateTask({ ...validTask, photos });
         expect(result.valid).toBe(true);
     });
@@ -328,15 +339,17 @@ describeWithDB('API Endpoints', () => {
             expect(res.body).toHaveProperty('errors');
         });
 
-        test('creates a task with photos', async () => {
+        test('creates a task with Base64 photos (converted to filenames)', async () => {
             const photos = ['data:image/jpeg;base64,/9j/4AAQ', 'data:image/png;base64,iVBOR'];
             const res = await request(app)
                 .post('/api/v1/tasks')
                 .send({ ...validTask, photos });
 
             expect(res.status).toBe(201);
+            // Photos are now stored as filenames (UUID-based), not Base64
             expect(res.body.photos).toHaveLength(2);
-            expect(res.body.photos[0]).toBe('data:image/jpeg;base64,/9j/4AAQ');
+            expect(res.body.photos[0]).toMatch(/\.jpg$/);
+            expect(res.body.photos[1]).toMatch(/\.png$/);
         });
 
         test('creates a task with empty photos array', async () => {
@@ -438,7 +451,7 @@ describeWithDB('API Endpoints', () => {
             expect(res.body.subtasks[1].completed).toBe(false);
         });
 
-        test('updates photos on a task', async () => {
+        test('updates photos on a task (Base64 converted to filename)', async () => {
             const created = await request(app).post('/api/v1/tasks').send(validTask);
             const photos = ['data:image/jpeg;base64,/9j/4AAQ'];
             const res = await request(app)
@@ -447,7 +460,7 @@ describeWithDB('API Endpoints', () => {
 
             expect(res.status).toBe(200);
             expect(res.body.photos).toHaveLength(1);
-            expect(res.body.photos[0]).toBe('data:image/jpeg;base64,/9j/4AAQ');
+            expect(res.body.photos[0]).toMatch(/\.jpg$/);
         });
 
         test('rejects subtasks exceeding max count via PUT', async () => {

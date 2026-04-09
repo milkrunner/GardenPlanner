@@ -34,7 +34,7 @@ COPY README.md ./
 RUN node scripts/build.js
 
 # Datenverzeichnis erstellen und Rechte setzen
-RUN mkdir -p /app/data /app/data/logs && chown -R node:node /app
+RUN mkdir -p /app/data /app/data/logs /app/data/photos /app/data/photos/thumbs && chown -R node:node /app
 
 # Non-root User verwenden
 USER node

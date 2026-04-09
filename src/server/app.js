@@ -16,6 +16,7 @@ const { listCategories } = require('./services/plant-service');
 const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
+const photosRouter = require('./routes/photos');
 const authRouter = require('./routes/auth');
 const adminRouter = require('./routes/admin');
 const { requireAdmin } = require('./middleware/require-admin');
@@ -152,12 +153,17 @@ app.delete('/api/tasks/:id', writeLimiter);
 app.post('/api/tasks/:id/archive', writeLimiter);
 app.post('/api/tasks/:id/unarchive', writeLimiter);
 app.delete('/api/archived-tasks/:id', writeLimiter);
+app.post('/api/v1/tasks/:id/photos', writeLimiter);
+app.delete('/api/v1/tasks/:id/photos/:filename', writeLimiter);
+app.post('/api/tasks/:id/photos', writeLimiter);
+app.delete('/api/tasks/:id/photos/:filename', writeLimiter);
 
 // --- Canonical API Routes (/api/v1) ---
 
 app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1', archiveRouter);
 app.use('/api/v1/plants', plantsRouter);
+app.use('/api/v1', photosRouter);
 
 app.get('/api/v1/plant-categories', (req, res) => {
     res.json(listCategories());
@@ -171,6 +177,7 @@ app.use('/api/v1/admin', requireAdmin, adminRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api', archiveRouter);
 app.use('/api/plants', plantsRouter);
+app.use('/api', photosRouter);
 
 app.get('/api/plant-categories', (req, res) => {
     res.json(listCategories());

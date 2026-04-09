@@ -116,12 +116,16 @@ function validateTask(taskData, partial = false) {
             }
             taskData.photos.forEach((photo, i) => {
                 if (typeof photo !== 'string') {
-                    errors.push(`Foto ${i + 1}: muss ein String (Data-URL) sein`);
-                } else if (!photo.startsWith('data:image/')) {
-                    errors.push(`Foto ${i + 1}: muss eine g\u00fcltige Bild-Data-URL sein`);
-                } else if (photo.length > 1500000) {
-                    errors.push(`Foto ${i + 1}: darf maximal ca. 1 MB gro\u00df sein`);
+                    errors.push(`Foto ${i + 1}: muss ein String sein`);
+                } else if (photo.startsWith('data:image/')) {
+                    // Legacy Base64 data URL (still accepted for backwards compatibility)
+                    if (photo.length > 1500000) {
+                        errors.push(`Foto ${i + 1}: darf maximal ca. 1 MB gro\u00df sein`);
+                    }
+                } else if (photo.includes('..') || photo.includes('/') || photo.includes('\\')) {
+                    errors.push(`Foto ${i + 1}: ungueltiger Dateiname`);
                 }
+                // else: valid filename reference — OK
             });
         }
     }
