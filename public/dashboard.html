@@ -422,6 +422,31 @@
             </div>
           </div>
 
+          <!-- Kommentare Section -->
+          <div class="form-group comments-section">
+            <label>Kommentare</label>
+            <div id="commentsList" class="comments-list">
+              <!-- Kommentare werden dynamisch eingefuegt -->
+            </div>
+            <div class="comment-input-wrapper">
+              <textarea
+                id="newCommentInput"
+                placeholder="Kommentar schreiben..."
+                rows="2"
+                class="comment-input"
+                maxlength="2000"
+              ></textarea>
+              <button
+                type="button"
+                id="addCommentBtn"
+                class="btn btn-primary btn-sm"
+                title="Kommentar hinzufuegen"
+              >
+                Senden
+              </button>
+            </div>
+          </div>
+
           <div class="modal-actions">
             <button type="button" class="btn btn-secondary" id="cancelEditBtn">
               Abbrechen

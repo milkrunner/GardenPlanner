@@ -144,6 +144,10 @@ app.delete('/api/v1/tasks/:id', writeLimiter);
 app.post('/api/v1/tasks/:id/archive', writeLimiter);
 app.post('/api/v1/tasks/:id/unarchive', writeLimiter);
 app.delete('/api/v1/archived-tasks/:id', writeLimiter);
+app.post('/api/tasks/:id/comments', writeLimiter);
+app.delete('/api/tasks/:id/comments/:commentId', writeLimiter);
+app.post('/api/v1/tasks/:id/comments', writeLimiter);
+app.delete('/api/v1/tasks/:id/comments/:commentId', writeLimiter);
 
 // --- API Routes ---
 

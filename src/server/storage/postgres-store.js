@@ -23,6 +23,7 @@ function rowToTask(row) {
         recurrence: row.recurrence,
         subtasks: row.subtasks || [],
         history: row.history || [],
+        comments: row.comments || [],
         sortOrder: parseInt(row.sort_order),
         completedAt: row.completed_at,
         archivedAt: row.archived_at,
@@ -113,6 +114,10 @@ async function updateTask(id, fields) {
     if (fields.history !== undefined) {
         setClauses.push(`history = $${idx++}`);
         values.push(JSON.stringify(fields.history));
+    }
+    if (fields.comments !== undefined) {
+        setClauses.push(`comments = $${idx++}`);
+        values.push(JSON.stringify(fields.comments));
     }
 
     if (setClauses.length === 0) {

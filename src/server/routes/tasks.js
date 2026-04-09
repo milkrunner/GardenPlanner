@@ -13,7 +13,9 @@ const {
     getTask,
     createTask,
     updateTask,
-    deleteTask
+    deleteTask,
+    addComment,
+    deleteComment
 } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
@@ -56,6 +58,25 @@ router.put('/:id', validateIdParam, async (req, res) => {
 // DELETE /api/tasks/:id - Delete a task
 router.delete('/:id', validateIdParam, async (req, res) => {
     const result = await deleteTask(req.params.id);
+    if (result.error) {
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
+    }
+    res.status(204).send();
+});
+
+// POST /api/tasks/:id/comments — Add a comment
+router.post('/:id/comments', validateIdParam, async (req, res) => {
+    const username = req.user ? req.user.username : 'Anonym';
+    const result = await addComment(req.params.id, req.body.text, username);
+    if (result.error) {
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
+    }
+    res.status(201).json(result.comment);
+});
+
+// DELETE /api/tasks/:id/comments/:commentId — Delete a comment
+router.delete('/:id/comments/:commentId', validateIdParam, async (req, res) => {
+    const result = await deleteComment(req.params.id, req.params.commentId);
     if (result.error) {
         return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
