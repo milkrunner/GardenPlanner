@@ -54,4 +54,20 @@ const STORAGE = {
     WRITE_RETRY_DELAY_MS: 50,
 };
 
-module.exports = { PAGINATION, FIELD_LIMITS, STORAGE };
+/**
+ * @typedef {Object} PhotoConfig
+ * @property {number} MAX_FILE_SIZE - Max file size in bytes (5 MB)
+ * @property {number} MAX_PHOTOS_PER_TASK - Max photos per task
+ * @property {number} THUMB_WIDTH - Thumbnail width in pixels
+ * @property {number} THUMB_HEIGHT - Thumbnail height in pixels
+ */
+
+/** @type {PhotoConfig} */
+const PHOTOS = {
+    MAX_FILE_SIZE: 5 * 1024 * 1024,
+    MAX_PHOTOS_PER_TASK: 3,
+    THUMB_WIDTH: 200,
+    THUMB_HEIGHT: 200,
+};
+
+module.exports = { PAGINATION, FIELD_LIMITS, STORAGE, PHOTOS };

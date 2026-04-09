@@ -61,26 +61,54 @@ GartenPlaner.prototype.addTask = async function () {
 			return;
 		}
 
-		var photos = this.tempPhotos ? this.tempPhotos.slice() : [];
+		// Collect new photo File objects for upload
+		var photoFiles = [];
+		if (this.tempPhotos) {
+			for (var pi = 0; pi < this.tempPhotos.length; pi++) {
+				if (this.tempPhotos[pi] && this.tempPhotos[pi].file) {
+					photoFiles.push(this.tempPhotos[pi].file);
+				}
+			}
+		}
 
 		let task;
 		if (this.useAPI) {
+			// Create task first (without photos)
 			task = await TaskAPI.createTask({
 				...taskData,
 				subtasks: this.tempSubtasks.map((st) => ({
 					text: st.text,
 					completed: st.completed,
 				})),
-				photos: photos,
 			});
+			// Then upload photos via multipart endpoint
+			if (photoFiles.length > 0 && task && task.id) {
+				try {
+					var photoResult = await TaskAPI.uploadPhotos(task.id, photoFiles);
+					task.photos = photoResult.photos;
+				} catch (photoErr) {
+					console.error("Foto-Upload fehlgeschlagen:", photoErr);
+					this.showNotification("Aufgabe erstellt, aber Fotos konnten nicht hochgeladen werden.", "warning");
+				}
+			}
 		} else {
+			// Offline/local mode: use data URLs as before
+			var offlinePhotos = [];
+			if (this.tempPhotos) {
+				for (var opi = 0; opi < this.tempPhotos.length; opi++) {
+					var item = this.tempPhotos[opi];
+					if (item && item.previewUrl && item.previewUrl.startsWith("data:")) {
+						offlinePhotos.push(item.previewUrl);
+					}
+				}
+			}
 			task = {
 				id: Date.now(),
 				...taskData,
 				createdAt: new Date().toISOString(),
 				history: [],
 				subtasks: [...this.tempSubtasks],
-				photos: photos,
+				photos: offlinePhotos,
 			};
 			this.addHistoryEntry(task, "created", {
 				title: task.title,
@@ -97,6 +125,14 @@ GartenPlaner.prototype.addTask = async function () {
 		this.updateLocationFilter();
 
 		this.resetCreateForm();
+		// Revoke preview URLs and clear temp photos
+		if (this.tempPhotos) {
+			for (var rpi = 0; rpi < this.tempPhotos.length; rpi++) {
+				if (this.tempPhotos[rpi] && this.tempPhotos[rpi].previewUrl) {
+					URL.revokeObjectURL(this.tempPhotos[rpi].previewUrl);
+				}
+			}
+		}
 		this.tempPhotos = [];
 		if (typeof this.renderPhotoPreviewCreate === 'function') {
 			this.renderPhotoPreviewCreate();
@@ -297,10 +333,53 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		task.employee = taskData.employee;
 		task.location = taskData.location;
 		task.description = taskData.description;
-		// Update photos
-		if (this.editPhotos !== undefined) {
-			task.photos = this.editPhotos.slice();
+
+		// Handle photos: upload new files, collect existing filenames
+		if (this.editPhotos !== undefined && this.useAPI) {
+			// Upload new photo files first
+			var newFiles = this.editPhotoNewFiles || [];
+			if (newFiles.length > 0) {
+				var filesToUpload = newFiles.map(function (item) { return item.file; });
+				try {
+					var uploadResult = await TaskAPI.uploadPhotos(id, filesToUpload);
+					// Merge: existing filenames + newly uploaded filenames
+					// The server already handles the merge, so use the returned list
+					task.photos = uploadResult.photos;
+				} catch (uploadErr) {
+					console.error("Foto-Upload fehlgeschlagen:", uploadErr);
+					this.showNotification("Fotos konnten nicht hochgeladen werden.", "warning");
+				}
+			}
+			// Delete photos that were removed in the edit UI
+			var existingPhotos = Array.isArray(task.photos) ? task.photos : [];
+			var keptFilenames = this.editPhotos
+				.filter(function (item) { return item.filename; })
+				.map(function (item) { return item.filename; });
+			for (var dpi = 0; dpi < existingPhotos.length; dpi++) {
+				if (typeof existingPhotos[dpi] === "string" && !existingPhotos[dpi].startsWith("data:") && keptFilenames.indexOf(existingPhotos[dpi]) === -1) {
+					try {
+						await TaskAPI.deletePhoto(id, existingPhotos[dpi]);
+					} catch (delErr) {
+						console.error("Foto-Loeschung fehlgeschlagen:", delErr);
+					}
+				}
+			}
+			// Refresh task photos from what's remaining
+			task.photos = keptFilenames;
+			if (newFiles.length > 0 && task.photos) {
+				// Re-fetch task to get the final photo list
+				try {
+					var refreshed = await TaskAPI.getTask(id);
+					if (refreshed) task.photos = refreshed.photos;
+				} catch (_e) { /* ignore */ }
+			}
+		} else if (this.editPhotos !== undefined) {
+			// Offline mode: keep data URLs
+			task.photos = this.editPhotos.map(function (item) {
+				return item.previewUrl || item;
+			});
 		}
+
 		const changes = [];
 		if (oldTitle !== task.title)
 			changes.push(`Titel: "${oldTitle}" \u2192 "${task.title}"`);

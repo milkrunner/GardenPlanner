@@ -71,7 +71,7 @@ const APP_CONFIG = {
 
     // API
     api: {
-        baseUrl: '/api'
+        baseUrl: '/api/v1'
     },
 
     // PDF Export (#15)
