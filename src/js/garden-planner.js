@@ -1468,8 +1468,13 @@
   }
 
   // =====================================================
-  // Save / Load
+  // Save / Load (mit Server-Sync #251)
   // =====================================================
+
+  // Debounce-Timer fuer Auto-Save
+  var autoSaveTimer = null;
+  var AUTO_SAVE_DELAY = 2000;
+
   function getAllGardens() {
     try {
       var data = localStorage.getItem(STORAGE_KEY);
@@ -1481,6 +1486,68 @@
 
   function saveGardens(gardens) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gardens));
+  }
+
+  // Server-API Aufrufe (#251)
+  async function apiListGardens() {
+    try {
+      var res = await fetch(API_BASE + '/gardens', { credentials: 'same-origin' });
+      if (!res.ok) return null;
+      return res.json();
+    } catch (e) { return null; }
+  }
+
+  async function apiSaveGarden(garden) {
+    try {
+      if (garden.serverId) {
+        var res = await fetch(API_BASE + '/gardens/' + garden.serverId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ name: garden.name, data: garden.data })
+        });
+        if (res.ok) return res.json();
+      }
+      // Kein serverId oder PUT fehlgeschlagen: POST
+      var postRes = await fetch(API_BASE + '/gardens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ name: garden.name, data: garden.data })
+      });
+      if (postRes.ok || postRes.status === 201) return postRes.json();
+      return null;
+    } catch (e) { return null; }
+  }
+
+  async function apiDeleteGarden(serverId) {
+    try {
+      await fetch(API_BASE + '/gardens/' + serverId, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+    } catch (e) { /* Offline-Tolerant */ }
+  }
+
+  async function apiExportGarden(serverId) {
+    try {
+      var res = await fetch(API_BASE + '/gardens/' + serverId + '/export', { credentials: 'same-origin' });
+      if (res.ok) return res.json();
+      return null;
+    } catch (e) { return null; }
+  }
+
+  async function apiImportGarden(gardenJson) {
+    try {
+      var res = await fetch(API_BASE + '/gardens/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(gardenJson)
+      });
+      if (res.ok || res.status === 201) return res.json();
+      return null;
+    } catch (e) { return null; }
   }
 
   function saveCurrentGarden() {
@@ -1496,7 +1563,6 @@
         gardens[idx].name = gardenData.name;
         gardens[idx].updatedAt = now;
       } else {
-        // ID not found, create new
         currentGardenId = generateId();
         gardens.push({
           id: currentGardenId,
@@ -1520,10 +1586,15 @@
     saveGardens(gardens);
     renderSavedGardens();
     setStatus('Garten "' + gardenData.name + '" gespeichert');
+
+    // Server-Sync im Hintergrund (#251)
+    syncGardenToServer(currentGardenId);
   }
 
   function autoSave() {
     if (!currentGardenId) return;
+
+    // Sofortiges localStorage-Speichern
     var gardens = getAllGardens();
     var now = new Date().toISOString();
     gardenData.name = dom.gardenName.value.trim() || 'Mein Garten';
@@ -1535,6 +1606,32 @@
       gardens[idx].updatedAt = now;
       saveGardens(gardens);
     }
+
+    // Debounced Server-Sync (#251)
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function () {
+      syncGardenToServer(currentGardenId);
+    }, AUTO_SAVE_DELAY);
+  }
+
+  async function syncGardenToServer(localId) {
+    if (!navigator.onLine) return;
+    var gardens = getAllGardens();
+    var garden = gardens.find(function (g) { return g.id === localId; });
+    if (!garden) return;
+
+    var result = await apiSaveGarden({
+      serverId: garden.serverId || null,
+      name: garden.name,
+      data: garden.data
+    });
+
+    if (result && result.id) {
+      // Server-ID lokal merken
+      garden.serverId = result.id;
+      serverGardenId = result.id;
+      saveGardens(gardens);
+    }
   }
 
   function loadGarden(id) {
@@ -1542,7 +1639,6 @@
     var garden = gardens.find(function (g) { return g.id === id; });
     if (!garden) return;
 
-    // Migration check
     var data = garden.data;
     if (!data.version || data.version === 1) {
       data = migrateV1toV2(data);
@@ -1552,10 +1648,11 @@
 
     gardenData = cloneData(data);
     currentGardenId = id;
+    serverGardenId = garden.serverId || null;
     dom.gardenName.value = gardenData.name || 'Mein Garten';
 
-    // Reset state
     state.selectedElement = null;
+    if (editPanelOpen) closeEditPanel();
     drawPoints = [];
     drawPreviewLine = null;
     undoStack = [];
@@ -1569,11 +1666,20 @@
   }
 
   function deleteGarden(id) {
-    var gardens = getAllGardens().filter(function (g) { return g.id !== id; });
+    var gardens = getAllGardens();
+    var garden = gardens.find(function (g) { return g.id === id; });
+
+    // Server-Loeschung (#251)
+    if (garden && garden.serverId) {
+      apiDeleteGarden(garden.serverId);
+    }
+
+    gardens = gardens.filter(function (g) { return g.id !== id; });
     saveGardens(gardens);
 
     if (currentGardenId === id) {
       currentGardenId = null;
+      serverGardenId = null;
       gardenData = createEmptyGarden();
       dom.gardenName.value = gardenData.name;
       undoStack = [];
@@ -1583,14 +1689,16 @@
     }
 
     renderSavedGardens();
-    setStatus('Garten gelöscht');
+    setStatus('Garten gel\u00f6scht');
   }
 
   function newGarden() {
     currentGardenId = null;
+    serverGardenId = null;
     gardenData = createEmptyGarden();
     dom.gardenName.value = gardenData.name;
     state.selectedElement = null;
+    if (editPanelOpen) closeEditPanel();
     drawPoints = [];
     drawPreviewLine = null;
     undoStack = [];
@@ -1601,6 +1709,98 @@
     renderDrawing();
     renderSavedGardens();
     setStatus('Neuer Garten erstellt');
+  }
+
+  // Server-Gaerten mit localStorage synchronisieren (#251)
+  async function syncGardensFromServer() {
+    if (!navigator.onLine) return;
+    var serverGardens = await apiListGardens();
+    if (!serverGardens || !Array.isArray(serverGardens)) return;
+
+    var localGardens = getAllGardens();
+    var changed = false;
+
+    // Server-Gaerten die lokal fehlen hinzufuegen
+    serverGardens.forEach(function (sg) {
+      var existing = localGardens.find(function (lg) { return lg.serverId === sg.id; });
+      if (!existing) {
+        // Volle Daten vom Server laden
+        fetch(API_BASE + '/gardens/' + sg.id, { credentials: 'same-origin' })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (fullGarden) {
+            if (!fullGarden) return;
+            var gardens = getAllGardens();
+            gardens.push({
+              id: generateId(),
+              serverId: fullGarden.id,
+              name: fullGarden.name,
+              data: fullGarden.data || {},
+              createdAt: fullGarden.createdAt,
+              updatedAt: fullGarden.updatedAt
+            });
+            saveGardens(gardens);
+            renderSavedGardens();
+          });
+      }
+    });
+
+    // Lokale Gaerten ohne serverId zum Server hochladen
+    localGardens.forEach(function (lg) {
+      if (!lg.serverId) {
+        syncGardenToServer(lg.id);
+      }
+    });
+  }
+
+  // JSON-Export/Import Funktionen (#251)
+  function exportGardenJSON() {
+    var exportData = {
+      name: gardenData.name,
+      data: cloneData(gardenData),
+      exportedAt: new Date().toISOString()
+    };
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (gardenData.name || 'garten') + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus('Garten als JSON exportiert');
+  }
+
+  function importGardenJSON() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        try {
+          var importedData = JSON.parse(ev.target.result);
+          var name = importedData.name || 'Importierter Garten';
+          var data = importedData.data || importedData;
+          if (!data.version) data.version = 2;
+
+          gardenData = cloneData(data);
+          gardenData.name = name;
+          currentGardenId = null;
+          serverGardenId = null;
+          dom.gardenName.value = name;
+          saveCurrentGarden();
+          renderAll();
+          setStatus('Garten "' + name + '" importiert');
+
+          // Server-Import (#251)
+          apiImportGarden({ name: name, data: data });
+        } catch (err) {
+          setStatus('Import fehlgeschlagen: Ung\u00fcltige Datei');
+        }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
   }
 
   // =====================================================
@@ -2467,6 +2667,8 @@
           exportMenu.style.display = 'none';
           if (this.dataset.format === 'png') exportPNG();
           else if (this.dataset.format === 'svg') exportSVG();
+          else if (this.dataset.format === 'json') exportGardenJSON();
+          else if (this.dataset.format === 'import') importGardenJSON();
         });
       });
       // Close menu on outside click
@@ -2578,6 +2780,9 @@
     loadLastGarden();
     window.addEventListener('resize', function () { renderRulers(); });
     renderAll();
+
+    // Gaerten vom Server synchronisieren (#251)
+    syncGardensFromServer();
 
     setStatus('Bereit \u2014 W\u00e4hle ein Werkzeug oder platziere Pflanzen');
   }

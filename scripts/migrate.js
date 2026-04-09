@@ -52,6 +52,23 @@ async function migrate() {
         )
     `);
 
+    // Gardens table (#251)
+    await query(`
+        CREATE TABLE IF NOT EXISTS gardens (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            name VARCHAR(100) NOT NULL DEFAULT 'Mein Garten',
+            data JSONB DEFAULT '{}',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    `);
+
+    // Index fuer schnellen User-Lookup
+    await query(`
+        CREATE INDEX IF NOT EXISTS idx_gardens_user_id ON gardens(user_id)
+    `);
+
     // Add photos column if it doesn't exist (for existing databases)
     await query(`
         DO $$
