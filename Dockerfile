@@ -1,7 +1,7 @@
 # Gartenplaner Docker Image
 # Node.js Express Server with REST API
 
-FROM node:22-alpine
+FROM node:22-alpine3.21
 
 # Metadaten
 LABEL maintainer="GardenPlanner"
@@ -9,8 +9,9 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 
 WORKDIR /app
 
-# Update Alpine packages to fix known vulnerabilities (CVE-2025-60876)
-RUN apk update && apk upgrade --no-cache
+# Update Alpine packages to fix known vulnerabilities
+# CVE-2025-60876 (busybox), CVE-2026-31790 & CVE-2026-2673 (openssl)
+RUN apk update && apk upgrade --no-cache && apk add --no-cache openssl
 
 # Dependencies installieren
 # NPM_REGISTRY defaults to public npm; override for internal builds:
