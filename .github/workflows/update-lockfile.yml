@@ -1,0 +1,42 @@
+name: Update package-lock.json
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to update'
+        required: true
+        default: 'develop'
+
+permissions:
+  contents: write
+
+jobs:
+  update-lockfile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies and update lockfile
+        run: npm install --package-lock-only
+
+      - name: Commit and push updated lockfile
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet package-lock.json; then
+            echo "No changes to package-lock.json"
+          else
+            git add package-lock.json
+            git commit -m "fix: update package-lock.json — sync with package.json"
+            git push
+          fi
