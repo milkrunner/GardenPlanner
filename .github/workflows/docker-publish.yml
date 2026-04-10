@@ -49,11 +49,54 @@ jobs:
             echo "tags=${IMAGE}:beta,${IMAGE}:${VERSION}-beta,${IMAGE}:${VERSION}-beta.${BUILD}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Build and push Docker image
+      - name: Build Docker image (lokal)
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
-          tags: ${{ steps.tags.outputs.tags }}
+          push: false
+          load: true
+          tags: gardenplanner:local
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'gardenplanner:local'
+          format: 'table'
+          output: 'trivy-report.txt'
+          severity: 'MEDIUM,HIGH,CRITICAL'
+          exit-code: '0'
+          vuln-type: 'os,library'
+
+      - name: Trivy Scan Summary
+        if: always()
+        run: |
+          echo "## 🔍 Trivy Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** gardenplanner:local" >> $GITHUB_STEP_SUMMARY
+          echo "**Severity-Filter:** MEDIUM, HIGH, CRITICAL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -s trivy-report.txt ]; then
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat trivy-report.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Keine Schwachstellen gefunden." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Trivy Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-vulnerability-report
+          path: trivy-report.txt
+          retention-days: 30
+
+      - name: Docker Image taggen und pushen
+        run: |
+          IFS=',' read -ra TAG_ARRAY <<< "${{ steps.tags.outputs.tags }}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            docker tag gardenplanner:local "$tag"
+            docker push "$tag"
+          done
