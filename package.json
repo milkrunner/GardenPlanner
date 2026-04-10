@@ -1,6 +1,6 @@
 {
   "name": "gartenplaner",
-  "version": "3.9.0",
+  "version": "3.9.1",
   "description": "Gartenplaner - Webanwendung mit REST API zur Verwaltung von Gartenaufgaben",
   "main": "server.js",
   "scripts": {
@@ -34,7 +34,6 @@
     "tar": "7.5.13",
     "brace-expansion": "2.0.3",
     "minimatch": "10.2.5",
-    "picomatch": "4.0.4",
     "glob": "11.0.2"
   }
 }
