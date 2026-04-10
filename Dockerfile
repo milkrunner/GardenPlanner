@@ -11,7 +11,9 @@ WORKDIR /app
 
 # Update Alpine packages to fix known vulnerabilities
 # CVE-2025-60876 (busybox), CVE-2026-31790 & CVE-2026-2673 (openssl)
-RUN apk update && apk upgrade --no-cache && apk add --no-cache openssl
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache openssl busybox \
+    && apk info -v openssl busybox
 
 # Dependencies installieren
 # NPM_REGISTRY defaults to public npm; override for internal builds:
