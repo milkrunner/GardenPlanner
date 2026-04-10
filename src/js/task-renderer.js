@@ -159,7 +159,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                     ${safeEmployee ? `<span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeEmployee}</span>` : ""}
                     <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeLocation}</span>
                 </div>
-                ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
+                ${safeDescription ? `<div class="task-description" title="${safeDescription}">${safeDescription}</div>` : ""}
                 ${this.renderSubtasksProgress(task)}
                 ${this.renderPhotoThumbnails(task)}
                 ${this.renderCommentBadge(task)}
