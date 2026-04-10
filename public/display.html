@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Display - Gartenplaner</title>
+    <meta
+      name="description"
+      content="Aufgaben-Display fuer TV/Monitor - Vollbildansicht offener Aufgaben"
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../src/css/display.css" />
+  </head>
+  <body>
+    <div class="display-container">
+      <header class="display-header">
+        <div class="display-header-left">
+          <h1 class="display-title">Offene Aufgaben</h1>
+          <span class="display-counter" id="taskCounter">0</span>
+        </div>
+        <div class="display-header-right">
+          <span class="display-clock" id="clock"></span>
+        </div>
+      </header>
+
+      <main class="display-main" id="tasksGrid">
+        <!-- Aufgaben-Cards werden hier dynamisch eingefuegt -->
+      </main>
+
+      <div class="display-empty" id="emptyState" hidden>
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <p>Keine offenen Aufgaben</p>
+      </div>
+
+      <footer class="display-footer">
+        <span class="display-last-update" id="lastUpdate"></span>
+      </footer>
+    </div>
+
+    <script nonce="__CSP_NONCE__" src="../src/js/display.js"></script>
+  </body>
+</html>

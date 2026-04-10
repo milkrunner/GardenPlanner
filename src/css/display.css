@@ -1,0 +1,403 @@
+/* ===========================================
+   Display-Ansicht — TV/Monitor Vollbild
+   =========================================== */
+
+/* ---------- Reset & Base ---------- */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ---------- CSS Custom Properties ---------- */
+:root {
+  /* Spacing */
+  --d-space-xs: 0.25rem;
+  --d-space-sm: 0.5rem;
+  --d-space-md: 1rem;
+  --d-space-lg: 1.5rem;
+  --d-space-xl: 2rem;
+
+  /* Typography */
+  --d-font-heading: "DM Serif Display", Georgia, serif;
+  --d-font-body: "Nunito", system-ui, sans-serif;
+
+  /* Radii */
+  --d-radius: 12px;
+  --d-radius-sm: 8px;
+  --d-radius-badge: 6px;
+
+  /* Durations */
+  --d-duration: 0.3s;
+
+  /* Priority colors */
+  --d-priority-high: #E11D48;
+  --d-priority-medium: #EA580C;
+  --d-priority-low: #16A34A;
+
+  /* Light theme (default) */
+  --d-bg: #F5F3EE;
+  --d-bg-card: #FFFFFF;
+  --d-text: #1C1917;
+  --d-text-secondary: #78716C;
+  --d-border: #E7E5E4;
+  --d-header-bg: #365E3D;
+  --d-header-text: #FFFFFF;
+  --d-badge-bg: rgba(0, 0, 0, 0.06);
+  --d-overdue-bg: rgba(225, 29, 72, 0.06);
+  --d-overdue-border: #E11D48;
+  --d-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --d-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.06);
+  --d-empty-color: #A8A29E;
+}
+
+/* ---------- Dark Theme ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --d-bg: #0C0A09;
+    --d-bg-card: #1C1917;
+    --d-text: #F5F5F4;
+    --d-text-secondary: #A8A29E;
+    --d-border: #44403C;
+    --d-header-bg: #1C1917;
+    --d-header-text: #A8D5BA;
+    --d-badge-bg: rgba(255, 255, 255, 0.08);
+    --d-overdue-bg: rgba(225, 29, 72, 0.12);
+    --d-overdue-border: #f87171;
+    --d-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --d-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.2);
+    --d-empty-color: #57534E;
+
+    --d-priority-high: #f87171;
+    --d-priority-medium: #fb923c;
+    --d-priority-low: #4ade80;
+  }
+}
+
+/* ---------- Body ---------- */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--d-font-body);
+  background: var(--d-bg);
+  color: var(--d-text);
+  cursor: default;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* ---------- Container ---------- */
+.display-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: var(--d-space-lg);
+  gap: var(--d-space-lg);
+}
+
+/* ---------- Header ---------- */
+.display-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  padding: var(--d-space-md) var(--d-space-xl);
+  background: var(--d-header-bg);
+  border-radius: var(--d-radius);
+  box-shadow: var(--d-shadow);
+}
+
+.display-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--d-space-md);
+}
+
+.display-title {
+  font-family: var(--d-font-heading);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--d-header-text);
+  line-height: 1.2;
+}
+
+.display-counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 2.4rem;
+  padding: 0 var(--d-space-sm);
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--d-header-text);
+  font-family: var(--d-font-body);
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.display-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.display-clock {
+  font-family: var(--d-font-body);
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--d-header-text);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Main Grid ---------- */
+.display-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: var(--d-space-lg);
+  align-content: start;
+  overflow-y: auto;
+  padding: var(--d-space-xs);
+}
+
+/* Dezenter Scrollbar */
+.display-main::-webkit-scrollbar {
+  width: 6px;
+}
+
+.display-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.display-main::-webkit-scrollbar-thumb {
+  background: var(--d-border);
+  border-radius: 3px;
+}
+
+/* ---------- Task Card ---------- */
+.display-card {
+  background: var(--d-bg-card);
+  border-radius: var(--d-radius);
+  padding: var(--d-space-lg);
+  border-left: 5px solid var(--d-priority-low);
+  box-shadow: var(--d-shadow-card);
+  transition: opacity var(--d-duration) ease;
+  display: flex;
+  flex-direction: column;
+  gap: var(--d-space-sm);
+}
+
+.display-card--priority-high {
+  border-left-color: var(--d-priority-high);
+}
+
+.display-card--priority-medium {
+  border-left-color: var(--d-priority-medium);
+}
+
+.display-card--priority-low {
+  border-left-color: var(--d-priority-low);
+}
+
+/* Overdue styling */
+.display-card--overdue {
+  background: var(--d-overdue-bg);
+  border-left-color: var(--d-overdue-border);
+  box-shadow: 0 0 0 1px var(--d-overdue-border), var(--d-shadow-card);
+}
+
+/* ---------- Card Title ---------- */
+.display-card__title {
+  font-family: var(--d-font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--d-text);
+  line-height: 1.3;
+}
+
+/* ---------- Card Badges ---------- */
+.display-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--d-space-sm);
+  margin-top: var(--d-space-xs);
+}
+
+.display-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--d-radius-badge);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Priority badges */
+.display-badge--high {
+  background: rgba(225, 29, 72, 0.12);
+  color: var(--d-priority-high);
+}
+
+.display-badge--medium {
+  background: rgba(234, 88, 12, 0.12);
+  color: var(--d-priority-medium);
+}
+
+.display-badge--low {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--d-priority-low);
+}
+
+/* Status badges */
+.display-badge--pending {
+  background: var(--d-badge-bg);
+  color: var(--d-text-secondary);
+}
+
+.display-badge--in-progress {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7C3AED;
+}
+
+@media (prefers-color-scheme: dark) {
+  .display-badge--in-progress {
+    color: #A78BFA;
+  }
+}
+
+/* ---------- Card Meta (location, date) ---------- */
+.display-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--d-space-sm) var(--d-space-lg);
+  margin-top: var(--d-space-xs);
+  color: var(--d-text-secondary);
+  font-size: 0.95rem;
+}
+
+.display-card__meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.display-card__meta-item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.display-card__meta-item--overdue {
+  color: var(--d-priority-high);
+  font-weight: 600;
+}
+
+/* ---------- Empty State ---------- */
+.display-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--d-space-lg);
+  color: var(--d-empty-color);
+}
+
+.display-empty svg {
+  opacity: 0.4;
+}
+
+.display-empty p {
+  font-family: var(--d-font-heading);
+  font-size: 1.6rem;
+}
+
+/* ---------- Footer ---------- */
+.display-footer {
+  flex-shrink: 0;
+  text-align: right;
+  padding: 0 var(--d-space-sm);
+}
+
+.display-last-update {
+  font-size: 0.8rem;
+  color: var(--d-text-secondary);
+  opacity: 0.6;
+}
+
+/* ---------- Fade animation for refresh ---------- */
+.display-fade-out {
+  opacity: 0.3;
+  transition: opacity 0.4s ease;
+}
+
+.display-fade-in {
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 800px) {
+  .display-container {
+    padding: var(--d-space-md);
+    gap: var(--d-space-md);
+  }
+
+  .display-title {
+    font-size: 1.4rem;
+  }
+
+  .display-clock {
+    font-size: 1.2rem;
+  }
+
+  .display-main {
+    grid-template-columns: 1fr;
+  }
+
+  .display-card__title {
+    font-size: 1.2rem;
+  }
+}
+
+@media (min-width: 1600px) {
+  .display-container {
+    padding: var(--d-space-xl) 3rem;
+  }
+
+  .display-title {
+    font-size: 2.2rem;
+  }
+
+  .display-clock {
+    font-size: 2rem;
+  }
+
+  .display-card__title {
+    font-size: 1.5rem;
+  }
+
+  .display-badge {
+    font-size: 0.95rem;
+  }
+
+  .display-card__meta {
+    font-size: 1.05rem;
+  }
+}
+
+@media (min-width: 2400px) {
+  .display-main {
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  }
+
+  .display-card__title {
+    font-size: 1.7rem;
+  }
+}
