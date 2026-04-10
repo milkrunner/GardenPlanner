@@ -1838,6 +1838,46 @@
   }
 
   // =====================================================
+  // Export-Hilfsfunktionen
+  // =====================================================
+
+  /**
+   * Erzeugt einen Dateinamen mit Gartenname und aktuellem Datum.
+   * Format: Gartenname_YYYY-MM-DD.ext
+   */
+  function buildExportFilename(ext) {
+    var name = (gardenData.name || 'garten').replace(/[^a-zA-Z0-9äöüÄÖÜß _-]/g, '');
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = String(now.getMonth() + 1).padStart(2, '0');
+    var d = String(now.getDate()).padStart(2, '0');
+    return name + '_' + y + '-' + m + '-' + d + '.' + ext;
+  }
+
+  /**
+   * Kopiert alle <pattern>-Definitionen inline in den SVG-Klon,
+   * damit die SVG-Datei ohne externe Referenzen funktioniert.
+   */
+  function inlinePatternsIntoClone(svgClone) {
+    var clonedDefs = svgClone.querySelector('#svgDefs') || svgClone.querySelector('defs');
+    if (!clonedDefs) {
+      clonedDefs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      svgClone.insertBefore(clonedDefs, svgClone.firstChild);
+    }
+    // Kopiere Pattern-Definitionen aus dem Original-SVG
+    var originalDefs = dom.svgDefs;
+    if (originalDefs) {
+      var patterns = originalDefs.querySelectorAll('pattern');
+      patterns.forEach(function (pattern) {
+        var existing = clonedDefs.querySelector('#' + pattern.id);
+        if (!existing) {
+          clonedDefs.appendChild(pattern.cloneNode(true));
+        }
+      });
+    }
+  }
+
+  // =====================================================
   // Export (SVG to PNG)
   // =====================================================
   function exportPNG() {
@@ -1853,6 +1893,9 @@
     var drawLayer = svgClone.querySelector('#layerDrawing');
     if (drawLayer) drawLayer.innerHTML = '';
 
+    // Inline patterns for correct rendering
+    inlinePatternsIntoClone(svgClone);
+
     // Inline styles for export
     var allElements = svgClone.querySelectorAll('*');
     allElements.forEach(function (el) {
@@ -1866,6 +1909,7 @@
     var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     var url = URL.createObjectURL(svgBlob);
 
+    var filename = buildExportFilename('png');
     var img = new Image();
     img.onload = function () {
       var canvas = document.createElement('canvas');
@@ -1880,10 +1924,10 @@
       canvas.toBlob(function (blob) {
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = (gardenData.name || 'garten') + '.png';
+        a.download = filename;
         a.click();
         URL.revokeObjectURL(a.href);
-        setStatus('PNG exportiert: ' + a.download);
+        setStatus('PNG exportiert: ' + filename);
       }, 'image/png');
     };
     img.onerror = function () {
@@ -1911,6 +1955,9 @@
     var gridLayer = svgClone.querySelector('#layerGrid');
     if (gridLayer) gridLayer.innerHTML = '';
 
+    // Inline alle Pattern-Definitionen fuer saubere SVG-Ausgabe
+    inlinePatternsIntoClone(svgClone);
+
     // Add background rect
     var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     bg.setAttribute('width', gardenData.canvasSize.width);
@@ -1933,14 +1980,15 @@
       }
     });
 
+    var filename = buildExportFilename('svg');
     var svgData = new XMLSerializer().serializeToString(svgClone);
     var blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (gardenData.name || 'garten') + '.svg';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
-    setStatus('SVG exportiert: ' + a.download);
+    setStatus('SVG exportiert: ' + filename);
   }
 
   // =====================================================

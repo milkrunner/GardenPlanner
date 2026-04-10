@@ -290,6 +290,19 @@ const TaskAPI = {
             body: JSON.stringify({ ids })
         });
     },
+
+    async addComment(taskId, text) {
+        return this._fetch(`/tasks/${encodeURIComponent(taskId)}/comments`, {
+            method: "POST",
+            body: JSON.stringify({ text })
+        });
+    },
+
+    async deleteComment(taskId, commentId) {
+        return this._fetch(`/tasks/${encodeURIComponent(taskId)}/comments/${encodeURIComponent(commentId)}`, {
+            method: "DELETE"
+        });
+    },
 };
 
 window.TaskAPI = TaskAPI;

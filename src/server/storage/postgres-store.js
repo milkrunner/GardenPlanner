@@ -24,6 +24,7 @@ function rowToTask(row) {
         subtasks: row.subtasks || [],
         history: row.history || [],
         photos: row.photos || [],
+        comments: row.comments || [],
         sortOrder: parseInt(row.sort_order),
         completedAt: row.completed_at,
         archivedAt: row.archived_at,
@@ -119,6 +120,10 @@ async function updateTask(id, fields) {
     if (fields.photos !== undefined) {
         setClauses.push(`photos = $${idx++}`);
         values.push(JSON.stringify(fields.photos));
+    }
+    if (fields.comments !== undefined) {
+        setClauses.push(`comments = $${idx++}`);
+        values.push(JSON.stringify(fields.comments));
     }
 
     if (setClauses.length === 0) {
