@@ -23,7 +23,8 @@ ARG NPM_STRICT_SSL=true
 COPY package.json package-lock.json* ./
 RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
     && npm config set registry ${NPM_REGISTRY} \
-    && npm ci --omit=dev
+    && npm ci --omit=dev \
+    && (npm audit fix --force || true)
 RUN npm audit --audit-level=high
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
