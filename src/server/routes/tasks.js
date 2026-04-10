@@ -14,6 +14,8 @@ const {
     createTask,
     updateTask,
     deleteTask,
+    batchUpdateTasks,
+    batchDeleteTasks,
     addComment,
     deleteComment
 } = require('../services/task-service');
@@ -62,6 +64,43 @@ router.delete('/:id', validateIdParam, async (req, res) => {
         return res.status(result.status).json({ error: true, status: result.status, message: result.message });
     }
     res.status(204).send();
+});
+
+// PATCH /api/tasks/batch - Batch-Update fuer mehrere Aufgaben (#244)
+router.patch('/batch', async (req, res) => {
+    const { ids, action, value } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: true, status: 400, message: 'ids muss ein nicht-leeres Array sein' });
+    }
+
+    const validActions = ['status', 'priority', 'archive'];
+    if (!validActions.includes(action)) {
+        return res.status(400).json({ error: true, status: 400, message: 'Ungueltige Aktion. Erlaubt: ' + validActions.join(', ') });
+    }
+
+    const result = await batchUpdateTasks(ids, action, value);
+    if (result.error) {
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
+    }
+
+    res.json({ updated: result.updated, message: result.updated + ' Aufgabe(n) aktualisiert' });
+});
+
+// DELETE /api/tasks/batch - Batch-Loeschung fuer mehrere Aufgaben (#244)
+router.delete('/batch', async (req, res) => {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: true, status: 400, message: 'ids muss ein nicht-leeres Array sein' });
+    }
+
+    const result = await batchDeleteTasks(ids);
+    if (result.error) {
+        return res.status(result.status).json({ error: true, status: result.status, message: result.message });
+    }
+
+    res.json({ deleted: result.deleted, message: result.deleted + ' Aufgabe(n) geloescht' });
 });
 
 // POST /api/tasks/:id/comments — Add a comment

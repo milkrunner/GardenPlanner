@@ -17,6 +17,7 @@ const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
 const photosRouter = require('./routes/photos');
+const gardensRouter = require('./routes/gardens');
 const authRouter = require('./routes/auth');
 const adminRouter = require('./routes/admin');
 const { requireAdmin } = require('./middleware/require-admin');
@@ -161,6 +162,16 @@ app.post('/api/tasks/:id/comments', writeLimiter);
 app.delete('/api/tasks/:id/comments/:commentId', writeLimiter);
 app.post('/api/v1/tasks/:id/comments', writeLimiter);
 app.delete('/api/v1/tasks/:id/comments/:commentId', writeLimiter);
+// Batch operations (#244)
+app.patch('/api/v1/tasks/batch', writeLimiter);
+app.delete('/api/v1/tasks/batch', writeLimiter);
+app.patch('/api/tasks/batch', writeLimiter);
+app.delete('/api/tasks/batch', writeLimiter);
+// Garden write operations (#251)
+app.post('/api/v1/gardens', writeLimiter);
+app.put('/api/v1/gardens/:id', writeLimiter);
+app.delete('/api/v1/gardens/:id', writeLimiter);
+app.post('/api/v1/gardens/import', writeLimiter);
 
 // --- Canonical API Routes (/api/v1) ---
 
@@ -168,6 +179,7 @@ app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1', archiveRouter);
 app.use('/api/v1/plants', plantsRouter);
 app.use('/api/v1', photosRouter);
+app.use('/api/v1/gardens', gardensRouter);
 
 app.get('/api/v1/plant-categories', (req, res) => {
     res.json(listCategories());

@@ -76,6 +76,7 @@
 
   var gardenData = createEmptyGarden();
   var currentGardenId = null;
+  var serverGardenId = null; // Server-seitige ID fuer API-Sync (#251)
 
   // Drawing state
   var drawPoints = [];
@@ -83,6 +84,12 @@
 
   // Drag state
   var dragState = null;
+
+  // Edit panel state (#250)
+  var editPanelOpen = false;
+  var editingElementId = null;
+  var vertexEditMode = false;
+  var vertexDragState = null;
 
   // Undo/redo
   var undoStack = [];
@@ -177,6 +184,15 @@
       area -= points[j][0] * points[i][1];
     }
     return Math.abs(area) / 2;
+  }
+
+  function calcPolygonCentroid(points) {
+    var cx = 0, cy = 0;
+    for (var i = 0; i < points.length; i++) {
+      cx += points[i][0];
+      cy += points[i][1];
+    }
+    return { x: cx / points.length, y: cy / points.length };
   }
 
   function calcPolygonPerimeter(points) {
@@ -529,6 +545,21 @@
         polygon.classList.add('selected');
       }
 
+      // Notizen-Label fuer Flaeche (#250)
+      if (area.notes) {
+        var centroid = calcPolygonCentroid(area.points);
+        var noteLabel = createSVGElement('text');
+        noteLabel.setAttribute('x', String(centroid.x));
+        noteLabel.setAttribute('y', String(centroid.y));
+        noteLabel.setAttribute('text-anchor', 'middle');
+        noteLabel.setAttribute('font-size', '11');
+        noteLabel.setAttribute('fill', 'rgba(0,0,0,0.6)');
+        noteLabel.setAttribute('pointer-events', 'none');
+        noteLabel.setAttribute('class', 'element-label');
+        noteLabel.textContent = area.notes.length > 20 ? area.notes.substring(0, 20) + '...' : area.notes;
+        layer.appendChild(noteLabel);
+      }
+
       polygon.addEventListener('mousedown', onAreaMouseDown);
       polygon.addEventListener('click', onAreaClick);
       (function(areaData) {
@@ -557,19 +588,21 @@
     layer.innerHTML = '';
 
     gardenData.elements.forEach(function (el) {
+      var scale = el.scale || 1;
       var g = createSVGElement('g');
       g.setAttribute('class', 'element-group');
       g.setAttribute('data-id', el.id);
-      g.setAttribute('transform', 'translate(' + el.x + ',' + el.y + ')');
+      g.setAttribute('transform', 'translate(' + el.x + ',' + el.y + ') scale(' + scale + ')');
 
       if (state.selectedElement === el.id) {
         g.classList.add('selected');
       }
 
+      var radius = 18;
       var circle = createSVGElement('circle');
       circle.setAttribute('cx', '0');
       circle.setAttribute('cy', '0');
-      circle.setAttribute('r', '18');
+      circle.setAttribute('r', String(radius));
       circle.setAttribute('fill', el.color || '#E0E0E0');
       circle.setAttribute('fill-opacity', '0.8');
       circle.setAttribute('stroke', el.color || '#BDBDBD');
@@ -593,6 +626,19 @@
       label.setAttribute('class', 'element-label');
       label.textContent = el.name;
       g.appendChild(label);
+
+      // Notizen-Indikator (#250)
+      if (el.notes) {
+        var noteIndicator = createSVGElement('circle');
+        noteIndicator.setAttribute('cx', String(radius - 2));
+        noteIndicator.setAttribute('cy', String(-radius + 2));
+        noteIndicator.setAttribute('r', '4');
+        noteIndicator.setAttribute('fill', '#FFC107');
+        noteIndicator.setAttribute('stroke', 'white');
+        noteIndicator.setAttribute('stroke-width', '1');
+        noteIndicator.setAttribute('pointer-events', 'none');
+        g.appendChild(noteIndicator);
+      }
 
       g.addEventListener('mousedown', onElementMouseDown);
       g.addEventListener('click', onElementClick);
@@ -788,6 +834,7 @@
           // Deselect if clicking empty canvas
           if (!e.target.closest('.area-polygon') && !e.target.closest('.element-group')) {
             state.selectedElement = null;
+            if (editPanelOpen) closeEditPanel();
             renderAll();
           }
         }
@@ -801,12 +848,21 @@
       renderDrawing();
     }
 
+    // Vertex-Drag (#250)
+    if (vertexDragState) {
+      handleVertexDrag(e);
+      return;
+    }
+
     if (dragState) {
       handleDrag(e);
     }
   }
 
   function onCanvasMouseUp() {
+    if (vertexDragState) {
+      endVertexDrag();
+    }
     if (dragState) {
       endDrag();
     }
@@ -815,6 +871,21 @@
   function onCanvasDblClick(e) {
     if (state.tool === 'draw' && drawPoints.length >= 3) {
       closePolygon();
+      return;
+    }
+
+    // Doppelklick auf Element oder Flaeche oeffnet Edit-Panel (#250)
+    var target = e.target.closest('.element-group');
+    if (target) {
+      e.stopPropagation();
+      openEditPanel(target.getAttribute('data-id'), e);
+      return;
+    }
+    var areaPoly = e.target.closest('.area-polygon');
+    if (areaPoly) {
+      e.stopPropagation();
+      openEditPanel(areaPoly.getAttribute('data-id'), e);
+      return;
     }
   }
 
@@ -1196,8 +1267,214 @@
   }
 
   // =====================================================
-  // Save / Load
+  // Edit Panel (#250)
   // =====================================================
+  function openEditPanel(id, e) {
+    var panel = document.getElementById('gardenEditPanel');
+    if (!panel) return;
+
+    editingElementId = id;
+    editPanelOpen = true;
+    state.selectedElement = id;
+    renderAll();
+
+    // Bestimme ob es eine Flaeche oder ein Element ist
+    var area = gardenData.layers.find(function (l) { return l.id === id; });
+    var element = gardenData.elements.find(function (el) { return el.id === id; });
+
+    if (area) {
+      renderAreaEditPanel(area, panel);
+    } else if (element) {
+      renderElementEditPanel(element, panel);
+    } else {
+      return;
+    }
+
+    // Panel positionieren
+    positionEditPanel(panel, e);
+    panel.classList.add('visible');
+  }
+
+  function closeEditPanel() {
+    var panel = document.getElementById('gardenEditPanel');
+    if (panel) panel.classList.remove('visible');
+    editPanelOpen = false;
+    editingElementId = null;
+    vertexEditMode = false;
+    removeVertexHandles();
+  }
+
+  function positionEditPanel(panel, e) {
+    var workspace = document.querySelector('.garden-workspace');
+    if (!workspace) return;
+    var rect = workspace.getBoundingClientRect();
+    var x = e.clientX - rect.left + 12;
+    var y = e.clientY - rect.top + 12;
+
+    // Sicherstellen, dass Panel im sichtbaren Bereich bleibt
+    var panelRect = panel.getBoundingClientRect();
+    if (x + 280 > rect.width) x = rect.width - 290;
+    if (y + 300 > rect.height) y = Math.max(10, rect.height - 310);
+    if (x < 0) x = 10;
+    if (y < 0) y = 10;
+
+    panel.style.left = x + 'px';
+    panel.style.top = y + 'px';
+  }
+
+  function renderAreaEditPanel(area, panel) {
+    var surface = getSurfaceType(area.surfaceType);
+    var title = panel.querySelector('#editPanelTitle');
+    title.textContent = surface.name + ' bearbeiten';
+
+    var body = panel.querySelector('#editPanelBody');
+    var surfaceOptions = SURFACE_TYPES.map(function (s) {
+      return '<option value="' + s.id + '"' + (s.id === area.surfaceType ? ' selected' : '') + '>' + s.icon + ' ' + s.name + '</option>';
+    }).join('');
+
+    body.innerHTML =
+      '<label for="editAreaSurface">Fl\u00e4chentyp</label>' +
+      '<select id="editAreaSurface">' + surfaceOptions + '</select>' +
+      '<label for="editAreaNotes">Notizen / Label</label>' +
+      '<textarea id="editAreaNotes" placeholder="Notizen eingeben..." rows="2">' + escapeText(area.notes || '') + '</textarea>' +
+      '<label><input type="checkbox" id="editAreaVertices" ' + (vertexEditMode ? 'checked' : '') + '> Eckpunkte bearbeiten</label>';
+
+    var actions = panel.querySelector('#editPanelActions');
+    actions.innerHTML =
+      '<button class="danger" id="editPanelDelete">L\u00f6schen</button>' +
+      '<button class="primary" id="editPanelApply">\u00dcbernehmen</button>';
+
+    // Events binden
+    document.getElementById('editPanelApply').addEventListener('click', function () {
+      pushUndo();
+      area.surfaceType = document.getElementById('editAreaSurface').value;
+      area.notes = document.getElementById('editAreaNotes').value.trim();
+      renderAll();
+      autoSave();
+      setStatus('Fl\u00e4che aktualisiert');
+    });
+
+    document.getElementById('editPanelDelete').addEventListener('click', function () {
+      closeEditPanel();
+      deleteAreaById(area.id);
+    });
+
+    document.getElementById('editAreaVertices').addEventListener('change', function () {
+      vertexEditMode = this.checked;
+      if (vertexEditMode) {
+        showVertexHandles(area);
+      } else {
+        removeVertexHandles();
+      }
+    });
+
+    panel.querySelector('#editPanelClose').addEventListener('click', closeEditPanel);
+  }
+
+  function renderElementEditPanel(element, panel) {
+    var title = panel.querySelector('#editPanelTitle');
+    title.textContent = (element.icon || '') + ' ' + element.name + ' bearbeiten';
+
+    var body = panel.querySelector('#editPanelBody');
+    var scale = element.scale || 1;
+
+    body.innerHTML =
+      '<label for="editElName">Name</label>' +
+      '<input type="text" id="editElName" value="' + escapeText(element.name) + '" maxlength="60" />' +
+      '<label for="editElScale">Gr\u00f6\u00dfe (Skalierung)</label>' +
+      '<input type="number" id="editElScale" value="' + scale + '" min="0.5" max="3" step="0.1" />' +
+      '<label for="editElNotes">Notizen / Label</label>' +
+      '<textarea id="editElNotes" placeholder="Notizen eingeben..." rows="2">' + escapeText(element.notes || '') + '</textarea>';
+
+    var actions = panel.querySelector('#editPanelActions');
+    actions.innerHTML =
+      '<button class="danger" id="editPanelDelete">L\u00f6schen</button>' +
+      '<button class="primary" id="editPanelApply">\u00dcbernehmen</button>';
+
+    document.getElementById('editPanelApply').addEventListener('click', function () {
+      pushUndo();
+      element.name = document.getElementById('editElName').value.trim() || element.name;
+      element.scale = parseFloat(document.getElementById('editElScale').value) || 1;
+      element.notes = document.getElementById('editElNotes').value.trim();
+      renderAll();
+      autoSave();
+      setStatus(element.name + ' aktualisiert');
+    });
+
+    document.getElementById('editPanelDelete').addEventListener('click', function () {
+      closeEditPanel();
+      deleteElementById(element.id);
+    });
+
+    panel.querySelector('#editPanelClose').addEventListener('click', closeEditPanel);
+  }
+
+  // Vertex-Editing: Eckpunkte anzeigen und verschiebbar machen
+  function showVertexHandles(area) {
+    removeVertexHandles();
+    var layer = dom.layerDrawing;
+    if (!area.points || area.points.length < 3) return;
+
+    area.points.forEach(function (pt, idx) {
+      var handle = createSVGElement('circle');
+      handle.setAttribute('cx', pt[0]);
+      handle.setAttribute('cy', pt[1]);
+      handle.setAttribute('r', '5');
+      handle.setAttribute('fill', 'var(--primary)');
+      handle.setAttribute('stroke', 'white');
+      handle.setAttribute('stroke-width', '2');
+      handle.setAttribute('class', 'vertex-handle');
+      handle.setAttribute('data-area-id', area.id);
+      handle.setAttribute('data-vertex-idx', idx);
+
+      handle.addEventListener('mousedown', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        vertexDragState = {
+          areaId: area.id,
+          idx: idx,
+          origPoint: [pt[0], pt[1]]
+        };
+        pushUndo();
+      });
+
+      layer.appendChild(handle);
+    });
+  }
+
+  function removeVertexHandles() {
+    var layer = dom.layerDrawing;
+    if (!layer) return;
+    var handles = layer.querySelectorAll('.vertex-handle');
+    handles.forEach(function (h) { h.remove(); });
+  }
+
+  function handleVertexDrag(e) {
+    if (!vertexDragState) return;
+    var area = gardenData.layers.find(function (l) { return l.id === vertexDragState.areaId; });
+    if (!area) return;
+
+    var pt = mouseToSVG(e);
+    var snapped = snapToGrid(pt, e.shiftKey);
+    area.points[vertexDragState.idx] = [Math.round(snapped.x), Math.round(snapped.y)];
+    renderAreas();
+    showVertexHandles(area);
+  }
+
+  function endVertexDrag() {
+    if (!vertexDragState) return;
+    vertexDragState = null;
+    autoSave();
+  }
+
+  // =====================================================
+  // Save / Load (mit Server-Sync #251)
+  // =====================================================
+
+  // Debounce-Timer fuer Auto-Save
+  var autoSaveTimer = null;
+  var AUTO_SAVE_DELAY = 2000;
+
   function getAllGardens() {
     try {
       var data = localStorage.getItem(STORAGE_KEY);
@@ -1209,6 +1486,68 @@
 
   function saveGardens(gardens) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(gardens));
+  }
+
+  // Server-API Aufrufe (#251)
+  async function apiListGardens() {
+    try {
+      var res = await fetch(API_BASE + '/gardens', { credentials: 'same-origin' });
+      if (!res.ok) return null;
+      return res.json();
+    } catch (e) { return null; }
+  }
+
+  async function apiSaveGarden(garden) {
+    try {
+      if (garden.serverId) {
+        var res = await fetch(API_BASE + '/gardens/' + garden.serverId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ name: garden.name, data: garden.data })
+        });
+        if (res.ok) return res.json();
+      }
+      // Kein serverId oder PUT fehlgeschlagen: POST
+      var postRes = await fetch(API_BASE + '/gardens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ name: garden.name, data: garden.data })
+      });
+      if (postRes.ok || postRes.status === 201) return postRes.json();
+      return null;
+    } catch (e) { return null; }
+  }
+
+  async function apiDeleteGarden(serverId) {
+    try {
+      await fetch(API_BASE + '/gardens/' + serverId, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+      });
+    } catch (e) { /* Offline-Tolerant */ }
+  }
+
+  async function apiExportGarden(serverId) {
+    try {
+      var res = await fetch(API_BASE + '/gardens/' + serverId + '/export', { credentials: 'same-origin' });
+      if (res.ok) return res.json();
+      return null;
+    } catch (e) { return null; }
+  }
+
+  async function apiImportGarden(gardenJson) {
+    try {
+      var res = await fetch(API_BASE + '/gardens/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(gardenJson)
+      });
+      if (res.ok || res.status === 201) return res.json();
+      return null;
+    } catch (e) { return null; }
   }
 
   function saveCurrentGarden() {
@@ -1224,7 +1563,6 @@
         gardens[idx].name = gardenData.name;
         gardens[idx].updatedAt = now;
       } else {
-        // ID not found, create new
         currentGardenId = generateId();
         gardens.push({
           id: currentGardenId,
@@ -1248,10 +1586,15 @@
     saveGardens(gardens);
     renderSavedGardens();
     setStatus('Garten "' + gardenData.name + '" gespeichert');
+
+    // Server-Sync im Hintergrund (#251)
+    syncGardenToServer(currentGardenId);
   }
 
   function autoSave() {
     if (!currentGardenId) return;
+
+    // Sofortiges localStorage-Speichern
     var gardens = getAllGardens();
     var now = new Date().toISOString();
     gardenData.name = dom.gardenName.value.trim() || 'Mein Garten';
@@ -1263,6 +1606,32 @@
       gardens[idx].updatedAt = now;
       saveGardens(gardens);
     }
+
+    // Debounced Server-Sync (#251)
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function () {
+      syncGardenToServer(currentGardenId);
+    }, AUTO_SAVE_DELAY);
+  }
+
+  async function syncGardenToServer(localId) {
+    if (!navigator.onLine) return;
+    var gardens = getAllGardens();
+    var garden = gardens.find(function (g) { return g.id === localId; });
+    if (!garden) return;
+
+    var result = await apiSaveGarden({
+      serverId: garden.serverId || null,
+      name: garden.name,
+      data: garden.data
+    });
+
+    if (result && result.id) {
+      // Server-ID lokal merken
+      garden.serverId = result.id;
+      serverGardenId = result.id;
+      saveGardens(gardens);
+    }
   }
 
   function loadGarden(id) {
@@ -1270,7 +1639,6 @@
     var garden = gardens.find(function (g) { return g.id === id; });
     if (!garden) return;
 
-    // Migration check
     var data = garden.data;
     if (!data.version || data.version === 1) {
       data = migrateV1toV2(data);
@@ -1280,10 +1648,11 @@
 
     gardenData = cloneData(data);
     currentGardenId = id;
+    serverGardenId = garden.serverId || null;
     dom.gardenName.value = gardenData.name || 'Mein Garten';
 
-    // Reset state
     state.selectedElement = null;
+    if (editPanelOpen) closeEditPanel();
     drawPoints = [];
     drawPreviewLine = null;
     undoStack = [];
@@ -1297,11 +1666,20 @@
   }
 
   function deleteGarden(id) {
-    var gardens = getAllGardens().filter(function (g) { return g.id !== id; });
+    var gardens = getAllGardens();
+    var garden = gardens.find(function (g) { return g.id === id; });
+
+    // Server-Loeschung (#251)
+    if (garden && garden.serverId) {
+      apiDeleteGarden(garden.serverId);
+    }
+
+    gardens = gardens.filter(function (g) { return g.id !== id; });
     saveGardens(gardens);
 
     if (currentGardenId === id) {
       currentGardenId = null;
+      serverGardenId = null;
       gardenData = createEmptyGarden();
       dom.gardenName.value = gardenData.name;
       undoStack = [];
@@ -1311,14 +1689,16 @@
     }
 
     renderSavedGardens();
-    setStatus('Garten gelöscht');
+    setStatus('Garten gel\u00f6scht');
   }
 
   function newGarden() {
     currentGardenId = null;
+    serverGardenId = null;
     gardenData = createEmptyGarden();
     dom.gardenName.value = gardenData.name;
     state.selectedElement = null;
+    if (editPanelOpen) closeEditPanel();
     drawPoints = [];
     drawPreviewLine = null;
     undoStack = [];
@@ -1329,6 +1709,98 @@
     renderDrawing();
     renderSavedGardens();
     setStatus('Neuer Garten erstellt');
+  }
+
+  // Server-Gaerten mit localStorage synchronisieren (#251)
+  async function syncGardensFromServer() {
+    if (!navigator.onLine) return;
+    var serverGardens = await apiListGardens();
+    if (!serverGardens || !Array.isArray(serverGardens)) return;
+
+    var localGardens = getAllGardens();
+    var changed = false;
+
+    // Server-Gaerten die lokal fehlen hinzufuegen
+    serverGardens.forEach(function (sg) {
+      var existing = localGardens.find(function (lg) { return lg.serverId === sg.id; });
+      if (!existing) {
+        // Volle Daten vom Server laden
+        fetch(API_BASE + '/gardens/' + sg.id, { credentials: 'same-origin' })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (fullGarden) {
+            if (!fullGarden) return;
+            var gardens = getAllGardens();
+            gardens.push({
+              id: generateId(),
+              serverId: fullGarden.id,
+              name: fullGarden.name,
+              data: fullGarden.data || {},
+              createdAt: fullGarden.createdAt,
+              updatedAt: fullGarden.updatedAt
+            });
+            saveGardens(gardens);
+            renderSavedGardens();
+          });
+      }
+    });
+
+    // Lokale Gaerten ohne serverId zum Server hochladen
+    localGardens.forEach(function (lg) {
+      if (!lg.serverId) {
+        syncGardenToServer(lg.id);
+      }
+    });
+  }
+
+  // JSON-Export/Import Funktionen (#251)
+  function exportGardenJSON() {
+    var exportData = {
+      name: gardenData.name,
+      data: cloneData(gardenData),
+      exportedAt: new Date().toISOString()
+    };
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (gardenData.name || 'garten') + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus('Garten als JSON exportiert');
+  }
+
+  function importGardenJSON() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (ev) {
+        try {
+          var importedData = JSON.parse(ev.target.result);
+          var name = importedData.name || 'Importierter Garten';
+          var data = importedData.data || importedData;
+          if (!data.version) data.version = 2;
+
+          gardenData = cloneData(data);
+          gardenData.name = name;
+          currentGardenId = null;
+          serverGardenId = null;
+          dom.gardenName.value = name;
+          saveCurrentGarden();
+          renderAll();
+          setStatus('Garten "' + name + '" importiert');
+
+          // Server-Import (#251)
+          apiImportGarden({ name: name, data: data });
+        } catch (err) {
+          setStatus('Import fehlgeschlagen: Ung\u00fcltige Datei');
+        }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
   }
 
   // =====================================================
@@ -2042,7 +2514,9 @@
           setTool('delete');
           break;
         case 'Escape':
-          if (drawPoints.length > 0) {
+          if (editPanelOpen) {
+            closeEditPanel();
+          } else if (drawPoints.length > 0) {
             drawPoints = [];
             drawPreviewLine = null;
             renderDrawing();
@@ -2201,6 +2675,7 @@
     dom.tooltip = document.getElementById('gardenTooltip');
     dom.gridScaleSelect = document.getElementById('gridScaleSelect');
     dom.statusCanvasSize = document.getElementById('statusCanvasSize');
+    dom.editPanel = document.getElementById('gardenEditPanel');
   }
 
   function bindEvents() {
@@ -2240,6 +2715,8 @@
           exportMenu.style.display = 'none';
           if (this.dataset.format === 'png') exportPNG();
           else if (this.dataset.format === 'svg') exportSVG();
+          else if (this.dataset.format === 'json') exportGardenJSON();
+          else if (this.dataset.format === 'import') importGardenJSON();
         });
       });
       // Close menu on outside click
@@ -2351,6 +2828,9 @@
     loadLastGarden();
     window.addEventListener('resize', function () { renderRulers(); });
     renderAll();
+
+    // Gaerten vom Server synchronisieren (#251)
+    syncGardensFromServer();
 
     setStatus('Bereit \u2014 W\u00e4hle ein Werkzeug oder platziere Pflanzen');
   }
