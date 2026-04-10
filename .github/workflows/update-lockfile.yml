@@ -1,12 +1,10 @@
 name: Update package-lock.json
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to update'
-        required: true
-        default: 'develop'
+  push:
+    branches: [develop, main]
+    paths:
+      - 'package.json'
 
 permissions:
   contents: write
@@ -18,8 +16,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.inputs.branch }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
