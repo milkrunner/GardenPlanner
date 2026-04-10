@@ -464,6 +464,50 @@
   opacity: 1;
 }
 
+/* Seasonal Toggle (#253) */
+.plant-seasonal-toggle {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.plant-seasonal-toggle:hover {
+  background: var(--bg-tertiary);
+}
+
+.plant-seasonal-toggle.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Season Month Select (#253) */
+.season-month-label {
+  font-size: 0.7rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+.season-month-select {
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  height: 26px;
+}
+
+.season-month-select:focus-visible {
+  outline: 2px solid var(--focus-ring);
+}
+
 /* Plant & Structure Palette */
 .plant-palette,
 .structure-palette {
@@ -716,6 +760,19 @@
 
 .garden-canvas .element-group.dragging {
   opacity: 0.7;
+}
+
+/* Mehrfach-Auswahl (#255) */
+.garden-canvas .element-group.multi-selected .element-circle {
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-dasharray: 6 3;
+}
+
+.garden-canvas .area-polygon.multi-selected {
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-dasharray: 6 3;
 }
 
 .garden-canvas .element-circle {

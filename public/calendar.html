@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pflanzkalender - Gartenplaner</title>
+    <meta name="description" content="Saisonaler Pflanzkalender mit Aussaat-, Pflege- und Erntezeiten">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#365E3D">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../src/css/styles.css">
+    <link rel="stylesheet" href="../src/css/calendar.css">
+</head>
+<body>
+    <a href="#main" class="skip-to-main">Zum Inhalt springen</a>
+    <script nonce="__CSP_NONCE__" src="../src/js/auth-check.js"></script>
+    <div class="container">
+        <header role="banner">
+            <h1>📅 Pflanzkalender</h1>
+            <p class="subtitle">Aussaat-, Pflege- und Erntezeiten im Ueberblick</p>
+        </header>
+
+        <div class="nav-container">
+            <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+                <a href="/dashboard" class="nav-link">📋 Dashboard</a>
+                <a href="/statistics" class="nav-link">📊 Statistiken</a>
+                <a href="/plants" class="nav-link">🌱 Pflanzen</a>
+                <a href="/calendar" class="nav-link active" aria-current="page">📅 Kalender</a>
+                <a href="/garden" class="nav-link">🌻 Garten</a>
+                <a href="/logs" class="nav-link">📜 Logs</a>
+            </nav>
+            <a href="/index" class="btn btn-primary nav-action-btn">➕ Neue Aufgabe</a>
+        </div>
+
+        <main id="main" role="main">
+            <!-- Empfohlene Aufgaben -->
+            <section class="calendar-recommendations" id="calendarRecommendations">
+                <h2>🌟 Empfohlene Aufgaben fuer <span id="currentMonthName">diesen Monat</span></h2>
+                <div class="recommendation-list" id="recommendationList">
+                    <!-- Dynamisch gefuellt -->
+                </div>
+            </section>
+
+            <!-- Filterleiste -->
+            <section class="calendar-controls">
+                <div class="calendar-filter-group">
+                    <label for="calendarCategoryFilter">Kategorie:</label>
+                    <select id="calendarCategoryFilter" aria-label="Nach Kategorie filtern">
+                        <option value="">Alle</option>
+                    </select>
+                </div>
+                <div class="calendar-filter-group">
+                    <label for="calendarSearch">Suche:</label>
+                    <input type="text" id="calendarSearch" placeholder="Pflanze suchen..." aria-label="Pflanzen suchen">
+                </div>
+            </section>
+
+            <!-- Gantt/Timeline -->
+            <section class="calendar-timeline" id="calendarTimeline">
+                <div class="timeline-header">
+                    <div class="timeline-plant-col">Pflanze</div>
+                    <div class="timeline-months">
+                        <span>Jan</span><span>Feb</span><span>Mrz</span><span>Apr</span>
+                        <span>Mai</span><span>Jun</span><span>Jul</span><span>Aug</span>
+                        <span>Sep</span><span>Okt</span><span>Nov</span><span>Dez</span>
+                    </div>
+                </div>
+                <div class="timeline-body" id="timelineBody">
+                    <!-- Dynamisch gefuellt -->
+                </div>
+            </section>
+
+            <!-- Legende -->
+            <section class="calendar-legend">
+                <h3>Legende</h3>
+                <div class="legend-items">
+                    <span class="legend-item"><span class="legend-swatch legend-sow"></span> Aussaat</span>
+                    <span class="legend-item"><span class="legend-swatch legend-care"></span> Pflege</span>
+                    <span class="legend-item"><span class="legend-swatch legend-harvest"></span> Ernte</span>
+                    <span class="legend-item"><span class="legend-marker"></span> Aktueller Monat</span>
+                </div>
+            </section>
+        </main>
+
+        <footer role="contentinfo">
+            <p>&copy; 2025 Gartenplaner <span class="app-version" id="appVersion"></span></p>
+        </footer>
+    </div>
+
+    <!-- Dark Mode Toggle -->
+    <div class="theme-toggle">
+      <button id="themeToggle" class="theme-toggle-btn" aria-label="Theme umschalten" title="Dark Mode umschalten">
+        <svg id="themeIcon" class="theme-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <script nonce="__CSP_NONCE__" src="../src/js/calendar.js"></script>
+    <script nonce="__CSP_NONCE__" src="../src/js/pwa-register.js"></script>
+</body>
+</html>

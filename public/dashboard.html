@@ -37,6 +37,7 @@
           <a href="/statistics" class="nav-link">📊 Statistiken</a>
           <a href="/plants" class="nav-link">🌱 Pflanzen</a>
           <a href="/garden" class="nav-link">🌻 Garten</a>
+          <a href="/calendar" class="nav-link">📅 Kalender</a>
           <a href="/logs" class="nav-link">📜 Logs</a>
         </nav>
         <a href="/index" class="btn btn-primary nav-action-btn"
@@ -350,6 +351,15 @@
           <div class="form-group">
             <label for="editTaskDescription">Beschreibung</label>
             <textarea id="editTaskDescription" rows="4"></textarea>
+          </div>
+
+          <!-- Dependencies Section (#242) -->
+          <div class="form-group">
+            <label for="editTaskDependencies">Blockiert durch (Abhaengigkeiten)</label>
+            <select id="editTaskDependencies" multiple class="dependencies-select" aria-label="Aufgaben-Abhaengigkeiten auswaehlen">
+              <!-- Dynamisch befuellt -->
+            </select>
+            <small class="form-hint">Shift+Klick oder Ctrl+Klick fuer Mehrfachauswahl</small>
           </div>
 
           <!-- Subtasks Section -->

@@ -48,6 +48,8 @@
   var plantCategories = [];
   var currentPlantCategory = '';
   var showPlantFavoritesOnly = false;
+  var showSeasonalOnly = false;
+  var selectedSeasonMonth = new Date().getMonth(); // 0-11
   var API_BASE = '/api/v1';
 
   var STRUCTURES = [
@@ -71,7 +73,8 @@
     panX: 0,
     panY: 0,
     gridVisible: true,
-    gridScale: DEFAULT_GRID_SCALE
+    gridScale: DEFAULT_GRID_SCALE,
+    multiSelected: []  // Mehrfach-Auswahl (#255)
   };
 
   var gardenData = createEmptyGarden();
@@ -84,6 +87,9 @@
 
   // Drag state
   var dragState = null;
+
+  // Mehrfach-Auswahl: Selektionsrechteck (#255)
+  var selectRectState = null; // { startX, startY }
 
   // Edit panel state (#250)
   var editPanelOpen = false;
@@ -544,6 +550,10 @@
       if (state.selectedElement === area.id) {
         polygon.classList.add('selected');
       }
+      // Mehrfach-Auswahl markierung (#255)
+      if (state.multiSelected && state.multiSelected.indexOf(area.id) !== -1) {
+        polygon.classList.add('multi-selected');
+      }
 
       // Notizen-Label fuer Flaeche (#250)
       if (area.notes) {
@@ -597,6 +607,14 @@
       if (state.selectedElement === el.id) {
         g.classList.add('selected');
       }
+      // Mehrfach-Auswahl markierung (#255)
+      if (state.multiSelected && state.multiSelected.indexOf(el.id) !== -1) {
+        g.classList.add('multi-selected');
+      }
+
+      // Saisonale Darstellung (#253): Pflanzen ausserhalb der Saison abdunkeln
+      var plantDef = findPlantDef(el);
+      var outOfSeason = plantDef && !isPlantInSeason(plantDef, selectedSeasonMonth);
 
       var radius = 18;
       var circle = createSVGElement('circle');
@@ -604,10 +622,13 @@
       circle.setAttribute('cy', '0');
       circle.setAttribute('r', String(radius));
       circle.setAttribute('fill', el.color || '#E0E0E0');
-      circle.setAttribute('fill-opacity', '0.8');
-      circle.setAttribute('stroke', el.color || '#BDBDBD');
+      circle.setAttribute('fill-opacity', outOfSeason ? '0.3' : '0.8');
+      circle.setAttribute('stroke', outOfSeason ? '#999' : (el.color || '#BDBDBD'));
       circle.setAttribute('stroke-width', '1.5');
       circle.setAttribute('class', 'element-circle');
+      if (outOfSeason) {
+        circle.setAttribute('stroke-dasharray', '3 2');
+      }
       g.appendChild(circle);
 
       var text = createSVGElement('text');
@@ -616,6 +637,7 @@
       text.setAttribute('text-anchor', 'middle');
       text.setAttribute('font-size', '18');
       text.setAttribute('pointer-events', 'none');
+      if (outOfSeason) text.setAttribute('opacity', '0.4');
       text.textContent = el.icon || '?';
       g.appendChild(text);
 
@@ -624,6 +646,7 @@
       label.setAttribute('x', '0');
       label.setAttribute('y', '30');
       label.setAttribute('class', 'element-label');
+      if (outOfSeason) label.setAttribute('opacity', '0.4');
       label.textContent = el.name;
       g.appendChild(label);
 
@@ -642,6 +665,40 @@
 
       g.addEventListener('mousedown', onElementMouseDown);
       g.addEventListener('click', onElementClick);
+
+      // Erweiterten Tooltip mit Saisondetails anzeigen (#253)
+      (function(element, pDef, oos) {
+        g.addEventListener('mouseenter', function () {
+          if (state.tool !== 'select' || dragState) return;
+          var tipHtml = '<div class="garden-tooltip-title">' + escapeText(element.name) + '</div>';
+          if (pDef) {
+            var seasonLabels = { spring: 'Fr\u00fchling', summer: 'Sommer', autumn: 'Herbst', winter: 'Winter' };
+            if (pDef.season && pDef.season.length > 0) {
+              var seasons = pDef.season.map(function (s) { return seasonLabels[s] || s; }).join(', ');
+              tipHtml += '<div class="garden-tooltip-stat">Saison: ' + escapeText(seasons) + '</div>';
+            }
+            if (pDef.germination) {
+              tipHtml += '<div class="garden-tooltip-stat">Keimung: ' + escapeText(pDef.germination) + '</div>';
+            }
+            if (pDef.harvest) {
+              tipHtml += '<div class="garden-tooltip-stat">Ernte: ' + escapeText(pDef.harvest) + '</div>';
+            }
+            if (oos) {
+              tipHtml += '<div class="garden-tooltip-stat" style="color:#ef4444;font-weight:600">Nicht in Saison (' + MONTH_NAMES[selectedSeasonMonth] + ')</div>';
+            } else if (pDef.season && pDef.season.length > 0) {
+              tipHtml += '<div class="garden-tooltip-stat" style="color:#22c55e;font-weight:600">In Saison (' + MONTH_NAMES[selectedSeasonMonth] + ')</div>';
+            }
+          }
+          var tip = dom.tooltip;
+          if (tip) {
+            tip.innerHTML = tipHtml;
+            tip.style.display = 'block';
+          }
+        });
+        g.addEventListener('mouseleave', hideTooltip);
+        g.addEventListener('mousemove', moveTooltip);
+      })(el, plantDef, outOfSeason);
+
       layer.appendChild(g);
     });
   }
@@ -761,6 +818,7 @@
     // Deselect element when changing tools
     if (tool !== 'select') {
       state.selectedElement = null;
+      state.multiSelected = [];
       renderAll();
     }
 
@@ -816,6 +874,184 @@
   }
 
   // =====================================================
+  // Mehrfach-Auswahl (#255)
+  // =====================================================
+
+  /**
+   * Fuegt eine ID zur Multi-Auswahl hinzu oder entfernt sie.
+   */
+  function toggleMultiSelect(id) {
+    var idx = state.multiSelected.indexOf(id);
+    if (idx === -1) {
+      state.multiSelected.push(id);
+    } else {
+      state.multiSelected.splice(idx, 1);
+    }
+  }
+
+  /**
+   * Waehlt alle Elemente und Flaechen aus.
+   */
+  function selectAll() {
+    state.multiSelected = [];
+    gardenData.elements.forEach(function (el) {
+      state.multiSelected.push(el.id);
+    });
+    gardenData.layers.forEach(function (l) {
+      state.multiSelected.push(l.id);
+    });
+    renderAll();
+    setStatus(state.multiSelected.length + ' Elemente ausgewaehlt');
+  }
+
+  /**
+   * Loescht alle multi-selektierten Elemente.
+   */
+  function deleteMultiSelected() {
+    if (state.multiSelected.length === 0) return;
+    gardenConfirm('Mehrere loeschen', state.multiSelected.length + ' Elemente loeschen?').then(function (ok) {
+      if (!ok) return;
+      pushUndo();
+      var ids = state.multiSelected.slice();
+      gardenData.elements = gardenData.elements.filter(function (el) {
+        return ids.indexOf(el.id) === -1;
+      });
+      gardenData.layers = gardenData.layers.filter(function (l) {
+        return ids.indexOf(l.id) === -1;
+      });
+      state.multiSelected = [];
+      state.selectedElement = null;
+      renderAll();
+      autoSave();
+      setStatus(ids.length + ' Elemente geloescht');
+    });
+  }
+
+  /**
+   * Kopiert (dupliziert) alle multi-selektierten Elemente.
+   */
+  function copyMultiSelected() {
+    if (state.multiSelected.length === 0) return;
+    pushUndo();
+    var ids = state.multiSelected.slice();
+    var newIds = [];
+    var offset = 30;
+
+    ids.forEach(function (id) {
+      var el = gardenData.elements.find(function (e) { return e.id === id; });
+      if (el) {
+        var copy = cloneData(el);
+        copy.id = generateId();
+        copy.x += offset;
+        copy.y += offset;
+        gardenData.elements.push(copy);
+        newIds.push(copy.id);
+      }
+      var area = gardenData.layers.find(function (l) { return l.id === id; });
+      if (area) {
+        var areaCopy = cloneData(area);
+        areaCopy.id = generateId();
+        areaCopy.points = areaCopy.points.map(function (p) {
+          return [p[0] + offset, p[1] + offset];
+        });
+        gardenData.layers.push(areaCopy);
+        newIds.push(areaCopy.id);
+      }
+    });
+
+    state.multiSelected = newIds;
+    renderAll();
+    autoSave();
+    setStatus(newIds.length + ' Elemente dupliziert');
+  }
+
+  /**
+   * Verschiebt alle multi-selektierten Elemente um dx/dy.
+   */
+  function moveMultiSelected(dx, dy) {
+    if (state.multiSelected.length === 0) return;
+    var ids = state.multiSelected;
+
+    ids.forEach(function (id) {
+      var el = gardenData.elements.find(function (e) { return e.id === id; });
+      if (el) {
+        el.x += dx;
+        el.y += dy;
+      }
+      var area = gardenData.layers.find(function (l) { return l.id === id; });
+      if (area) {
+        area.points = area.points.map(function (p) {
+          return [p[0] + dx, p[1] + dy];
+        });
+      }
+    });
+  }
+
+  /**
+   * Prueft ob ein Punkt innerhalb eines Rechtecks liegt.
+   */
+  function isPointInRect(px, py, rx, ry, rw, rh) {
+    return px >= rx && px <= rx + rw && py >= ry && py <= ry + rh;
+  }
+
+  /**
+   * Selektiert alle Elemente innerhalb des Selektionsrechtecks.
+   */
+  function selectElementsInRect(x1, y1, x2, y2) {
+    var minX = Math.min(x1, x2);
+    var minY = Math.min(y1, y2);
+    var maxX = Math.max(x1, x2);
+    var maxY = Math.max(y1, y2);
+
+    state.multiSelected = [];
+
+    gardenData.elements.forEach(function (el) {
+      if (el.x >= minX && el.x <= maxX && el.y >= minY && el.y <= maxY) {
+        state.multiSelected.push(el.id);
+      }
+    });
+
+    gardenData.layers.forEach(function (area) {
+      if (!area.points || area.points.length === 0) return;
+      // Pruefe ob Mittelpunkt der Flaeche im Rechteck
+      var cx = 0, cy = 0;
+      area.points.forEach(function (p) { cx += p[0]; cy += p[1]; });
+      cx /= area.points.length;
+      cy /= area.points.length;
+      if (cx >= minX && cx <= maxX && cy >= minY && cy <= maxY) {
+        state.multiSelected.push(area.id);
+      }
+    });
+  }
+
+  /**
+   * Rendert das Selektionsrechteck waehrend des Aufziehens.
+   */
+  function renderSelectionRect(x1, y1, x2, y2) {
+    // Entferne altes Rechteck
+    var old = document.getElementById('selectionRect');
+    if (old) old.remove();
+
+    var rect = createSVGElement('rect');
+    rect.setAttribute('id', 'selectionRect');
+    rect.setAttribute('x', Math.min(x1, x2));
+    rect.setAttribute('y', Math.min(y1, y2));
+    rect.setAttribute('width', Math.abs(x2 - x1));
+    rect.setAttribute('height', Math.abs(y2 - y1));
+    rect.setAttribute('fill', 'rgba(54, 94, 61, 0.1)');
+    rect.setAttribute('stroke', 'var(--primary, #365E3D)');
+    rect.setAttribute('stroke-width', '1.5');
+    rect.setAttribute('stroke-dasharray', '5 3');
+    rect.setAttribute('pointer-events', 'none');
+    dom.layerDrawing.appendChild(rect);
+  }
+
+  function removeSelectionRect() {
+    var old = document.getElementById('selectionRect');
+    if (old) old.remove();
+  }
+
+  // =====================================================
   // Canvas Events
   // =====================================================
   function onCanvasClick(e) {
@@ -831,10 +1067,13 @@
         } else if (state.selectedStructure) {
           placeStructure(pt);
         } else {
-          // Deselect if clicking empty canvas
+          // Deselect if clicking empty canvas (nicht bei Shift/Ctrl)
           if (!e.target.closest('.area-polygon') && !e.target.closest('.element-group')) {
-            state.selectedElement = null;
-            if (editPanelOpen) closeEditPanel();
+            if (!e.shiftKey && !e.ctrlKey) {
+              state.selectedElement = null;
+              state.multiSelected = [];
+              if (editPanelOpen) closeEditPanel();
+            }
             renderAll();
           }
         }
@@ -848,6 +1087,13 @@
       renderDrawing();
     }
 
+    // Selektionsrechteck (#255)
+    if (selectRectState) {
+      var pt = mouseToSVG(e);
+      renderSelectionRect(selectRectState.startX, selectRectState.startY, pt.x, pt.y);
+      return;
+    }
+
     // Vertex-Drag (#250)
     if (vertexDragState) {
       handleVertexDrag(e);
@@ -859,13 +1105,43 @@
     }
   }
 
-  function onCanvasMouseUp() {
+  function onCanvasMouseUp(e) {
+    // Selektionsrechteck abschliessen (#255)
+    if (selectRectState) {
+      var pt = mouseToSVG(e);
+      selectElementsInRect(selectRectState.startX, selectRectState.startY, pt.x, pt.y);
+      selectRectState = null;
+      removeSelectionRect();
+      renderAll();
+      if (state.multiSelected.length > 0) {
+        setStatus(state.multiSelected.length + ' Elemente ausgewaehlt');
+      }
+      return;
+    }
+
     if (vertexDragState) {
       endVertexDrag();
     }
     if (dragState) {
       endDrag();
     }
+  }
+
+  /**
+   * Startet das Selektionsrechteck beim Mousedown auf leerem Canvas (#255).
+   */
+  function onCanvasMouseDown(e) {
+    if (state.tool !== 'select') return;
+    if (state.selectedPlant || state.selectedStructure) return;
+    // Nur auf leerem Canvas starten (nicht auf Elementen/Flaechen)
+    if (e.target.closest('.area-polygon') || e.target.closest('.element-group')) return;
+    if (e.button !== 0) return; // Nur linke Maustaste
+
+    var pt = mouseToSVG(e);
+    selectRectState = {
+      startX: pt.x,
+      startY: pt.y
+    };
   }
 
   function onCanvasDblClick(e) {
@@ -967,8 +1243,17 @@
         placeStructure(pt2);
         return;
       }
-      state.selectedElement = (state.selectedElement === id) ? null : id;
-      renderAll();
+      // Shift+Klick: additive Auswahl (#255)
+      if (e.shiftKey) {
+        toggleMultiSelect(id);
+        state.selectedElement = null;
+        renderAll();
+        setStatus(state.multiSelected.length + ' Elemente ausgewaehlt');
+      } else {
+        state.multiSelected = [];
+        state.selectedElement = (state.selectedElement === id) ? null : id;
+        renderAll();
+      }
     }
   }
 
@@ -978,7 +1263,12 @@
     var id = this.getAttribute('data-id');
 
     if (state.tool === 'move') {
-      startAreaDrag(e, id);
+      // Mehrfach-Verschiebung (#255)
+      if (state.multiSelected.length > 1 && state.multiSelected.indexOf(id) !== -1) {
+        startMultiDrag(e);
+      } else {
+        startAreaDrag(e, id);
+      }
     }
   }
 
@@ -1005,10 +1295,24 @@
     var id = g.getAttribute('data-id');
 
     if (state.tool === 'delete') {
-      deleteElementById(id);
+      // Mehrfach-Auswahl loeschen (#255)
+      if (state.multiSelected.length > 0 && state.multiSelected.indexOf(id) !== -1) {
+        deleteMultiSelected();
+      } else {
+        deleteElementById(id);
+      }
     } else if (state.tool === 'select') {
-      state.selectedElement = (state.selectedElement === id) ? null : id;
-      renderAll();
+      // Shift+Klick: additive Auswahl (#255)
+      if (e.shiftKey) {
+        toggleMultiSelect(id);
+        state.selectedElement = null;
+        renderAll();
+        setStatus(state.multiSelected.length + ' Elemente ausgewaehlt');
+      } else {
+        state.multiSelected = [];
+        state.selectedElement = (state.selectedElement === id) ? null : id;
+        renderAll();
+      }
     }
   }
 
@@ -1018,7 +1322,12 @@
     var id = g.getAttribute('data-id');
 
     if (state.tool === 'move' || state.tool === 'select') {
-      startElementDrag(e, id);
+      // Mehrfach-Verschiebung (#255)
+      if (state.multiSelected.length > 1 && state.multiSelected.indexOf(id) !== -1) {
+        startMultiDrag(e);
+      } else {
+        startElementDrag(e, id);
+      }
     }
   }
 
@@ -1071,6 +1380,30 @@
     renderAll();
   }
 
+  /**
+   * Startet Gruppen-Verschiebung fuer Mehrfach-Auswahl (#255).
+   */
+  function startMultiDrag(e) {
+    var pt = mouseToSVG(e);
+    // Speichere Original-Positionen aller selektierten Elemente
+    var origPositions = {};
+    state.multiSelected.forEach(function (id) {
+      var el = gardenData.elements.find(function (e) { return e.id === id; });
+      if (el) origPositions[id] = { x: el.x, y: el.y };
+      var area = gardenData.layers.find(function (l) { return l.id === id; });
+      if (area) origPositions[id] = { points: area.points.map(function (p) { return [p[0], p[1]]; }) };
+    });
+
+    dragState = {
+      type: 'multi',
+      startX: pt.x,
+      startY: pt.y,
+      origPositions: origPositions
+    };
+
+    dom.canvasArea.classList.add('dragging');
+  }
+
   function handleDrag(e) {
     if (!dragState) return;
     var pt = mouseToSVG(e);
@@ -1094,6 +1427,23 @@
         });
         renderAreas();
       }
+    } else if (dragState.type === 'multi') {
+      // Gruppen-Verschiebung (#255)
+      Object.keys(dragState.origPositions).forEach(function (id) {
+        var orig = dragState.origPositions[id];
+        var el = gardenData.elements.find(function (e) { return e.id === id; });
+        if (el && orig.x !== undefined) {
+          el.x = Math.round(orig.x + dx);
+          el.y = Math.round(orig.y + dy);
+        }
+        var areaEl = gardenData.layers.find(function (l) { return l.id === id; });
+        if (areaEl && orig.points) {
+          areaEl.points = orig.points.map(function (p) {
+            return [Math.round(p[0] + dx), Math.round(p[1] + dy)];
+          });
+        }
+      });
+      renderAll();
     }
   }
 
@@ -1108,6 +1458,8 @@
       }
     } else if (dragState.type === 'area') {
       hasMoved = true; // simplification
+    } else if (dragState.type === 'multi') {
+      hasMoved = true; // Gruppen-Verschiebung (#255)
     }
 
     if (hasMoved) {
@@ -1124,6 +1476,20 @@
         if (areaUndo) {
           areaUndo.points = dragState.origPoints;
         }
+      } else if (dragState.type === 'multi') {
+        // Originalpositionen wiederherstellen im Undo-Snapshot
+        Object.keys(dragState.origPositions).forEach(function (id) {
+          var orig = dragState.origPositions[id];
+          var elU = undoData.elements.find(function (e) { return e.id === id; });
+          if (elU && orig.x !== undefined) {
+            elU.x = orig.x;
+            elU.y = orig.y;
+          }
+          var areaU = undoData.layers.find(function (l) { return l.id === id; });
+          if (areaU && orig.points) {
+            areaU.points = orig.points;
+          }
+        });
       }
       undoStack.push(undoData);
       if (undoStack.length > MAX_UNDO) undoStack.shift();
@@ -2215,6 +2581,42 @@
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // =====================================================
+  // Saisonale Ansicht (#253)
+  // =====================================================
+
+  var MONTH_NAMES = ['Januar', 'Februar', 'M\u00e4rz', 'April', 'Mai', 'Juni',
+    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+
+  var SEASON_FOR_MONTH = [
+    'winter', 'winter', 'spring', 'spring', 'spring', 'summer',
+    'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'
+  ];
+
+  /**
+   * Prueft ob eine Pflanze im angegebenen Monat Saison hat.
+   */
+  function isPlantInSeason(plant, month) {
+    if (!plant.season || plant.season.length === 0) return true;
+    var season = SEASON_FOR_MONTH[month];
+    return plant.season.indexOf(season) !== -1;
+  }
+
+  /**
+   * Findet die interne Pflanzendefinition fuer ein Canvas-Element.
+   */
+  function findPlantDef(el) {
+    if (el.type !== 'plant') return null;
+    for (var i = 0; i < PLANTS.length; i++) {
+      if (PLANTS[i].name === el.name) return PLANTS[i];
+    }
+    // Fallback
+    for (var j = 0; j < FALLBACK_PLANTS.length; j++) {
+      if (FALLBACK_PLANTS[j].name === el.name) return FALLBACK_PLANTS[j];
+    }
+    return null;
+  }
+
   /**
    * Zeigt den Pflanzen-Tooltip an einer bestimmten Position.
    */
@@ -2265,6 +2667,13 @@
       var favs = getPlantFavorites();
       filtered = filtered.filter(function (p) {
         return favs.indexOf(p.id) !== -1;
+      });
+    }
+
+    // Saisonaler Filter (#253)
+    if (showSeasonalOnly) {
+      filtered = filtered.filter(function (p) {
+        return isPlantInSeason(p, selectedSeasonMonth);
       });
     }
 
@@ -2523,6 +2932,7 @@
             setStatus('Zeichnung abgebrochen');
           } else {
             state.selectedElement = null;
+            state.multiSelected = [];
             deselectPlantStructure();
             renderAll();
             setStatus('Auswahl aufgehoben');
@@ -2530,14 +2940,32 @@
           break;
         case 'Delete':
         case 'Backspace':
-          if (state.selectedElement) {
-            // Delete selected element
+          // Mehrfach-Auswahl loeschen (#255)
+          if (state.multiSelected.length > 0) {
+            deleteMultiSelected();
+          } else if (state.selectedElement) {
             var isArea = gardenData.layers.some(function (l) { return l.id === state.selectedElement; });
             if (isArea) {
               deleteAreaById(state.selectedElement);
             } else {
               deleteElementById(state.selectedElement);
             }
+          }
+          break;
+        case 'a':
+        case 'A':
+          // Ctrl+A: Alles auswaehlen (#255)
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            selectAll();
+          }
+          break;
+        case 'c':
+        case 'C':
+          // Ctrl+C: Multi-Auswahl duplizieren (#255)
+          if ((e.ctrlKey || e.metaKey) && state.multiSelected.length > 0) {
+            e.preventDefault();
+            copyMultiSelected();
           }
           break;
         case 'z':
@@ -2652,6 +3080,8 @@
     dom.plantSearch = document.getElementById('plantSearch');
     dom.plantCategoryFilters = document.getElementById('plantCategoryFilters');
     dom.plantFavoritesToggle = document.getElementById('plantFavoritesToggle');
+    dom.plantSeasonalToggle = document.getElementById('plantSeasonalToggle');
+    dom.seasonMonthSelect = document.getElementById('seasonMonthSelect');
 
     // Tooltip-Element fuer Pflanzen dynamisch erstellen
     var tooltipEl = document.createElement('div');
@@ -2688,6 +3118,7 @@
 
     // Canvas events
     dom.canvasArea.addEventListener('click', onCanvasClick);
+    dom.canvasArea.addEventListener('mousedown', onCanvasMouseDown);
     dom.canvasArea.addEventListener('mousemove', onCanvasMouseMove);
     dom.canvasArea.addEventListener('mouseup', onCanvasMouseUp);
     dom.canvasArea.addEventListener('dblclick', onCanvasDblClick);
@@ -2813,6 +3244,26 @@
         showPlantFavoritesOnly = !showPlantFavoritesOnly;
         dom.plantFavoritesToggle.classList.toggle('active', showPlantFavoritesOnly);
         dom.plantFavoritesToggle.setAttribute('aria-pressed', String(showPlantFavoritesOnly));
+        renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+      });
+    }
+
+    // Saisonaler Filter binden (#253)
+    if (dom.plantSeasonalToggle) {
+      dom.plantSeasonalToggle.addEventListener('click', function () {
+        showSeasonalOnly = !showSeasonalOnly;
+        dom.plantSeasonalToggle.classList.toggle('active', showSeasonalOnly);
+        dom.plantSeasonalToggle.setAttribute('aria-pressed', String(showSeasonalOnly));
+        renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
+      });
+    }
+
+    // Saisonwechsel-Dropdown binden (#253)
+    if (dom.seasonMonthSelect) {
+      dom.seasonMonthSelect.value = String(selectedSeasonMonth);
+      dom.seasonMonthSelect.addEventListener('change', function () {
+        selectedSeasonMonth = parseInt(this.value, 10);
+        renderElements();
         renderPlantPalette(dom.plantSearch ? dom.plantSearch.value : '');
       });
     }

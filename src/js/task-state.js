@@ -334,6 +334,18 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		task.location = taskData.location;
 		task.description = taskData.description;
 
+		// Abhaengigkeiten speichern (#242)
+		var depSelect = document.getElementById("editTaskDependencies");
+		if (depSelect) {
+			var selectedDeps = [];
+			for (var i = 0; i < depSelect.options.length; i++) {
+				if (depSelect.options[i].selected) {
+					selectedDeps.push(depSelect.options[i].value);
+				}
+			}
+			task.dependencies = selectedDeps;
+		}
+
 		// Handle photos: upload new files, collect existing filenames
 		if (this.editPhotos !== undefined && this.useAPI) {
 			// Upload new photo files first
@@ -390,7 +402,7 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		if (oldDescription !== task.description)
 			changes.push("Beschreibung ge\u00e4ndert");
 		if (this.useAPI) {
-			await TaskAPI.updateTask(id, { ...taskData, photos: task.photos });
+			await TaskAPI.updateTask(id, { ...taskData, photos: task.photos, dependencies: task.dependencies || [] });
 		} else if (changes.length > 0) {
 			this.addHistoryEntry(task, "edited", { changes: changes });
 		}
@@ -596,6 +608,27 @@ GartenPlaner.prototype.toggleTaskStatus = async function (id) {
 			throw new Error(`Task with id ${id} not found`);
 		}
 		const oldStatus = task.status;
+
+		// Warnung bei offenen Abhaengigkeiten (#242)
+		if (task.status === "pending" && task.dependencies && task.dependencies.length > 0) {
+			const openDeps = task.dependencies.filter((depId) => {
+				const depTask = this.tasks.find((t) => t.id === depId);
+				return depTask && depTask.status !== "completed";
+			});
+			if (openDeps.length > 0) {
+				const depNames = openDeps.map((depId) => {
+					const depTask = this.tasks.find((t) => t.id === depId);
+					return depTask ? depTask.title : depId;
+				}).join(", ");
+				const proceed = confirm(
+					"Achtung: Diese Aufgabe hat offene Abhaengigkeiten:\n\n" +
+					depNames +
+					"\n\nTrotzdem als erledigt markieren?"
+				);
+				if (!proceed) return;
+			}
+		}
+
 		if (task.status === "pending") {
 			const taskElement = document.querySelector(`[data-task-id="${id}"]`);
 			if (taskElement) {

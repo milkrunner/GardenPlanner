@@ -152,6 +152,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                     ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ""}
                     <span class="task-title">${safeTitle}</span>
                     ${task.recurrence && task.recurrence !== "none" ? this.getRecurrenceBadge(task.recurrence) : ""}
+                    ${this.getDependencyBadge(task)}
                     ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString("de-DE")}</span>` : ""}
                 </div>
                 <div class="task-meta">
@@ -718,6 +719,34 @@ GartenPlaner.prototype.getRecurrenceBadge = (recurrence) => {
 	};
 
 	return `<span class="recurrence-badge" title="Diese Aufgabe wiederholt sich ${labels[recurrence].toLowerCase()}">${icons[recurrence] || ""}${labels[recurrence] || recurrence}</span>`;
+};
+
+/**
+ * Erzeugt ein "Blockiert durch"-Badge wenn die Aufgabe Abhaengigkeiten hat (#242).
+ */
+GartenPlaner.prototype.getDependencyBadge = function (task) {
+	if (!task.dependencies || task.dependencies.length === 0) return "";
+
+	var blockers = [];
+	var self = this;
+	task.dependencies.forEach(function (depId) {
+		var depTask = self.tasks.find(function (t) { return t.id === depId; });
+		if (depTask && depTask.status !== "completed") {
+			blockers.push(Security.escapeHtml(depTask.title));
+		}
+	});
+
+	if (blockers.length === 0) return "";
+
+	var label = blockers.length === 1
+		? "Blockiert durch: " + blockers[0]
+		: "Blockiert durch " + blockers.length + " Aufgaben";
+
+	return '<span class="dependency-badge" title="' + Security.escapeHtml(blockers.join(', ')) + '">' +
+		'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">' +
+		'<rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>' +
+		'<path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+		'</svg>' + label + '</span>';
 };
 
 GartenPlaner.prototype.renderSubtasksInModal = function (task) {
