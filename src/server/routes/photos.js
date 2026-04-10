@@ -28,11 +28,9 @@ const router = express.Router();
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: MAX_FILE_SIZE },
-    fileFilter(req, file, cb) {
-        if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Nur Bilddateien erlaubt (jpg, png, gif, webp)'));
+    fileFilter(req, file) {
+        if (!ALLOWED_MIMETYPES.includes(file.mimetype)) {
+            throw new Error('Nur Bilddateien erlaubt (jpg, png, gif, webp)');
         }
     },
 });
