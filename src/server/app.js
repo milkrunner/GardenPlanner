@@ -157,6 +157,10 @@ app.post('/api/v1/tasks/:id/photos', writeLimiter);
 app.delete('/api/v1/tasks/:id/photos/:filename', writeLimiter);
 app.post('/api/tasks/:id/photos', writeLimiter);
 app.delete('/api/tasks/:id/photos/:filename', writeLimiter);
+app.post('/api/tasks/:id/comments', writeLimiter);
+app.delete('/api/tasks/:id/comments/:commentId', writeLimiter);
+app.post('/api/v1/tasks/:id/comments', writeLimiter);
+app.delete('/api/v1/tasks/:id/comments/:commentId', writeLimiter);
 
 // --- Canonical API Routes (/api/v1) ---
 

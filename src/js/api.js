@@ -264,6 +264,19 @@ const TaskAPI = {
     async deleteArchivedTask(id) {
         return this._fetch(`/archived-tasks/${encodeURIComponent(id)}`, { method: "DELETE" });
     },
+
+    async addComment(taskId, text) {
+        return this._fetch(`/tasks/${encodeURIComponent(taskId)}/comments`, {
+            method: "POST",
+            body: JSON.stringify({ text })
+        });
+    },
+
+    async deleteComment(taskId, commentId) {
+        return this._fetch(`/tasks/${encodeURIComponent(taskId)}/comments/${encodeURIComponent(commentId)}`, {
+            method: "DELETE"
+        });
+    },
 };
 
 window.TaskAPI = TaskAPI;

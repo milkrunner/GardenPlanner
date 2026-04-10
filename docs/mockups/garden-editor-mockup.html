@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gartenplaner — Freihand-Editor Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=DM+Serif+Display&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --soil: #3E2723;
+    --soil-light: #5D4037;
+    --grass: #558B2F;
+    --grass-light: #7CB342;
+    --grass-pale: #C5E1A5;
+    --stone: #90A4AE;
+    --stone-light: #CFD8DC;
+    --sand: #D7CCC8;
+    --water: #4FC3F7;
+    --wood: #8D6E63;
+    --bg: #F5F0E8;
+    --bg-warm: #FBF7F0;
+    --text: #2E2418;
+    --text-light: #6D5D4B;
+    --border: #D4C8B8;
+    --accent: #E65100;
+    --accent-light: #FF8A65;
+    --primary: #33691E;
+    --primary-light: #689F38;
+    --shadow: rgba(62, 39, 35, 0.12);
+    --font-display: 'DM Serif Display', serif;
+    --font-body: 'Nunito', sans-serif;
+    --font-hand: 'Caveat', cursive;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    background-image:
+      radial-gradient(circle at 15% 85%, rgba(85, 139, 47, 0.04) 0%, transparent 50%),
+      radial-gradient(circle at 85% 15%, rgba(141, 110, 99, 0.04) 0%, transparent 50%);
+  }
+
+  /* === LAYOUT === */
+  .app {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 260px 1fr;
+    grid-template-areas: "header header" "sidebar canvas";
+    height: 100vh;
+  }
+
+  /* === HEADER === */
+  .header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: var(--bg-warm);
+    border-bottom: 1.5px solid var(--border);
+    box-shadow: 0 1px 4px var(--shadow);
+    z-index: 10;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--primary);
+    letter-spacing: -0.3px;
+  }
+
+  .header h1 span {
+    font-family: var(--font-hand);
+    font-size: 26px;
+    color: var(--grass);
+  }
+
+  .garden-name {
+    font-family: var(--font-hand);
+    font-size: 20px;
+    color: var(--text-light);
+    border: none;
+    background: transparent;
+    border-bottom: 1.5px dashed var(--border);
+    padding: 2px 8px;
+    outline: none;
+    width: 200px;
+  }
+
+  .garden-name:focus {
+    border-color: var(--primary-light);
+    color: var(--text);
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-warm);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn:hover { background: white; box-shadow: 0 2px 8px var(--shadow); transform: translateY(-1px); }
+  .btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+  .btn-primary:hover { background: var(--primary-light); border-color: var(--primary-light); }
+  .btn-ghost { border: none; background: transparent; color: var(--text-light); }
+  .btn-ghost:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+
+  /* === TOOLBAR (in header) === */
+  .toolbar {
+    display: flex;
+    gap: 4px;
+    background: white;
+    border-radius: 10px;
+    padding: 4px;
+    border: 1.5px solid var(--border);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .tool-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .tool-btn:hover { background: var(--grass-pale); color: var(--primary); }
+  .tool-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(51, 105, 30, 0.3); }
+
+  .tool-btn svg { width: 20px; height: 20px; }
+
+  .tool-btn[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--soil);
+    color: white;
+    font-size: 11px;
+    font-family: var(--font-body);
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .tool-separator {
+    width: 1px;
+    margin: 6px 2px;
+    background: var(--border);
+  }
+
+  /* === SIDEBAR === */
+  .sidebar {
+    grid-area: sidebar;
+    background: var(--bg-warm);
+    border-right: 1.5px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-section h3 {
+    font-family: var(--font-hand);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Surface types */
+  .surface-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .surface-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+  }
+
+  .surface-item:hover { border-color: var(--grass-pale); transform: translateY(-1px); box-shadow: 0 2px 8px var(--shadow); }
+  .surface-item.active { border-color: var(--primary); background: var(--grass-pale); }
+
+  .surface-swatch {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .surface-swatch.bed { background: linear-gradient(135deg, #5D4037, #795548); }
+  .surface-swatch.lawn { background: linear-gradient(135deg, #558B2F, #7CB342); }
+  .surface-swatch.gravel { background: var(--stone-light); background-image: radial-gradient(circle, var(--stone) 1px, transparent 1px); background-size: 6px 6px; }
+  .surface-swatch.path { background: linear-gradient(135deg, #BCAAA4, #A1887F); }
+  .surface-swatch.water-s { background: linear-gradient(135deg, #039BE5, #4FC3F7); }
+  .surface-swatch.terrace { background: linear-gradient(135deg, #A1887F, #8D6E63); background-image: repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.08) 8px, rgba(0,0,0,0.08) 9px); }
+
+  .surface-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-align: center;
+  }
+
+  /* Plant palette */
+  .plant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .plant-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.15s;
+    border: 1.5px solid transparent;
+  }
+
+  .plant-item:hover { background: white; border-color: var(--border); box-shadow: 0 2px 6px var(--shadow); }
+  .plant-item:active { cursor: grabbing; transform: scale(0.97); }
+
+  .plant-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .plant-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .plant-info {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  /* Search */
+  .sidebar-search {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236D5D4B' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='M21 21l-4.35-4.35'/%3E%3C/svg%3E") 10px center no-repeat;
+    outline: none;
+    margin-bottom: 12px;
+  }
+
+  .sidebar-search:focus { border-color: var(--primary-light); }
+
+  /* === CANVAS AREA === */
+  .canvas-area {
+    grid-area: canvas;
+    position: relative;
+    overflow: hidden;
+    background: #EDE8DF;
+    background-image:
+      radial-gradient(circle, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .canvas-area svg {
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+  }
+
+  /* Grid overlay (subtle) */
+  .grid-pattern {
+    opacity: 0.3;
+  }
+
+  /* Garden shapes */
+  .garden-area {
+    transition: opacity 0.2s;
+  }
+
+  .garden-area:hover {
+    opacity: 0.85;
+    cursor: pointer;
+  }
+
+  /* Placed plants on canvas */
+  .placed-plant {
+    cursor: move;
+    transition: transform 0.1s;
+  }
+
+  .placed-plant:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,0.2));
+  }
+
+  /* Dimension labels */
+  .dim-label {
+    font-family: var(--font-hand);
+    font-size: 14px;
+    fill: var(--text-light);
+  }
+
+  /* Drawing preview */
+  .draw-preview {
+    stroke: var(--primary);
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    fill: none;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  .draw-point {
+    fill: var(--primary);
+    stroke: white;
+    stroke-width: 2;
+    cursor: pointer;
+  }
+
+  .draw-point:first-of-type {
+    fill: var(--accent);
+    r: 7;
+  }
+
+  /* === STATUS BAR === */
+  .status-bar {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    padding: 8px 20px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 16px var(--shadow);
+    font-size: 12px;
+    color: var(--text-light);
+    z-index: 5;
+  }
+
+  .status-bar .sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+  }
+
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--text-light);
+    transition: all 0.15s;
+  }
+
+  .zoom-btn:hover { background: var(--grass-pale); color: var(--primary); }
+  .zoom-level { font-weight: 600; min-width: 40px; text-align: center; }
+
+  /* === CONTEXT MENU (floating) === */
+  .context-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 220px;
+    background: white;
+    border-radius: 14px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 8px 24px var(--shadow);
+    z-index: 5;
+    overflow: hidden;
+    animation: slideIn 0.2s ease-out;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .context-panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .context-panel-header h4 {
+    font-family: var(--font-hand);
+    font-size: 18px;
+    color: var(--primary);
+  }
+
+  .context-panel-body {
+    padding: 12px 16px;
+  }
+
+  .prop-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+  }
+
+  .prop-label { color: var(--text-light); }
+  .prop-value { font-weight: 600; color: var(--text); }
+
+  /* === UNDO BAR === */
+  .undo-bar {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    background: white;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 2px 8px var(--shadow);
+    z-index: 5;
+  }
+
+  .undo-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .undo-btn:hover { background: var(--grass-pale); color: var(--primary); }
+  .undo-btn.disabled { opacity: 0.3; pointer-events: none; }
+  .undo-btn svg { width: 18px; height: 18px; }
+
+  /* === HINT OVERLAY === */
+  .hint {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--soil);
+    color: white;
+    font-family: var(--font-hand);
+    font-size: 16px;
+    padding: 8px 20px;
+    border-radius: 20px;
+    white-space: nowrap;
+    z-index: 5;
+    animation: hintPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes hintPulse {
+    0%, 100% { opacity: 0.9; }
+    50% { opacity: 1; transform: translateX(-50%) translateY(-2px); }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .app {
+      grid-template-columns: 1fr;
+      grid-template-areas: "header" "canvas";
+    }
+    .sidebar { display: none; }
+    .garden-name { width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <h1><span>&#127793;</span> Gartenplaner</h1>
+      <input class="garden-name" value="Hinterhof Niklas" placeholder="Gartenname...">
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <button class="tool-btn" data-tooltip="Auswählen" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+      </button>
+      <button class="tool-btn active" data-tooltip="Fläche zeichnen" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
+      </button>
+      <button class="tool-btn" data-tooltip="Freihand" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+      </button>
+      <div class="tool-separator"></div>
+      <button class="tool-btn" data-tooltip="Pflanze setzen" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12"/><path d="M12 12C12 7 7 2 2 2c0 5 5 10 10 10z"/><path d="M12 12c0-5 5-10 10-10 0 5-5 10-10 10z"/></svg>
+      </button>
+      <button class="tool-btn" data-tooltip="Struktur" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </button>
+      <div class="tool-separator"></div>
+      <button class="tool-btn" data-tooltip="Verschieben" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+      </button>
+      <button class="tool-btn" data-tooltip="Löschen" onclick="setTool(this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </button>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-ghost">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+        Raster
+      </button>
+      <button class="btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exportieren
+      </button>
+      <button class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Speichern
+      </button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <h3>&#127793; Flächen</h3>
+      <div class="surface-grid">
+        <div class="surface-item active" onclick="selectSurface(this)">
+          <div class="surface-swatch bed"></div>
+          <span class="surface-label">Beet</span>
+        </div>
+        <div class="surface-item" onclick="selectSurface(this)">
+          <div class="surface-swatch lawn"></div>
+          <span class="surface-label">Rasen</span>
+        </div>
+        <div class="surface-item" onclick="selectSurface(this)">
+          <div class="surface-swatch gravel"></div>
+          <span class="surface-label">Kies</span>
+        </div>
+        <div class="surface-item" onclick="selectSurface(this)">
+          <div class="surface-swatch path"></div>
+          <span class="surface-label">Weg</span>
+        </div>
+        <div class="surface-item" onclick="selectSurface(this)">
+          <div class="surface-swatch water-s"></div>
+          <span class="surface-label">Wasser</span>
+        </div>
+        <div class="surface-item" onclick="selectSurface(this)">
+          <div class="surface-swatch terrace"></div>
+          <span class="surface-label">Terrasse</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>&#127807; Pflanzen</h3>
+      <input class="sidebar-search" placeholder="Pflanze suchen...">
+      <div class="plant-list">
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #FFCDD2;">&#127813;</div>
+          <div><div class="plant-name">Tomate</div><div class="plant-info">Sonnig, Mai-Sep</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #C8E6C9;">&#129382;</div>
+          <div><div class="plant-name">Salat</div><div class="plant-info">Halbschatten, Mrz-Okt</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #FFE0B2;">&#127804;</div>
+          <div><div class="plant-name">Sonnenblume</div><div class="plant-info">Sonnig, Apr-Sep</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #D1C4E9;">&#129382;</div>
+          <div><div class="plant-name">Lavendel</div><div class="plant-info">Sonnig, mehrjährig</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #FFCCBC;">&#127798;</div>
+          <div><div class="plant-name">Rose</div><div class="plant-info">Sonnig, mehrjährig</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #C5E1A5;">&#129361;</div>
+          <div><div class="plant-name">Gurke</div><div class="plant-info">Sonnig, Mai-Aug</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #BBDEFB;">&#129744;</div>
+          <div><div class="plant-name">Blaubeere</div><div class="plant-info">Halbschatten, mehrj.</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #F0F4C3;">&#127806;</div>
+          <div><div class="plant-name">Basilikum</div><div class="plant-info">Sonnig, Mai-Sep</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>&#127960; Strukturen</h3>
+      <div class="plant-list">
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #D7CCC8;">&#129717;</div>
+          <div><div class="plant-name">Gartenbank</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #EFEBE9;">&#9970;</div>
+          <div><div class="plant-name">Zaun</div></div>
+        </div>
+        <div class="plant-item" draggable="true">
+          <div class="plant-icon" style="background: #E0E0E0;">&#129516;</div>
+          <div><div class="plant-name">Kompost</div></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CANVAS -->
+  <div class="canvas-area">
+    <svg id="gardenSvg" viewBox="0 0 1200 800">
+      <!-- Grid pattern (subtle) -->
+      <defs>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle cx="10" cy="10" r="0.5" fill="rgba(0,0,0,0.15)"/>
+        </pattern>
+        <!-- Surface patterns -->
+        <pattern id="pat-lawn" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect width="8" height="8" fill="#7CB342"/>
+          <line x1="0" y1="4" x2="3" y2="0" stroke="#689F38" stroke-width="0.5"/>
+          <line x1="5" y1="8" x2="8" y2="5" stroke="#689F38" stroke-width="0.5"/>
+        </pattern>
+        <pattern id="pat-gravel" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#CFD8DC"/>
+          <circle cx="2" cy="2" r="0.8" fill="#B0BEC5"/>
+          <circle cx="5" cy="4" r="0.6" fill="#90A4AE"/>
+        </pattern>
+        <pattern id="pat-bed" width="10" height="10" patternUnits="userSpaceOnUse">
+          <rect width="10" height="10" fill="#5D4037"/>
+          <circle cx="3" cy="7" r="0.7" fill="#4E342E" opacity="0.5"/>
+          <circle cx="8" cy="3" r="0.5" fill="#4E342E" opacity="0.4"/>
+        </pattern>
+        <pattern id="pat-path" width="12" height="12" patternUnits="userSpaceOnUse">
+          <rect width="12" height="12" fill="#A1887F"/>
+          <rect x="0" y="0" width="5" height="5" rx="1" fill="#8D6E63" opacity="0.3"/>
+          <rect x="6" y="6" width="5" height="5" rx="1" fill="#8D6E63" opacity="0.3"/>
+        </pattern>
+      </defs>
+
+      <rect width="1200" height="800" fill="url(#grid)"/>
+
+      <!-- Example: A garden with drawn areas -->
+      <!-- Main garden outline (lawn) -->
+      <polygon class="garden-area"
+        points="150,120 750,100 820,180 850,450 780,620 500,680 180,650 100,400"
+        fill="url(#pat-lawn)" stroke="#558B2F" stroke-width="2.5" opacity="0.9"/>
+
+      <!-- Flower bed -->
+      <polygon class="garden-area"
+        points="200,200 500,180 520,350 450,400 200,380"
+        fill="url(#pat-bed)" stroke="#5D4037" stroke-width="2" opacity="0.9"/>
+
+      <!-- Gravel path -->
+      <polygon class="garden-area"
+        points="520,350 580,320 620,500 560,520"
+        fill="url(#pat-gravel)" stroke="#90A4AE" stroke-width="1.5" opacity="0.9"/>
+
+      <!-- Stone path -->
+      <polygon class="garden-area"
+        points="620,500 700,480 720,600 640,620"
+        fill="url(#pat-path)" stroke="#8D6E63" stroke-width="1.5" opacity="0.9"/>
+
+      <!-- Water feature -->
+      <ellipse class="garden-area"
+        cx="700" cy="350" rx="60" ry="45"
+        fill="#4FC3F7" stroke="#039BE5" stroke-width="2" opacity="0.7"/>
+      <ellipse cx="700" cy="350" rx="45" ry="32"
+        fill="none" stroke="white" stroke-width="0.5" opacity="0.4"/>
+
+      <!-- Terrace -->
+      <rect class="garden-area"
+        x="150" y="480" width="200" height="150" rx="8"
+        fill="#A1887F" stroke="#8D6E63" stroke-width="2" opacity="0.9"/>
+      <!-- Terrace wood lines -->
+      <line x1="150" y1="500" x2="350" y2="500" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+      <line x1="150" y1="520" x2="350" y2="520" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+      <line x1="150" y1="540" x2="350" y2="540" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+      <line x1="150" y1="560" x2="350" y2="560" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+      <line x1="150" y1="580" x2="350" y2="580" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+      <line x1="150" y1="600" x2="350" y2="600" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+
+      <!-- Dimension annotations (handwritten style) -->
+      <text class="dim-label" x="430" y="85" transform="rotate(-2, 430, 85)">12 m</text>
+      <line x1="160" y1="95" x2="740" y2="95" stroke="var(--text-light)" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.5"/>
+
+      <text class="dim-label" x="70" y="400" transform="rotate(-90, 70, 400)">9 m</text>
+      <line x1="85" y1="130" x2="85" y2="640" stroke="var(--text-light)" stroke-width="0.8" stroke-dasharray="4 3" opacity="0.5"/>
+
+      <!-- Placed plants -->
+      <g class="placed-plant" transform="translate(250, 260)">
+        <circle r="16" fill="#FFCDD2" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#127813;</text>
+      </g>
+      <g class="placed-plant" transform="translate(310, 240)">
+        <circle r="16" fill="#FFCDD2" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#127813;</text>
+      </g>
+      <g class="placed-plant" transform="translate(370, 250)">
+        <circle r="16" fill="#FFCDD2" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#127813;</text>
+      </g>
+      <g class="placed-plant" transform="translate(280, 330)">
+        <circle r="16" fill="#C8E6C9" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#129382;</text>
+      </g>
+      <g class="placed-plant" transform="translate(340, 340)">
+        <circle r="16" fill="#C8E6C9" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#129382;</text>
+      </g>
+      <g class="placed-plant" transform="translate(430, 290)">
+        <circle r="16" fill="#FFE0B2" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#127804;</text>
+      </g>
+
+      <!-- Roses along path -->
+      <g class="placed-plant" transform="translate(540, 380)">
+        <circle r="14" fill="#FFCCBC" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="16">&#127798;</text>
+      </g>
+      <g class="placed-plant" transform="translate(570, 430)">
+        <circle r="14" fill="#FFCCBC" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="16">&#127798;</text>
+      </g>
+
+      <!-- Lavender -->
+      <g class="placed-plant" transform="translate(750, 250)">
+        <circle r="14" fill="#D1C4E9" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="16">&#129382;</text>
+      </g>
+      <g class="placed-plant" transform="translate(790, 300)">
+        <circle r="14" fill="#D1C4E9" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="16">&#129382;</text>
+      </g>
+
+      <!-- Bench on terrace -->
+      <g class="placed-plant" transform="translate(250, 530)">
+        <circle r="16" fill="#D7CCC8" stroke="white" stroke-width="2"/>
+        <text text-anchor="middle" dominant-baseline="central" font-size="18">&#129717;</text>
+      </g>
+
+      <!-- Drawing in progress: new polygon being drawn -->
+      <polyline class="draw-preview"
+        points="850,200 950,180 980,280 960,350"/>
+      <circle class="draw-point" cx="850" cy="200" r="6"/>
+      <circle class="draw-point" cx="950" cy="180" r="5"/>
+      <circle class="draw-point" cx="980" cy="280" r="5"/>
+      <circle class="draw-point" cx="960" cy="350" r="5"/>
+
+      <!-- Label for area being drawn -->
+      <text x="945" y="260" font-family="Caveat, cursive" font-size="13" fill="var(--primary)" opacity="0.7">Neues Beet?</text>
+    </svg>
+
+    <!-- Undo/Redo bar -->
+    <div class="undo-bar">
+      <button class="undo-btn" data-tooltip="Rückgängig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+      <button class="undo-btn disabled" data-tooltip="Wiederholen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+      </button>
+    </div>
+
+    <!-- Context panel (shown when area selected) -->
+    <div class="context-panel">
+      <div class="context-panel-header">
+        <h4>&#127793; Blumenbeet</h4>
+        <button class="btn-ghost" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--text-light);">&times;</button>
+      </div>
+      <div class="context-panel-body">
+        <div class="prop-row">
+          <span class="prop-label">Typ</span>
+          <span class="prop-value">Beet</span>
+        </div>
+        <div class="prop-row">
+          <span class="prop-label">Fläche</span>
+          <span class="prop-value">~18 m&sup2;</span>
+        </div>
+        <div class="prop-row">
+          <span class="prop-label">Pflanzen</span>
+          <span class="prop-value">6 Stück</span>
+        </div>
+        <div class="prop-row" style="padding-top: 8px; border-top: 1px solid var(--border);">
+          <span class="prop-label">Sonnenlicht</span>
+          <span class="prop-value">&#9728;&#65039; Voll</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hint -->
+    <div class="hint">Klicke um Punkte zu setzen &mdash; Doppelklick zum Abschliessen</div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="zoom-controls">
+        <button class="zoom-btn" onclick="changeZoom(-10)">-</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="zoom-btn" onclick="changeZoom(10)">+</button>
+      </div>
+      <div class="sep"></div>
+      <span>&#127793; 11 Pflanzen</span>
+      <div class="sep"></div>
+      <span>&#9634; 5 Flächen</span>
+      <div class="sep"></div>
+      <span>~85 m&sup2; Garten</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tool selection
+  function setTool(btn) {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // Surface selection
+  function selectSurface(el) {
+    document.querySelectorAll('.surface-item').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  // Zoom
+  let zoom = 100;
+  function changeZoom(delta) {
+    zoom = Math.min(200, Math.max(50, zoom + delta));
+    document.getElementById('zoomLevel').textContent = zoom + '%';
+  }
+
+  // Plant hover effect
+  document.querySelectorAll('.placed-plant').forEach(p => {
+    p.addEventListener('mouseenter', () => {
+      p.style.filter = 'drop-shadow(0 3px 8px rgba(0,0,0,0.25))';
+    });
+    p.addEventListener('mouseleave', () => {
+      p.style.filter = '';
+    });
+  });
+</script>
+
+</body>
+</html>

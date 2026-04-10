@@ -65,6 +65,11 @@ async function migrate() {
         END $$
     `);
 
+    // Spalte comments hinzufuegen falls noch nicht vorhanden (#243)
+    await query(`
+        ALTER TABLE tasks ADD COLUMN IF NOT EXISTS comments JSONB DEFAULT '[]'
+    `);
+
     console.log('Tables created.');
 
     const { rows } = await query('SELECT count(*) as cnt FROM tasks');

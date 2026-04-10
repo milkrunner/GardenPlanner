@@ -423,6 +423,62 @@ async function deleteArchivedTask(id) {
     return { error: false };
 }
 
+/**
+ * Add a comment to a task.
+ * @param {string} taskId - Task UUID
+ * @param {string} text - Comment text
+ * @param {string} username - Author username
+ * @returns {Promise<TaskOperationResult>} Result with the updated task or error
+ */
+async function addComment(taskId, text, username) {
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+        return { error: true, status: 400, message: 'Kommentartext darf nicht leer sein' };
+    }
+    if (text.trim().length > 2000) {
+        return { error: true, status: 400, message: 'Kommentar darf maximal 2000 Zeichen lang sein' };
+    }
+
+    const existing = await store.getTaskById(taskId);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Task not found' };
+    }
+
+    const comments = Array.isArray(existing.comments) ? existing.comments : [];
+    const comment = {
+        id: uuidv4(),
+        username: username || 'Anonym',
+        text: text.trim(),
+        createdAt: new Date().toISOString()
+    };
+    comments.push(comment);
+
+    const updated = await store.updateTask(taskId, { comments });
+    return { error: false, task: updated, comment };
+}
+
+/**
+ * Delete a comment from a task.
+ * @param {string} taskId - Task UUID
+ * @param {string} commentId - Comment UUID
+ * @returns {Promise<TaskOperationResult>} Result with the updated task or error
+ */
+async function deleteComment(taskId, commentId) {
+    const existing = await store.getTaskById(taskId);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Task not found' };
+    }
+
+    const comments = Array.isArray(existing.comments) ? existing.comments : [];
+    const index = comments.findIndex(c => c.id === commentId);
+    if (index === -1) {
+        return { error: true, status: 404, message: 'Kommentar nicht gefunden' };
+    }
+
+    comments.splice(index, 1);
+    const updated = await store.updateTask(taskId, { comments });
+    return { error: false, task: updated };
+}
+
 module.exports = {
     paginate,
     listTasks,
@@ -434,5 +490,7 @@ module.exports = {
     archiveTask,
     unarchiveTask,
     listArchivedTasks,
-    deleteArchivedTask
+    deleteArchivedTask,
+    addComment,
+    deleteComment
 };

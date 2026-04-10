@@ -161,6 +161,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                 ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
                 ${this.renderSubtasksProgress(task)}
                 ${this.renderPhotoThumbnails(task)}
+                ${this.renderCommentBadge(task)}
             </div>
             <div class="task-actions" role="group" aria-label="Aufgaben-Aktionen">
                 ${
@@ -885,6 +886,15 @@ GartenPlaner.prototype.renderPhotoThumbnails = function (task) {
 		.join("");
 
 	return '<div class="task-photo-thumbnails">' + thumbnails + '</div>';
+};
+
+GartenPlaner.prototype.renderCommentBadge = function (task) {
+	var comments = Array.isArray(task.comments) ? task.comments : [];
+	if (comments.length === 0) return "";
+	return '<span class="comment-badge" title="' + comments.length + ' Kommentar' + (comments.length !== 1 ? 'e' : '') + '">' +
+		'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 3px;">' +
+		'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+		'</svg>' + comments.length + '</span>';
 };
 
 GartenPlaner.prototype.openPhotoLightbox = function (src) {

@@ -90,7 +90,27 @@
       "Bash(sed -i 's|https://repo.inform-software.com/artifactory/api/npm/npmjs/|https://registry.npmjs.org/|g' package-lock.json)",
       "Bash(sed -i 's|http://repo.inform-software.com/artifactory/api/npm/npmjs/|https://registry.npmjs.org/|g' package-lock.json)",
       "Bash(grep -l:*)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(node scripts/build.js)",
+      "Read(//tmp/**)",
+      "Bash(grep -r \"api/\" public/*.html)",
+      "Bash(find .:*)",
+      "Bash(grep -r \"photo\\\\|image\\\\|attachment\\\\|upload\" public/*.html --include=\"*.html\")",
+      "Bash(grep -r \"weather\\\\|Wetter\" public/*.html)",
+      "Bash(npm audit:*)",
+      "Bash(grep -n \"PUT.*api.*tasks\\\\|updateTask\" /c/Git/GardenPlanner/src/server/services/*.js)",
+      "Bash(grep -n \"scripts/build.js\\\\|webpack\\\\|bundle\" /c/Git/GardenPlanner/scripts/*.js)",
+      "Bash(curl -sO https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-sw.js)",
+      "Bash(curl -sO https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-routing.prod.js)",
+      "Bash(curl -sO https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-strategies.prod.js)",
+      "Bash(curl -sO https://storage.googleapis.com/workbox-cdn/releases/7.3.0/workbox-cacheable-response.prod.js)",
+      "Bash(timeout 60 bash -c 'npm test 2>&1 | tail -15')",
+      "Bash(timeout 60 bash -c 'npm test 2>&1 | tail -8')",
+      "Bash(bash:*)",
+      "Bash(node:*)",
+      "Bash(export PATH=\"/c/Program Files/Git/cmd:$PATH\")",
+      "Bash(grep -v -E '^\\(develop|main\\)$')",
+      "Bash(export PATH=\"/c/Program Files/Git/cmd:/c/Program Files/Git/usr/bin:$PATH\")"
     ]
   }
 }
