@@ -3,9 +3,12 @@ name: Version Bump Check
 on:
   pull_request:
     branches: [develop, main]
+  push:
+    branches: [develop, main]
 
 jobs:
-  check-version:
+  check-version-pr:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR branch
@@ -28,3 +31,31 @@ jobs:
             exit 1
           fi
           echo "✓ Version bumped: ${{ steps.base.outputs.version }} → ${{ steps.pr.outputs.version }}"
+
+  check-version-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check version changed in this push
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          PREVIOUS=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version" 2>/dev/null || echo "unknown")
+
+          if [ "$PREVIOUS" = "unknown" ]; then
+            echo "✓ Could not determine previous version (initial commit?). Current: $CURRENT"
+            exit 0
+          fi
+
+          # Check if package.json changed in this push
+          if git diff HEAD~1 HEAD --name-only | grep -q "^package.json$"; then
+            if [ "$CURRENT" = "$PREVIOUS" ]; then
+              echo "::warning::package.json was modified but version was not bumped ($CURRENT). Consider bumping the version."
+            else
+              echo "✓ Version bumped: $PREVIOUS → $CURRENT"
+            fi
+          fi

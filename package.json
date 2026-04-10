@@ -1,6 +1,6 @@
 {
   "name": "gartenplaner",
-  "version": "3.8.1",
+  "version": "3.8.2",
   "description": "Gartenplaner - Webanwendung mit REST API zur Verwaltung von Gartenaufgaben",
   "main": "server.js",
   "scripts": {
