@@ -1,0 +1,70 @@
+<h2>Wie soll das Gitter aussehen?</h2>
+<p class="subtitle">Das Grid wird als Hintergrund auf dem Canvas angezeigt. Klick auf die Variante die dir am besten gefaellt.</p>
+
+<div class="cards">
+  <div class="card" data-choice="dots" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:#F5F3EE;position:relative;overflow:hidden;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="dotGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="20" cy="20" r="1.5" fill="rgba(0,0,0,0.15)"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dotGrid)"/>
+        <!-- Example polygon -->
+        <polygon points="60,40 180,30 200,120 140,160 50,130" fill="#8B6F47" fill-opacity="0.6" stroke="#7A5F3A" stroke-width="2"/>
+        <text x="120" y="95" text-anchor="middle" font-size="14" fill="white" font-family="sans-serif">Beet</text>
+        <!-- Example plant -->
+        <circle cx="260" cy="80" r="18" fill="#FFCDD2" stroke="#E57373" stroke-width="1.5"/>
+        <text x="260" y="86" text-anchor="middle" font-size="18">🍅</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A) Punkt-Raster</h3>
+      <p>Dezente Punkte, unaufdringlich. Wie in Figma/Miro. Gut fuer organische Gaerten.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="lines" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:#F5F3EE;position:relative;overflow:hidden;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="lineGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#lineGrid)"/>
+        <polygon points="60,40 180,30 200,120 140,160 50,130" fill="#8B6F47" fill-opacity="0.6" stroke="#7A5F3A" stroke-width="2"/>
+        <text x="120" y="95" text-anchor="middle" font-size="14" fill="white" font-family="sans-serif">Beet</text>
+        <circle cx="260" cy="80" r="18" fill="#FFCDD2" stroke="#E57373" stroke-width="1.5"/>
+        <text x="260" y="86" text-anchor="middle" font-size="18">🍅</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B) Linien-Raster</h3>
+      <p>Klassisches Millimeterpapier-Feeling. Gut fuer rechteckige Beete und praezises Zeichnen.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="crosshair" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:220px;background:#F5F3EE;position:relative;overflow:hidden;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="crossGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <line x1="18" y1="20" x2="22" y2="20" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+            <line x1="20" y1="18" x2="20" y2="22" stroke="rgba(0,0,0,0.12)" stroke-width="0.8"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#crossGrid)"/>
+        <polygon points="60,40 180,30 200,120 140,160 50,130" fill="#8B6F47" fill-opacity="0.6" stroke="#7A5F3A" stroke-width="2"/>
+        <text x="120" y="95" text-anchor="middle" font-size="14" fill="white" font-family="sans-serif">Beet</text>
+        <circle cx="260" cy="80" r="18" fill="#FFCDD2" stroke="#E57373" stroke-width="1.5"/>
+        <text x="260" y="86" text-anchor="middle" font-size="18">🍅</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C) Kreuz-Raster</h3>
+      <p>Kleine Kreuze an den Schnittpunkten. Kompromiss: Orientierung ohne visuelles Rauschen.</p>
+    </div>
+  </div>
+</div>

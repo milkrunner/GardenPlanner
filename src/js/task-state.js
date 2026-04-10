@@ -923,11 +923,12 @@ GartenPlaner.prototype.getAllHistory = function () {
 	return allHistory;
 };
 
-GartenPlaner.prototype.bulkCompleteTasksAction = function () {
+GartenPlaner.prototype.bulkCompleteTasksAction = async function () {
 	if (this.selectedTasks.size === 0) {
 		this.showNotification("\u26a0\ufe0f Keine Aufgaben ausgew\u00e4hlt");
 		return;
 	}
+	const ids = Array.from(this.selectedTasks);
 	const previousStates = [];
 	this.selectedTasks.forEach((taskId) => {
 		const task = this.tasks.find((t) => t.id === taskId);
@@ -942,6 +943,11 @@ GartenPlaner.prototype.bulkCompleteTasksAction = function () {
 	this.selectedTasks.clear();
 	this.renderTasks();
 	this.updateStatistics();
+	this.showNotification("\u2705 " + count + " Aufgabe(n) als erledigt markiert");
+	// API Batch-Call (#244)
+	if (this.useAPI && window.TaskAPI && window.TaskAPI.batchUpdate) {
+		try { await window.TaskAPI.batchUpdate(ids, 'status', 'completed'); } catch (e) { /* Offline-Tolerant */ }
+	}
 	this._registerUndo({
 		type: "bulkComplete",
 		description: `${count} Aufgabe(n) als erledigt markiert`,
@@ -955,11 +961,12 @@ GartenPlaner.prototype.bulkCompleteTasksAction = function () {
 	});
 };
 
-GartenPlaner.prototype.bulkUncompleteTasksAction = function () {
+GartenPlaner.prototype.bulkUncompleteTasksAction = async function () {
 	if (this.selectedTasks.size === 0) {
 		this.showNotification("\u26a0\ufe0f Keine Aufgaben ausgew\u00e4hlt");
 		return;
 	}
+	const ids = Array.from(this.selectedTasks);
 	const previousStates = [];
 	this.selectedTasks.forEach((taskId) => {
 		const task = this.tasks.find((t) => t.id === taskId);
@@ -974,6 +981,11 @@ GartenPlaner.prototype.bulkUncompleteTasksAction = function () {
 	this.selectedTasks.clear();
 	this.renderTasks();
 	this.updateStatistics();
+	this.showNotification("\u2705 " + count + " Aufgabe(n) reaktiviert");
+	// API Batch-Call (#244)
+	if (this.useAPI && window.TaskAPI && window.TaskAPI.batchUpdate) {
+		try { await window.TaskAPI.batchUpdate(ids, 'status', 'pending'); } catch (e) { /* Offline-Tolerant */ }
+	}
 	this._registerUndo({
 		type: "bulkUncomplete",
 		description: `${count} Aufgabe(n) reaktiviert`,
@@ -1002,6 +1014,7 @@ GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
 		danger: true,
 	});
 	if (confirmed) {
+		const ids = Array.from(this.selectedTasks);
 		const deletedTasks = this.tasks.filter((task) => this.selectedTasks.has(task.id)).map((t) => ({ ...t }));
 		this.tasks = this.tasks.filter((task) => !this.selectedTasks.has(task.id));
 		this.selectedTasks.clear();
@@ -1010,6 +1023,11 @@ GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
 		this.updateStatistics();
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
+		this.showNotification("\u2705 " + count + " Aufgabe(n) gel\u00f6scht");
+		// API Batch-Call (#244)
+		if (this.useAPI && window.TaskAPI && window.TaskAPI.batchDelete) {
+			try { await window.TaskAPI.batchDelete(ids); } catch (e) { /* Offline-Tolerant */ }
+		}
 		this._registerUndo({
 			type: "bulkDelete",
 			description: `${count} Aufgabe(n) gel\u00f6scht`,
@@ -1036,6 +1054,7 @@ GartenPlaner.prototype.bulkArchiveTasksAction = async function () {
 		cancelText: "Abbrechen",
 	});
 	if (confirmed) {
+		const ids = Array.from(this.selectedTasks);
 		const archivedTasksCopy = this.tasks.filter((task) => this.selectedTasks.has(task.id)).map((t) => ({ ...t }));
 		const tasksToArchive = this.tasks.filter((task) => this.selectedTasks.has(task.id));
 		tasksToArchive.forEach((task) => {
@@ -1050,16 +1069,59 @@ GartenPlaner.prototype.bulkArchiveTasksAction = async function () {
 		this.updateStatistics();
 		this.updateEmployeeFilter();
 		this.updateLocationFilter();
+		this.showNotification("\u2705 " + count + " Aufgabe(n) archiviert");
+		// API Batch-Call (#244)
+		if (this.useAPI && window.TaskAPI && window.TaskAPI.batchUpdate) {
+			try { await window.TaskAPI.batchUpdate(ids, 'archive'); } catch (e) { /* Offline-Tolerant */ }
+		}
 		this._registerUndo({
 			type: "bulkArchive",
 			description: `${count} Aufgabe(n) archiviert`,
 			undo: () => {
-				const ids = new Set(archivedTasksCopy.map((t) => t.id));
-				this.archivedTasks = this.archivedTasks.filter((t) => !ids.has(t.id));
+				const idSet = new Set(archivedTasksCopy.map((t) => t.id));
+				this.archivedTasks = this.archivedTasks.filter((t) => !idSet.has(t.id));
 				this.tasks.push(...archivedTasksCopy);
 				this.saveTasks(); this.saveArchivedTasks(); this.renderTasks();
 				this.updateStatistics(); this.updateEmployeeFilter(); this.updateLocationFilter();
 			},
 		});
 	}
+};
+
+// Prioritaet aendern (#244)
+GartenPlaner.prototype.bulkChangePriorityAction = async function (newPriority) {
+	if (this.selectedTasks.size === 0) {
+		this.showNotification("\u26a0\ufe0f Keine Aufgaben ausgew\u00e4hlt");
+		return;
+	}
+	const ids = Array.from(this.selectedTasks);
+	const priorityLabels = { high: "Hoch", medium: "Mittel", low: "Niedrig" };
+	const previousStates = [];
+	this.selectedTasks.forEach((taskId) => {
+		const task = this.tasks.find((t) => t.id === taskId);
+		if (task) {
+			previousStates.push({ id: task.id, priority: task.priority });
+			task.priority = newPriority;
+		}
+	});
+	const count = previousStates.length;
+	this.saveTasks();
+	this.selectedTasks.clear();
+	this.renderTasks();
+	this.showNotification("\u2705 " + count + " Aufgabe(n): Priorit\u00e4t auf " + (priorityLabels[newPriority] || newPriority) + " gesetzt");
+	// API Batch-Call (#244)
+	if (this.useAPI && window.TaskAPI && window.TaskAPI.batchUpdate) {
+		try { await window.TaskAPI.batchUpdate(ids, 'priority', newPriority); } catch (e) { /* Offline-Tolerant */ }
+	}
+	this._registerUndo({
+		type: "bulkPriority",
+		description: `${count} Aufgabe(n): Priorit\u00e4t ge\u00e4ndert`,
+		undo: () => {
+			previousStates.forEach((s) => {
+				const task = this.tasks.find((t) => t.id === s.id);
+				if (task) { task.priority = s.priority; }
+			});
+			this.saveTasks(); this.renderTasks();
+		},
+	});
 };

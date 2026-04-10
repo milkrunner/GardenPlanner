@@ -1236,6 +1236,124 @@
   background: var(--bg-tertiary);
 }
 
+/* =============================================
+   Edit Panel (#250)
+   ============================================= */
+.garden-edit-panel {
+  position: absolute;
+  z-index: 300;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  min-width: 260px;
+  max-width: 320px;
+  font-size: var(--text-sm);
+  display: none;
+}
+
+.garden-edit-panel.visible {
+  display: block;
+}
+
+.garden-edit-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.garden-edit-panel-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.garden-edit-panel-body {
+  padding: var(--space-md);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.garden-edit-panel-body label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-light);
+  margin-bottom: 2px;
+  margin-top: var(--space-sm);
+}
+
+.garden-edit-panel-body label:first-child {
+  margin-top: 0;
+}
+
+.garden-edit-panel-body input[type="text"],
+.garden-edit-panel-body input[type="number"],
+.garden-edit-panel-body textarea,
+.garden-edit-panel-body select {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-family: var(--font-body);
+  box-sizing: border-box;
+}
+
+.garden-edit-panel-body textarea {
+  resize: vertical;
+  min-height: 48px;
+}
+
+.garden-edit-panel-actions {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-top: 1px solid var(--border);
+}
+
+.garden-edit-panel-actions button {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.garden-edit-panel-actions button.primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.garden-edit-panel-actions button.danger {
+  background: #e74c3c;
+  color: white;
+  border-color: #e74c3c;
+}
+
+/* Vertex handles for polygon editing */
+.garden-canvas .vertex-handle {
+  cursor: move;
+  transition: r 0.1s;
+}
+
+.garden-canvas .vertex-handle:hover {
+  r: 7;
+}
+
 /* Dark mode adjustments for rulers */
 [data-theme="dark"] .garden-ruler-corner,
 [data-theme="dark"] .garden-ruler-top,

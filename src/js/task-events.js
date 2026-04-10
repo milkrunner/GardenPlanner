@@ -153,6 +153,17 @@ GartenPlaner.prototype.setupBulkActionListeners = function () {
 	if (bulkDeleteBtn) {
 		bulkDeleteBtn.addEventListener("click", () => this.bulkDeleteTasksAction());
 	}
+
+	// Prioritaet-Aendern (#244)
+	const bulkPrioritySelect = document.getElementById("bulkPrioritySelect");
+	if (bulkPrioritySelect) {
+		bulkPrioritySelect.addEventListener("change", (e) => {
+			if (e.target.value) {
+				this.bulkChangePriorityAction(e.target.value);
+				e.target.value = "";
+			}
+		});
+	}
 };
 
 // Subtask-Methoden für CREATE (neue Aufgabe)
@@ -271,6 +282,10 @@ GartenPlaner.prototype.openEditModal = function (id) {
 
 	// Photo Upload im Edit-Modal einrichten
 	this.setupPhotoUploadEdit(task);
+
+	// Kommentare rendern und Event Listeners einrichten
+	this.renderComments(task);
+	this.setupCommentListeners(task);
 
 	newCloseBtn.addEventListener("click", closeModal);
 	newCancelBtn.addEventListener("click", closeModal);
@@ -524,4 +539,115 @@ GartenPlaner.prototype.deleteSubtask = function (task, subtaskId) {
 	this.renderSubtasksInModal(task);
 	this.saveTasks();
 	this.renderTasks(); // Update main view to show progress
+};
+
+// --- Kommentar-Funktionen ---
+
+GartenPlaner.prototype.renderComments = function (task) {
+	var container = document.getElementById("commentsList");
+	if (!container) return;
+
+	var comments = Array.isArray(task.comments) ? task.comments : [];
+
+	if (comments.length === 0) {
+		container.innerHTML = '<div class="comments-empty">Noch keine Kommentare</div>';
+		return;
+	}
+
+	// Chronologisch sortieren (aelteste zuerst)
+	var sorted = comments.slice().sort(function (a, b) {
+		return new Date(a.createdAt) - new Date(b.createdAt);
+	});
+
+	container.innerHTML = sorted.map(function (comment) {
+		var safeText = Security.escapeHtml(comment.text);
+		var safeUser = Security.escapeHtml(comment.username || 'Anonym');
+		var date = new Date(comment.createdAt);
+		var dateStr = date.toLocaleDateString('de-DE') + ' ' + date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+		return '<div class="comment-item" data-comment-id="' + comment.id + '">' +
+			'<div class="comment-header">' +
+			'<span class="comment-author">' + safeUser + '</span>' +
+			'<span class="comment-date">' + dateStr + '</span>' +
+			'<button type="button" class="comment-delete-btn" data-comment-id="' + comment.id + '" title="Kommentar loeschen" aria-label="Kommentar loeschen">&times;</button>' +
+			'</div>' +
+			'<div class="comment-text">' + safeText + '</div>' +
+			'</div>';
+	}).join('');
+};
+
+GartenPlaner.prototype.setupCommentListeners = function (task) {
+	var self = this;
+	var addBtn = document.getElementById("addCommentBtn");
+	var input = document.getElementById("newCommentInput");
+	var container = document.getElementById("commentsList");
+	if (!addBtn || !input) return;
+
+	// Ersetze Buttons um alte Listener zu entfernen
+	var newAddBtn = addBtn.cloneNode(true);
+	addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+
+	newAddBtn.addEventListener("click", function () {
+		var text = input.value.trim();
+		if (!text) return;
+
+		if (self.useAPI) {
+			TaskAPI.addComment(task.id, text).then(function (comment) {
+				if (!Array.isArray(task.comments)) task.comments = [];
+				task.comments.push(comment);
+				self.renderComments(task);
+				self.renderTasks();
+				input.value = '';
+			}).catch(function (err) {
+				self.showNotification('Fehler beim Hinzufuegen des Kommentars: ' + err.message, 'error');
+			});
+		} else {
+			if (!Array.isArray(task.comments)) task.comments = [];
+			task.comments.push({
+				id: 'c-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+				username: 'Lokal',
+				text: text,
+				createdAt: new Date().toISOString()
+			});
+			self.saveTasks();
+			self.renderComments(task);
+			self.renderTasks();
+			input.value = '';
+		}
+	});
+
+	// Enter-Taste zum Senden (Shift+Enter fuer Zeilenumbruch)
+	var newInput = input.cloneNode(true);
+	input.parentNode.replaceChild(newInput, input);
+	newInput.addEventListener("keydown", function (e) {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			newAddBtn.click();
+		}
+	});
+
+	// Delete-Buttons fuer Kommentare
+	if (container) {
+		container.addEventListener("click", function (e) {
+			var deleteBtn = e.target.closest(".comment-delete-btn");
+			if (!deleteBtn) return;
+			var commentId = deleteBtn.dataset.commentId;
+			if (!commentId) return;
+
+			if (self.useAPI) {
+				TaskAPI.deleteComment(task.id, commentId).then(function () {
+					task.comments = (task.comments || []).filter(function (c) { return c.id !== commentId; });
+					self.renderComments(task);
+					self.renderTasks();
+				}).catch(function (err) {
+					self.showNotification('Fehler beim Loeschen des Kommentars: ' + err.message, 'error');
+				});
+			} else {
+				task.comments = (task.comments || []).filter(function (c) { return c.id !== commentId; });
+				self.saveTasks();
+				self.renderComments(task);
+				self.renderTasks();
+			}
+		});
+	}
 };

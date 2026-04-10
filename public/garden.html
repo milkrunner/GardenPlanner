@@ -82,6 +82,8 @@
             <div class="export-menu" id="exportMenu" style="display:none">
               <button type="button" class="export-menu-item" data-format="png">Als PNG exportieren</button>
               <button type="button" class="export-menu-item" data-format="svg">Als SVG exportieren</button>
+              <button type="button" class="export-menu-item" data-format="json">Als JSON exportieren</button>
+              <button type="button" class="export-menu-item" data-format="import">JSON importieren</button>
             </div>
           </div>
           <button type="button" class="header-btn header-btn--primary" id="saveBtn" title="Speichern (Ctrl+S)" aria-label="Speichern">
@@ -283,6 +285,21 @@
               </ul>
             </section>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Panel (#250) -->
+      <div class="garden-edit-panel" id="gardenEditPanel">
+        <div class="garden-edit-panel-header">
+          <span id="editPanelTitle">Element bearbeiten</span>
+          <button class="garden-edit-panel-close" id="editPanelClose" aria-label="Schliessen">&times;</button>
+        </div>
+        <div class="garden-edit-panel-body" id="editPanelBody">
+          <!-- Dynamisch befuellt -->
+        </div>
+        <div class="garden-edit-panel-actions" id="editPanelActions">
+          <!-- Dynamisch befuellt -->
         </div>
       </div>
     </div>

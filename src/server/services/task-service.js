@@ -427,6 +427,158 @@ async function deleteArchivedTask(id) {
     return { error: false };
 }
 
+/**
+ * Batch update multiple tasks (#244).
+ * Supports actions: 'status', 'priority', 'archive'.
+ * @param {string[]} ids - Array of task UUIDs
+ * @param {string} action - 'status' | 'priority' | 'archive'
+ * @param {string} [value] - New value for status/priority
+ * @returns {Promise<Object>} { error: boolean, updated: number }
+ */
+async function batchUpdateTasks(ids, action, value) {
+    const validStatuses = ['pending', 'in-progress', 'completed'];
+    const validPriorities = ['low', 'medium', 'high'];
+
+    let updated = 0;
+
+    for (const id of ids) {
+        try {
+            const existing = await store.getTaskById(id);
+            if (!existing) continue;
+
+            const updatedFields = {};
+            const historyEntry = {
+                timestamp: new Date().toISOString(),
+                action: 'batch_' + action,
+                details: {}
+            };
+
+            if (action === 'status') {
+                if (!validStatuses.includes(value)) {
+                    return { error: true, status: 400, message: 'Ungueltiger Status: ' + value };
+                }
+                updatedFields.status = value;
+                historyEntry.details = { from: existing.status, to: value };
+                if (value === 'completed') {
+                    updatedFields.completedAt = new Date().toISOString();
+                } else {
+                    updatedFields.completedAt = null;
+                }
+            } else if (action === 'priority') {
+                if (!validPriorities.includes(value)) {
+                    return { error: true, status: 400, message: 'Ungueltige Prioritaet: ' + value };
+                }
+                updatedFields.priority = value;
+                historyEntry.details = { from: existing.priority, to: value };
+            } else if (action === 'archive') {
+                updatedFields.archivedAt = new Date().toISOString();
+                historyEntry.action = 'archived';
+            }
+
+            const currentHistory = Array.isArray(existing.history) ? existing.history : [];
+            updatedFields.history = [...currentHistory, historyEntry];
+
+            await store.updateTask(id, updatedFields);
+            updated++;
+        } catch (err) {
+            // Einzelfehler ueberspringen, weitermachen
+            continue;
+        }
+    }
+
+    audit('batch_update', { action, value, count: updated, ids });
+    return { error: false, updated };
+}
+
+/**
+ * Batch delete multiple tasks (#244).
+ * @param {string[]} ids - Array of task UUIDs
+ * @returns {Promise<Object>} { error: boolean, deleted: number }
+ */
+async function batchDeleteTasks(ids) {
+    let deleted = 0;
+
+    for (const id of ids) {
+        try {
+            const existing = await store.getTaskById(id);
+            if (!existing) continue;
+
+            // Photo-Cleanup
+            if (Array.isArray(existing.photos)) {
+                for (const photo of existing.photos) {
+                    if (typeof photo === 'string' && !photo.startsWith('data:')) {
+                        deletePhoto(photo);
+                    }
+                }
+            }
+
+            await store.deleteTask(id);
+            deleted++;
+        } catch (err) {
+            continue;
+        }
+    }
+
+    audit('batch_delete', { count: deleted, ids });
+    return { error: false, deleted };
+}
+
+/**
+ * Add a comment to a task.
+ * @param {string} taskId - Task UUID
+ * @param {string} text - Comment text
+ * @param {string} username - Author username
+ * @returns {Promise<TaskOperationResult>} Result with the updated task or error
+ */
+async function addComment(taskId, text, username) {
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+        return { error: true, status: 400, message: 'Kommentartext darf nicht leer sein' };
+    }
+    if (text.trim().length > 2000) {
+        return { error: true, status: 400, message: 'Kommentar darf maximal 2000 Zeichen lang sein' };
+    }
+
+    const existing = await store.getTaskById(taskId);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Task not found' };
+    }
+
+    const comments = Array.isArray(existing.comments) ? existing.comments : [];
+    const comment = {
+        id: uuidv4(),
+        username: username || 'Anonym',
+        text: text.trim(),
+        createdAt: new Date().toISOString()
+    };
+    comments.push(comment);
+
+    const updated = await store.updateTask(taskId, { comments });
+    return { error: false, task: updated, comment };
+}
+
+/**
+ * Delete a comment from a task.
+ * @param {string} taskId - Task UUID
+ * @param {string} commentId - Comment UUID
+ * @returns {Promise<TaskOperationResult>} Result with the updated task or error
+ */
+async function deleteComment(taskId, commentId) {
+    const existing = await store.getTaskById(taskId);
+    if (!existing) {
+        return { error: true, status: 404, message: 'Task not found' };
+    }
+
+    const comments = Array.isArray(existing.comments) ? existing.comments : [];
+    const index = comments.findIndex(c => c.id === commentId);
+    if (index === -1) {
+        return { error: true, status: 404, message: 'Kommentar nicht gefunden' };
+    }
+
+    comments.splice(index, 1);
+    const updated = await store.updateTask(taskId, { comments });
+    return { error: false, task: updated };
+}
+
 module.exports = {
     paginate,
     listTasks,
@@ -438,5 +590,9 @@ module.exports = {
     archiveTask,
     unarchiveTask,
     listArchivedTasks,
-    deleteArchivedTask
+    deleteArchivedTask,
+    batchUpdateTasks,
+    batchDeleteTasks,
+    addComment,
+    deleteComment
 };
