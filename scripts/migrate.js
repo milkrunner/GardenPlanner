@@ -43,12 +43,26 @@ async function migrate() {
             recurrence VARCHAR(20) DEFAULT 'none',
             subtasks JSONB DEFAULT '[]',
             history JSONB DEFAULT '[]',
+            photos JSONB DEFAULT '[]',
             sort_order BIGINT DEFAULT extract(epoch from now()) * 1000,
             completed_at TIMESTAMPTZ,
             archived_at TIMESTAMPTZ,
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         )
+    `);
+
+    // Add photos column if it doesn't exist (for existing databases)
+    await query(`
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'tasks' AND column_name = 'photos'
+            ) THEN
+                ALTER TABLE tasks ADD COLUMN photos JSONB DEFAULT '[]';
+            END IF;
+        END $$
     `);
 
     // Spalte comments hinzufuegen falls noch nicht vorhanden (#243)

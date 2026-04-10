@@ -7,6 +7,7 @@ const { requestLogger } = require('./logger');
 const { securityHeaders } = require('./middleware/security');
 const { jwtAuth } = require('./middleware/auth');
 const { errorHandler } = require('./middleware/error-handler');
+const { apiDeprecation } = require('./middleware/api-deprecation');
 const { generalLimiter, writeLimiter, authLimiter, resetRateLimitStores } = require('./middleware/rate-limit');
 const { validateTask, escapeHtml, sanitizeTaskData } = require('./validation/task-validator');
 const { paginate } = require('./services/task-service');
@@ -15,6 +16,7 @@ const { listCategories } = require('./services/plant-service');
 const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
+const photosRouter = require('./routes/photos');
 const authRouter = require('./routes/auth');
 const adminRouter = require('./routes/admin');
 const { requireAdmin } = require('./middleware/require-admin');
@@ -58,18 +60,22 @@ app.use((req, res, next) => {
 app.use(requestLogger);
 
 // JWT authentication for /api/* routes (populates req.user; public auth paths pass through)
-app.use('/api', jwtAuth);
 app.use('/api/v1', jwtAuth);
+app.use('/api', jwtAuth);
+
+// Deprecation middleware for legacy /api/* paths (without /v1/)
+// Must come after jwtAuth so auth still works on legacy paths.
+app.use('/api', apiDeprecation);
 
 // Auth routes (after jwtAuth so req.user is populated on /status)
-app.use('/api/auth', authRouter);
 app.use('/api/v1/auth', authRouter);
+app.use('/api/auth', authRouter);
 
 // Rate limiting — tiered
-app.use('/api/auth', authLimiter);
 app.use('/api/v1/auth', authLimiter);
-app.use('/api', generalLimiter);
+app.use('/api/auth', authLimiter);
 app.use('/api/v1', generalLimiter);
+app.use('/api', generalLimiter);
 
 // --- Static file serving (replaces nginx) ---
 
@@ -108,6 +114,9 @@ app.get('/manifest.json', (req, res) => {
 });
 
 // Version endpoint (public, no auth needed)
+app.get('/api/v1/version', (req, res) => {
+    res.json({ version: APP_VERSION });
+});
 app.get('/api/version', (req, res) => {
     res.json({ version: APP_VERSION });
 });
@@ -131,53 +140,58 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(HTML_ROOT, 'index.html'));
 });
 
-// Stricter rate limit on write operations
-app.post('/api/tasks', writeLimiter);
-app.put('/api/tasks/:id', writeLimiter);
-app.delete('/api/tasks/:id', writeLimiter);
-app.post('/api/tasks/:id/archive', writeLimiter);
-app.post('/api/tasks/:id/unarchive', writeLimiter);
-app.delete('/api/archived-tasks/:id', writeLimiter);
+// Stricter rate limit on write operations (canonical /api/v1 paths first, then legacy /api)
 app.post('/api/v1/tasks', writeLimiter);
 app.put('/api/v1/tasks/:id', writeLimiter);
 app.delete('/api/v1/tasks/:id', writeLimiter);
 app.post('/api/v1/tasks/:id/archive', writeLimiter);
 app.post('/api/v1/tasks/:id/unarchive', writeLimiter);
 app.delete('/api/v1/archived-tasks/:id', writeLimiter);
+app.post('/api/tasks', writeLimiter);
+app.put('/api/tasks/:id', writeLimiter);
+app.delete('/api/tasks/:id', writeLimiter);
+app.post('/api/tasks/:id/archive', writeLimiter);
+app.post('/api/tasks/:id/unarchive', writeLimiter);
+app.delete('/api/archived-tasks/:id', writeLimiter);
+app.post('/api/v1/tasks/:id/photos', writeLimiter);
+app.delete('/api/v1/tasks/:id/photos/:filename', writeLimiter);
+app.post('/api/tasks/:id/photos', writeLimiter);
+app.delete('/api/tasks/:id/photos/:filename', writeLimiter);
 app.post('/api/tasks/:id/comments', writeLimiter);
 app.delete('/api/tasks/:id/comments/:commentId', writeLimiter);
 app.post('/api/v1/tasks/:id/comments', writeLimiter);
 app.delete('/api/v1/tasks/:id/comments/:commentId', writeLimiter);
 
-// --- API Routes ---
-
-app.use('/api/tasks', tasksRouter);
-app.use('/api', archiveRouter);
-app.use('/api/plants', plantsRouter);
-
-// GET /api/plant-categories - List unique categories
-app.get('/api/plant-categories', (req, res) => {
-    res.json(listCategories());
-});
-
-// --- Versioned API Routes (/api/v1) — canonical, same handlers ---
+// --- Canonical API Routes (/api/v1) ---
 
 app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1', archiveRouter);
 app.use('/api/v1/plants', plantsRouter);
+app.use('/api/v1', photosRouter);
 
-// GET /api/v1/plant-categories - List unique categories (versioned)
 app.get('/api/v1/plant-categories', (req, res) => {
     res.json(listCategories());
 });
 
 // --- Admin Routes ---
 app.use('/api/v1/admin', requireAdmin, adminRouter);
+
+// --- Legacy /api/* routes (deprecated, served with deprecation headers via middleware above) ---
+
+app.use('/api/tasks', tasksRouter);
+app.use('/api', archiveRouter);
+app.use('/api/plants', plantsRouter);
+app.use('/api', photosRouter);
+
+app.get('/api/plant-categories', (req, res) => {
+    res.json(listCategories());
+});
+
 app.use('/api/admin', requireAdmin, adminRouter);
 
 // --- Test-only error route (for verifying error handler) ---
 if (process.env.NODE_ENV === 'test') {
-    app.get('/api/test-error', (req, res, next) => {
+    app.get('/api/v1/test-error', (req, res, next) => {
         next(new Error('Test error for verification'));
     });
 }

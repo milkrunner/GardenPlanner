@@ -1,0 +1,118 @@
+<h2>Wie sollen Masse angezeigt werden?</h2>
+<p class="subtitle">Der Canvas bekommt eine Meter-Skala. Wo und wie soll sie erscheinen?</p>
+
+<div class="cards">
+  <div class="card" data-choice="ruler" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:240px;background:#F5F3EE;position:relative;overflow:hidden;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="g1" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <!-- Top ruler -->
+        <rect x="40" y="0" width="360" height="24" fill="#365E3D" fill-opacity="0.9"/>
+        <line x1="90" y1="16" x2="90" y2="24" stroke="white" stroke-width="1"/>
+        <line x1="140" y1="16" x2="140" y2="24" stroke="white" stroke-width="1"/>
+        <line x1="190" y1="16" x2="190" y2="24" stroke="white" stroke-width="1"/>
+        <line x1="240" y1="16" x2="240" y2="24" stroke="white" stroke-width="1"/>
+        <line x1="290" y1="16" x2="290" y2="24" stroke="white" stroke-width="1"/>
+        <line x1="340" y1="16" x2="340" y2="24" stroke="white" stroke-width="1"/>
+        <text x="90" y="12" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif">1m</text>
+        <text x="140" y="12" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif">2m</text>
+        <text x="190" y="12" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif">3m</text>
+        <text x="240" y="12" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif">4m</text>
+        <text x="290" y="12" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif">5m</text>
+        <text x="340" y="12" text-anchor="middle" font-size="9" fill="white" font-family="sans-serif">6m</text>
+        <!-- Left ruler -->
+        <rect x="0" y="24" width="40" height="216" fill="#365E3D" fill-opacity="0.9"/>
+        <line x1="32" y1="74" x2="40" y2="74" stroke="white" stroke-width="1"/>
+        <line x1="32" y1="124" x2="40" y2="124" stroke="white" stroke-width="1"/>
+        <line x1="32" y1="174" x2="40" y2="174" stroke="white" stroke-width="1"/>
+        <text x="28" y="77" text-anchor="end" font-size="9" fill="white" font-family="sans-serif">1m</text>
+        <text x="28" y="127" text-anchor="end" font-size="9" fill="white" font-family="sans-serif">2m</text>
+        <text x="28" y="177" text-anchor="end" font-size="9" fill="white" font-family="sans-serif">3m</text>
+        <!-- Canvas -->
+        <rect x="40" y="24" width="360" height="216" fill="url(#g1)"/>
+        <!-- Polygon with area label -->
+        <polygon points="100,60 220,50 240,140 180,180 90,150" fill="#8B6F47" fill-opacity="0.6" stroke="#7A5F3A" stroke-width="2"/>
+        <text x="165" y="110" text-anchor="middle" font-size="12" fill="white" font-weight="bold" font-family="sans-serif">Beet</text>
+        <text x="165" y="126" text-anchor="middle" font-size="11" fill="white" font-family="sans-serif">4.2 m²</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>A) Lineal am Rand</h3>
+      <p>Feste Lineale oben und links wie in Photoshop/CAD. Flaecheninhalt als Overlay auf den Polygonen. Immer sichtbar.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="scalebar" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:240px;background:#F5F3EE;position:relative;overflow:hidden;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="g2" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#g2)"/>
+        <!-- Polygon with area label -->
+        <polygon points="80,40 200,30 220,120 160,160 70,130" fill="#8B6F47" fill-opacity="0.6" stroke="#7A5F3A" stroke-width="2"/>
+        <text x="145" y="90" text-anchor="middle" font-size="12" fill="white" font-weight="bold" font-family="sans-serif">Beet</text>
+        <text x="145" y="106" text-anchor="middle" font-size="11" fill="white" font-family="sans-serif">4.2 m²</text>
+        <!-- Scale bar bottom-right -->
+        <rect x="270" y="200" width="110" height="30" rx="6" fill="rgba(255,255,255,0.9)" stroke="#ccc" stroke-width="1"/>
+        <line x1="280" y1="218" x2="370" y2="218" stroke="#365E3D" stroke-width="2"/>
+        <line x1="280" y1="214" x2="280" y2="222" stroke="#365E3D" stroke-width="2"/>
+        <line x1="370" y1="214" x2="370" y2="222" stroke="#365E3D" stroke-width="2"/>
+        <text x="325" y="212" text-anchor="middle" font-size="10" fill="#365E3D" font-weight="bold" font-family="sans-serif">2 m</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>B) Massstabsbalken</h3>
+      <p>Kompakter Balken unten rechts (wie Google Maps). Flaecheninhalt auf den Polygonen. Canvas bleibt sauber.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="both" onclick="toggleSelect(this)">
+    <div class="card-image" style="height:240px;background:#F5F3EE;position:relative;overflow:hidden;">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="g3" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <!-- Top ruler -->
+        <rect x="30" y="0" width="370" height="18" fill="#365E3D" fill-opacity="0.85"/>
+        <line x1="80" y1="12" x2="80" y2="18" stroke="white" stroke-width="0.8"/>
+        <line x1="130" y1="12" x2="130" y2="18" stroke="white" stroke-width="0.8"/>
+        <line x1="180" y1="12" x2="180" y2="18" stroke="white" stroke-width="0.8"/>
+        <line x1="230" y1="12" x2="230" y2="18" stroke="white" stroke-width="0.8"/>
+        <text x="80" y="10" text-anchor="middle" font-size="8" fill="white" font-family="sans-serif">1m</text>
+        <text x="130" y="10" text-anchor="middle" font-size="8" fill="white" font-family="sans-serif">2m</text>
+        <text x="180" y="10" text-anchor="middle" font-size="8" fill="white" font-family="sans-serif">3m</text>
+        <text x="230" y="10" text-anchor="middle" font-size="8" fill="white" font-family="sans-serif">4m</text>
+        <!-- Left ruler -->
+        <rect x="0" y="18" width="30" height="222" fill="#365E3D" fill-opacity="0.85"/>
+        <line x1="24" y1="68" x2="30" y2="68" stroke="white" stroke-width="0.8"/>
+        <line x1="24" y1="118" x2="30" y2="118" stroke="white" stroke-width="0.8"/>
+        <text x="20" y="71" text-anchor="end" font-size="8" fill="white" font-family="sans-serif">1m</text>
+        <text x="20" y="121" text-anchor="end" font-size="8" fill="white" font-family="sans-serif">2m</text>
+        <!-- Canvas -->
+        <rect x="30" y="18" width="370" height="222" fill="url(#g3)"/>
+        <!-- Polygon -->
+        <polygon points="80,50 200,40 220,130 160,170 70,140" fill="#8B6F47" fill-opacity="0.6" stroke="#7A5F3A" stroke-width="2"/>
+        <text x="145" y="100" text-anchor="middle" font-size="12" fill="white" font-weight="bold" font-family="sans-serif">Beet</text>
+        <text x="145" y="116" text-anchor="middle" font-size="11" fill="white" font-family="sans-serif">4.2 m²</text>
+        <!-- Hover tooltip -->
+        <rect x="230" y="75" width="130" height="55" rx="6" fill="rgba(28,25,23,0.9)"/>
+        <text x="240" y="93" font-size="11" fill="white" font-weight="bold" font-family="sans-serif">Beet</text>
+        <text x="240" y="108" font-size="10" fill="#A8A29E" font-family="sans-serif">Flaeche: 4.2 m²</text>
+        <text x="240" y="122" font-size="10" fill="#A8A29E" font-family="sans-serif">Umfang: 9.8 m</text>
+      </svg>
+    </div>
+    <div class="card-body">
+      <h3>C) Lineale + Hover-Tooltip</h3>
+      <p>Lineale am Rand fuer Orientierung. Flaeche/Umfang erscheinen als Tooltip beim Hovern ueber ein Polygon. Sauberste Darstellung.</p>
+    </div>
+  </div>
+</div>

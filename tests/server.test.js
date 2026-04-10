@@ -202,14 +202,25 @@ describe('validateTask', () => {
         expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('String')]));
     });
 
-    test('rejects photo without data:image/ prefix', () => {
-        const result = validateTask({ ...validTask, photos: ['not-a-data-url'] });
+    test('accepts photo filename reference', () => {
+        const result = validateTask({ ...validTask, photos: ['abc-123.jpg'] });
+        expect(result.valid).toBe(true);
+    });
+
+    test('rejects photo with path traversal', () => {
+        const result = validateTask({ ...validTask, photos: ['../etc/passwd'] });
         expect(result.valid).toBe(false);
-        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Data-URL')]));
+        expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('Dateiname')]));
     });
 
     test('accepts exactly 3 photos', () => {
         const photos = Array.from({ length: 3 }, () => 'data:image/jpeg;base64,/9j/4AAQ');
+        const result = validateTask({ ...validTask, photos });
+        expect(result.valid).toBe(true);
+    });
+
+    test('accepts mix of Base64 and filename references', () => {
+        const photos = ['data:image/jpeg;base64,/9j/4AAQ', 'abc-123.jpg'];
         const result = validateTask({ ...validTask, photos });
         expect(result.valid).toBe(true);
     });
@@ -305,10 +316,10 @@ describeWithDB('API Endpoints', () => {
         description: 'Vorgarten mähen'
     };
 
-    describe('POST /api/tasks', () => {
+    describe('POST /api/v1/tasks', () => {
         test('creates a task and returns 201', async () => {
             const res = await request(app)
-                .post('/api/tasks')
+                .post('/api/v1/tasks')
                 .send(validTask);
 
             expect(res.status).toBe(201);
@@ -319,7 +330,7 @@ describeWithDB('API Endpoints', () => {
 
         test('rejects invalid task with 400', async () => {
             const res = await request(app)
-                .post('/api/tasks')
+                .post('/api/v1/tasks')
                 .send({ title: '' });
 
             expect(res.status).toBe(400);
@@ -328,20 +339,22 @@ describeWithDB('API Endpoints', () => {
             expect(res.body).toHaveProperty('errors');
         });
 
-        test('creates a task with photos', async () => {
+        test('creates a task with Base64 photos (converted to filenames)', async () => {
             const photos = ['data:image/jpeg;base64,/9j/4AAQ', 'data:image/png;base64,iVBOR'];
             const res = await request(app)
-                .post('/api/tasks')
+                .post('/api/v1/tasks')
                 .send({ ...validTask, photos });
 
             expect(res.status).toBe(201);
+            // Photos are now stored as filenames (UUID-based), not Base64
             expect(res.body.photos).toHaveLength(2);
-            expect(res.body.photos[0]).toBe('data:image/jpeg;base64,/9j/4AAQ');
+            expect(res.body.photos[0]).toMatch(/\.jpg$/);
+            expect(res.body.photos[1]).toMatch(/\.png$/);
         });
 
         test('creates a task with empty photos array', async () => {
             const res = await request(app)
-                .post('/api/tasks')
+                .post('/api/v1/tasks')
                 .send({ ...validTask, photos: [] });
 
             expect(res.status).toBe(201);
@@ -349,52 +362,52 @@ describeWithDB('API Endpoints', () => {
         });
     });
 
-    describe('GET /api/tasks', () => {
+    describe('GET /api/v1/tasks', () => {
         test('returns empty array initially', async () => {
-            const res = await request(app).get('/api/tasks');
+            const res = await request(app).get('/api/v1/tasks');
             expect(res.status).toBe(200);
             expect(res.body).toEqual([]);
         });
 
         test('returns created tasks', async () => {
-            await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app).get('/api/tasks');
+            await request(app).post('/api/v1/tasks').send(validTask);
+            const res = await request(app).get('/api/v1/tasks');
             expect(res.body).toHaveLength(1);
         });
 
         test('filters by status', async () => {
-            await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app).get('/api/tasks?status=completed');
+            await request(app).post('/api/v1/tasks').send(validTask);
+            const res = await request(app).get('/api/v1/tasks?status=completed');
             expect(res.body).toHaveLength(0);
         });
     });
 
-    describe('GET /api/tasks/:id', () => {
+    describe('GET /api/v1/tasks/:id', () => {
         test('returns a specific task', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app).get(`/api/tasks/${created.body.id}`);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
+            const res = await request(app).get(`/api/v1/tasks/${created.body.id}`);
             expect(res.status).toBe(200);
             expect(res.body.id).toBe(created.body.id);
         });
 
         test('returns 400 for invalid ID format', async () => {
-            const res = await request(app).get('/api/tasks/nonexistent');
+            const res = await request(app).get('/api/v1/tasks/nonexistent');
             expect(res.status).toBe(400);
             expect(res.body.error).toBe(true);
             expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
-            const res = await request(app).get('/api/tasks/00000000-0000-4000-a000-000000000000');
+            const res = await request(app).get('/api/v1/tasks/00000000-0000-4000-a000-000000000000');
             expect(res.status).toBe(404);
         });
     });
 
-    describe('PUT /api/tasks/:id', () => {
+    describe('PUT /api/v1/tasks/:id', () => {
         test('updates a task', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
             const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
+                .put(`/api/v1/tasks/${created.body.id}`)
                 .send({ title: 'Hecke schneiden' });
 
             expect(res.status).toBe(200);
@@ -403,7 +416,7 @@ describeWithDB('API Endpoints', () => {
 
         test('returns 400 for invalid ID format', async () => {
             const res = await request(app)
-                .put('/api/tasks/nonexistent')
+                .put('/api/v1/tasks/nonexistent')
                 .send({ title: 'Test' });
             expect(res.status).toBe(400);
             expect(res.body.error).toBe(true);
@@ -412,15 +425,15 @@ describeWithDB('API Endpoints', () => {
 
         test('returns 404 for valid UUID that does not exist', async () => {
             const res = await request(app)
-                .put('/api/tasks/00000000-0000-4000-a000-000000000000')
+                .put('/api/v1/tasks/00000000-0000-4000-a000-000000000000')
                 .send({ title: 'Test' });
             expect(res.status).toBe(404);
         });
 
         test('normalizes subtasks like POST does', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
             const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
+                .put(`/api/v1/tasks/${created.body.id}`)
                 .send({
                     subtasks: [
                         { text: 'Object subtask', completed: true },
@@ -438,23 +451,23 @@ describeWithDB('API Endpoints', () => {
             expect(res.body.subtasks[1].completed).toBe(false);
         });
 
-        test('updates photos on a task', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
+        test('updates photos on a task (Base64 converted to filename)', async () => {
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
             const photos = ['data:image/jpeg;base64,/9j/4AAQ'];
             const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
+                .put(`/api/v1/tasks/${created.body.id}`)
                 .send({ photos });
 
             expect(res.status).toBe(200);
             expect(res.body.photos).toHaveLength(1);
-            expect(res.body.photos[0]).toBe('data:image/jpeg;base64,/9j/4AAQ');
+            expect(res.body.photos[0]).toMatch(/\.jpg$/);
         });
 
         test('rejects subtasks exceeding max count via PUT', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
             const subtasks = Array.from({ length: 51 }, (_, i) => ({ text: `Sub ${i}`, completed: false }));
             const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
+                .put(`/api/v1/tasks/${created.body.id}`)
                 .send({ subtasks });
 
             expect(res.status).toBe(400);
@@ -462,9 +475,9 @@ describeWithDB('API Endpoints', () => {
         });
 
         test('tracks status change in history', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
             const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
+                .put(`/api/v1/tasks/${created.body.id}`)
                 .send({ status: 'completed' });
 
             expect(res.body.status).toBe('completed');
@@ -474,19 +487,19 @@ describeWithDB('API Endpoints', () => {
         });
     });
 
-    describe('PUT /api/tasks/:id - Conflict Detection', () => {
+    describe('PUT /api/v1/tasks/:id - Conflict Detection', () => {
         test('returns 409 when lastKnownUpdate is older than server updatedAt', async () => {
             const createRes = await request(app)
-                .post('/api/tasks')
+                .post('/api/v1/tasks')
                 .send({ title: 'Conflict Test', location: 'Garten' });
             const taskId = createRes.body.id;
 
             await request(app)
-                .put(`/api/tasks/${taskId}`)
+                .put(`/api/v1/tasks/${taskId}`)
                 .send({ title: 'Updated Title' });
 
             const res = await request(app)
-                .put(`/api/tasks/${taskId}`)
+                .put(`/api/v1/tasks/${taskId}`)
                 .send({
                     title: 'Offline Change',
                     lastKnownUpdate: '2020-01-01T00:00:00.000Z'
@@ -499,79 +512,79 @@ describeWithDB('API Endpoints', () => {
 
         test('accepts update when lastKnownUpdate is not provided', async () => {
             const createRes = await request(app)
-                .post('/api/tasks')
+                .post('/api/v1/tasks')
                 .send({ title: 'No Conflict', location: 'Garten' });
 
             const res = await request(app)
-                .put(`/api/tasks/${createRes.body.id}`)
+                .put(`/api/v1/tasks/${createRes.body.id}`)
                 .send({ title: 'Updated Without Timestamp' });
 
             expect(res.status).toBe(200);
         });
     });
 
-    describe('DELETE /api/tasks/:id', () => {
+    describe('DELETE /api/v1/tasks/:id', () => {
         test('deletes a task and returns 204', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app).delete(`/api/tasks/${created.body.id}`);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
+            const res = await request(app).delete(`/api/v1/tasks/${created.body.id}`);
             expect(res.status).toBe(204);
 
-            const list = await request(app).get('/api/tasks');
+            const list = await request(app).get('/api/v1/tasks');
             expect(list.body).toHaveLength(0);
         });
 
         test('returns 400 for invalid ID format', async () => {
-            const res = await request(app).delete('/api/tasks/nonexistent');
+            const res = await request(app).delete('/api/v1/tasks/nonexistent');
             expect(res.status).toBe(400);
             expect(res.body.error).toBe(true);
             expect(res.body.message).toMatch(/Invalid ID format/);
         });
 
         test('returns 404 for valid UUID that does not exist', async () => {
-            const res = await request(app).delete('/api/tasks/00000000-0000-4000-a000-000000000000');
+            const res = await request(app).delete('/api/v1/tasks/00000000-0000-4000-a000-000000000000');
             expect(res.status).toBe(404);
         });
     });
 
-    describe('POST /api/tasks/:id/archive', () => {
+    describe('POST /api/v1/tasks/:id/archive', () => {
         test('archives a task', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app).post(`/api/tasks/${created.body.id}/archive`);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
+            const res = await request(app).post(`/api/v1/tasks/${created.body.id}/archive`);
 
             expect(res.status).toBe(200);
             expect(res.body.archivedAt).toBeDefined();
 
-            const tasks = await request(app).get('/api/tasks');
+            const tasks = await request(app).get('/api/v1/tasks');
             expect(tasks.body).toHaveLength(0);
 
-            const archived = await request(app).get('/api/archived-tasks');
+            const archived = await request(app).get('/api/v1/archived-tasks');
             expect(archived.body).toHaveLength(1);
         });
     });
 
-    describe('POST /api/tasks/:id/unarchive', () => {
+    describe('POST /api/v1/tasks/:id/unarchive', () => {
         test('restores an archived task', async () => {
-            const created = await request(app).post('/api/tasks').send(validTask);
-            await request(app).post(`/api/tasks/${created.body.id}/archive`);
-            const res = await request(app).post(`/api/tasks/${created.body.id}/unarchive`);
+            const created = await request(app).post('/api/v1/tasks').send(validTask);
+            await request(app).post(`/api/v1/tasks/${created.body.id}/archive`);
+            const res = await request(app).post(`/api/v1/tasks/${created.body.id}/unarchive`);
 
             expect(res.status).toBe(200);
 
-            const tasks = await request(app).get('/api/tasks');
+            const tasks = await request(app).get('/api/v1/tasks');
             expect(tasks.body).toHaveLength(1);
 
-            const archived = await request(app).get('/api/archived-tasks');
+            const archived = await request(app).get('/api/v1/archived-tasks');
             expect(archived.body).toHaveLength(0);
         });
     });
 
-    describe('POST /api/tasks/search', () => {
+    describe('POST /api/v1/tasks/search', () => {
         test('filters by employee via POST body', async () => {
-            await request(app).post('/api/tasks').send(validTask);
-            await request(app).post('/api/tasks').send({ ...validTask, employee: 'Lisa' });
+            await request(app).post('/api/v1/tasks').send(validTask);
+            await request(app).post('/api/v1/tasks').send({ ...validTask, employee: 'Lisa' });
 
             const res = await request(app)
-                .post('/api/tasks/search')
+                .post('/api/v1/tasks/search')
                 .send({ employee: 'Max' });
 
             expect(res.body).toHaveLength(1);
@@ -629,7 +642,7 @@ describe('paginate', () => {
     });
 });
 
-describeWithDB('GET /api/tasks with pagination', () => {
+describeWithDB('GET /api/v1/tasks with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -637,16 +650,16 @@ describeWithDB('GET /api/tasks with pagination', () => {
     };
 
     test('returns array without pagination params (backwards-compatible)', async () => {
-        await request(app).post('/api/tasks').send(validTask);
-        const res = await request(app).get('/api/tasks');
+        await request(app).post('/api/v1/tasks').send(validTask);
+        const res = await request(app).get('/api/v1/tasks');
         expect(Array.isArray(res.body)).toBe(true);
     });
 
     test('returns paginated object with page param', async () => {
         for (let i = 0; i < 5; i++) {
-            await request(app).post('/api/tasks').send({ ...validTask, title: `Task ${i}` });
+            await request(app).post('/api/v1/tasks').send({ ...validTask, title: `Task ${i}` });
         }
-        const res = await request(app).get('/api/tasks?page=1&limit=2');
+        const res = await request(app).get('/api/v1/tasks?page=1&limit=2');
         expect(res.body).toHaveProperty('data');
         expect(res.body).toHaveProperty('total', 5);
         expect(res.body).toHaveProperty('page', 1);
@@ -657,15 +670,15 @@ describeWithDB('GET /api/tasks with pagination', () => {
 
     test('pagination works with status filter', async () => {
         for (let i = 0; i < 3; i++) {
-            await request(app).post('/api/tasks').send(validTask);
+            await request(app).post('/api/v1/tasks').send(validTask);
         }
-        const res = await request(app).get('/api/tasks?status=pending&page=1&limit=2');
+        const res = await request(app).get('/api/v1/tasks?status=pending&page=1&limit=2');
         expect(res.body.data).toHaveLength(2);
         expect(res.body.total).toBe(3);
     });
 });
 
-describeWithDB('POST /api/tasks/search with pagination', () => {
+describeWithDB('POST /api/v1/tasks/search with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
@@ -673,17 +686,17 @@ describeWithDB('POST /api/tasks/search with pagination', () => {
     };
 
     test('returns array without pagination (backwards-compatible)', async () => {
-        await request(app).post('/api/tasks').send(validTask);
-        const res = await request(app).post('/api/tasks/search').send({ employee: 'Max' });
+        await request(app).post('/api/v1/tasks').send(validTask);
+        const res = await request(app).post('/api/v1/tasks/search').send({ employee: 'Max' });
         expect(Array.isArray(res.body)).toBe(true);
     });
 
     test('returns paginated object with page/limit in body', async () => {
         for (let i = 0; i < 5; i++) {
-            await request(app).post('/api/tasks').send(validTask);
+            await request(app).post('/api/v1/tasks').send(validTask);
         }
         const res = await request(app)
-            .post('/api/tasks/search')
+            .post('/api/v1/tasks/search')
             .send({ employee: 'Max', page: 1, limit: 2 });
         expect(res.body).toHaveProperty('data');
         expect(res.body.data).toHaveLength(2);
@@ -696,12 +709,12 @@ describeWithDB('POST /api/tasks/search with pagination', () => {
 describeWithDB('UUID validation for :id parameters', () => {
     const invalidIds = ['nonexistent', '123', 'not-a-uuid', '../etc/passwd'];
     const routes = [
-        { method: 'get', path: '/api/tasks/' },
-        { method: 'put', path: '/api/tasks/', body: { title: 'Test' } },
-        { method: 'delete', path: '/api/tasks/' },
-        { method: 'post', path: '/api/tasks/', suffix: '/archive' },
-        { method: 'post', path: '/api/tasks/', suffix: '/unarchive' },
-        { method: 'delete', path: '/api/archived-tasks/' },
+        { method: 'get', path: '/api/v1/tasks/' },
+        { method: 'put', path: '/api/v1/tasks/', body: { title: 'Test' } },
+        { method: 'delete', path: '/api/v1/tasks/' },
+        { method: 'post', path: '/api/v1/tasks/', suffix: '/archive' },
+        { method: 'post', path: '/api/v1/tasks/', suffix: '/unarchive' },
+        { method: 'delete', path: '/api/v1/archived-tasks/' },
     ];
 
     routes.forEach(({ method, path, body, suffix }) => {
@@ -717,7 +730,7 @@ describeWithDB('UUID validation for :id parameters', () => {
     });
 
     test('accepts valid UUID v4 format', async () => {
-        const res = await request(app).get('/api/tasks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+        const res = await request(app).get('/api/v1/tasks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
         // Without DB this may error, but with DB it should be 404 (valid format, doesn't exist)
         if (hasDB) {
             expect(res.status).toBe(404);
@@ -729,7 +742,7 @@ describeWithDB('UUID validation for :id parameters', () => {
 
 describeWithDB('Global error handler', () => {
     test('returns consistent error format for 500 errors', async () => {
-        const res = await request(app).get('/api/test-error');
+        const res = await request(app).get('/api/v1/test-error');
         expect(res.status).toBe(500);
         expect(res.body).toEqual({
             error: true,
@@ -742,7 +755,7 @@ describeWithDB('Global error handler', () => {
     test('returns consistent error format for 413 payload too large', async () => {
         const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
         const res = await request(app)
-            .post('/api/tasks')
+            .post('/api/v1/tasks')
             .send(largeBody);
 
         expect(res.status).toBe(413);
@@ -756,20 +769,20 @@ describeWithDB('Global error handler', () => {
 
 describeWithDB('Security', () => {
     test('sets security headers', async () => {
-        const res = await request(app).get('/api/tasks');
+        const res = await request(app).get('/api/v1/tasks');
         expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
         expect(res.headers['x-content-type-options']).toBe('nosniff');
     });
 
     test('auth status endpoint is always accessible', async () => {
-        const res = await request(app).get('/api/auth/status');
+        const res = await request(app).get('/api/v1/auth/status');
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('authRequired');
     });
 
     test('does not bypass auth via sec-fetch-site header', async () => {
         const res = await request(app)
-            .get('/api/tasks')
+            .get('/api/v1/tasks')
             .set('sec-fetch-site', 'same-origin');
         expect(res.status).toBe(200);
     });
@@ -831,7 +844,7 @@ describeWithDB('Security (DB-dependent)', () => {
 
     test('stores raw text without HTML escaping (escaping happens on frontend render)', async () => {
         const res = await request(app)
-            .post('/api/tasks')
+            .post('/api/v1/tasks')
             .send({
                 title: '<script>alert("xss")</script>',
                 employee: 'Max',
@@ -844,7 +857,7 @@ describeWithDB('Security (DB-dependent)', () => {
 
     test('returns special characters as-is in API responses', async () => {
         const res = await request(app)
-            .post('/api/tasks')
+            .post('/api/v1/tasks')
             .send({
                 title: 'Tom & Jerry',
                 employee: "O'Brien",
@@ -859,7 +872,7 @@ describeWithDB('Security (DB-dependent)', () => {
         expect(res.body.description).toBe('Use "quotes" & ampersands');
 
         const updated = await request(app)
-            .put(`/api/tasks/${res.body.id}`)
+            .put(`/api/v1/tasks/${res.body.id}`)
             .send({ title: 'Tom & Jerry' });
 
         expect(updated.status).toBe(200);
@@ -868,7 +881,7 @@ describeWithDB('Security (DB-dependent)', () => {
 
     test('stores subtask text as raw without HTML escaping', async () => {
         const res = await request(app)
-            .post('/api/tasks')
+            .post('/api/v1/tasks')
             .send({
                 title: 'Task with subtasks',
                 location: 'Garten',
@@ -888,15 +901,15 @@ describeWithDB('Security (DB-dependent)', () => {
 
 describeWithDB('Rate limiting', () => {
     test('returns rate limit headers on API responses', async () => {
-        const res = await request(app).get('/api/tasks');
+        const res = await request(app).get('/api/v1/tasks');
         expect(res.headers).toHaveProperty('ratelimit-limit');
         expect(res.headers).toHaveProperty('ratelimit-remaining');
     });
 
     test('write endpoints have stricter limits than read endpoints', async () => {
-        const readRes = await request(app).get('/api/tasks');
+        const readRes = await request(app).get('/api/v1/tasks');
         const writeRes = await request(app)
-            .post('/api/tasks')
+            .post('/api/v1/tasks')
             .send({ title: 'Test', location: 'Garten' });
 
         const readLimit = parseInt(readRes.headers['ratelimit-limit'], 10);
@@ -912,7 +925,7 @@ describe('JSON body size limit', () => {
     test('rejects payloads over 100kb with 413 status', async () => {
         const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
         const res = await request(app)
-            .post('/api/tasks')
+            .post('/api/v1/tasks')
             .send(largeBody);
 
         expect(res.status).toBe(413);

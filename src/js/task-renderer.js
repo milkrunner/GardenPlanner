@@ -92,7 +92,7 @@ GartenPlaner.prototype.renderTasks = function () {
 			card.querySelectorAll(".task-photo-thumbnail").forEach((thumb) => {
 				thumb.addEventListener("click", (e) => {
 					e.stopPropagation();
-					this.openPhotoLightbox(thumb.src);
+					this.openPhotoLightbox(thumb.dataset.fullSrc || thumb.src);
 				});
 			});
 
@@ -878,13 +878,14 @@ GartenPlaner.prototype.renderPhotoThumbnails = function (task) {
 	}
 
 	var thumbnails = task.photos
-		.map(
-			(photo, index) =>
-				`<img src="${photo}" alt="Foto ${index + 1}" class="task-photo-thumbnail" data-task-id="${task.id}" data-photo-index="${index}" />`,
-		)
+		.map(function (photo, index) {
+			var src = photo.startsWith("data:") ? photo : TaskAPI.getPhotoThumbUrl(photo);
+			var fullSrc = photo.startsWith("data:") ? photo : TaskAPI.getPhotoUrl(photo);
+			return '<img src="' + src + '" alt="Foto ' + (index + 1) + '" class="task-photo-thumbnail" data-task-id="' + task.id + '" data-photo-index="' + index + '" data-full-src="' + fullSrc + '" />';
+		})
 		.join("");
 
-	return `<div class="task-photo-thumbnails">${thumbnails}</div>`;
+	return '<div class="task-photo-thumbnails">' + thumbnails + '</div>';
 };
 
 GartenPlaner.prototype.renderCommentBadge = function (task) {
@@ -945,6 +946,31 @@ GartenPlaner.prototype.openPhotoLightbox = function (src) {
 	);
 };
 
+/**
+ * Validate a photo file (type and size check).
+ * @param {File} file
+ * @returns {boolean} true if valid
+ */
+GartenPlaner.prototype.validatePhotoFile = function (file) {
+	if (!file || !file.type.startsWith("image/")) {
+		return false;
+	}
+	var allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+	if (allowedTypes.indexOf(file.type) === -1) {
+		return false;
+	}
+	// 5 MB limit
+	if (file.size > 5 * 1024 * 1024) {
+		return false;
+	}
+	return true;
+};
+
+/**
+ * Process a photo file for local preview (still used for offline/local mode).
+ * @param {File} file
+ * @returns {Promise<string>} data URL
+ */
 GartenPlaner.prototype.processPhotoFile = function (file) {
 	return new Promise(function (resolve, reject) {
 		if (!file || !file.type.startsWith("image/")) {
@@ -1009,13 +1035,16 @@ GartenPlaner.prototype.setupPhotoUploadCreate = function () {
 		}
 
 		for (var i = 0; i < files.length; i++) {
-			try {
-				var dataUrl = await self.processPhotoFile(files[i]);
-				if (!self.tempPhotos) self.tempPhotos = [];
-				self.tempPhotos.push(dataUrl);
-			} catch (err) {
-				self.showNotification("Fehler beim Verarbeiten: " + err.message, "error");
+			if (!self.validatePhotoFile(files[i])) {
+				self.showNotification("Ungueltige Datei: " + files[i].name + " (nur jpg, png, gif, webp bis 5 MB)", "error");
+				continue;
 			}
+			if (!self.tempPhotos) self.tempPhotos = [];
+			// Store the File object for multipart upload; keep a preview URL
+			self.tempPhotos.push({
+				file: files[i],
+				previewUrl: URL.createObjectURL(files[i]),
+			});
 		}
 
 		self.renderPhotoPreviewCreate();
@@ -1037,10 +1066,11 @@ GartenPlaner.prototype.renderPhotoPreviewCreate = function () {
 
 	var self = this;
 	container.innerHTML = this.tempPhotos
-		.map(function (photo, index) {
+		.map(function (item, index) {
+			var src = item.previewUrl || item;
 			return (
 				'<div class="photo-preview-item">' +
-				'<img src="' + photo + '" alt="Vorschau ' + (index + 1) + '" />' +
+				'<img src="' + src + '" alt="Vorschau ' + (index + 1) + '" />' +
 				'<button type="button" class="photo-remove-btn" data-photo-index="' + index + '" aria-label="Foto entfernen">&times;</button>' +
 				"</div>"
 			);
@@ -1056,6 +1086,10 @@ GartenPlaner.prototype.renderPhotoPreviewCreate = function () {
 	container.querySelectorAll(".photo-remove-btn").forEach(function (btn) {
 		btn.addEventListener("click", function () {
 			var idx = parseInt(btn.dataset.photoIndex);
+			// Revoke object URL to free memory
+			if (self.tempPhotos[idx] && self.tempPhotos[idx].previewUrl) {
+				URL.revokeObjectURL(self.tempPhotos[idx].previewUrl);
+			}
 			self.tempPhotos.splice(idx, 1);
 			self.renderPhotoPreviewCreate();
 		});
@@ -1067,8 +1101,16 @@ GartenPlaner.prototype.setupPhotoUploadEdit = function (task) {
 	var input = document.getElementById("photoInputEdit");
 	if (!input) return;
 
-	// Initialize edit photos from task
-	this.editPhotos = task.photos ? task.photos.slice() : [];
+	// Initialize edit photos from task: existing filenames as strings, new uploads as {file, previewUrl}
+	this.editPhotos = task.photos ? task.photos.map(function (p) {
+		if (typeof p === "string" && !p.startsWith("data:")) {
+			return { filename: p, previewUrl: TaskAPI.getPhotoThumbUrl(p) };
+		}
+		// Legacy Base64 or already an object
+		return { filename: null, previewUrl: p.previewUrl || p };
+	}) : [];
+	// Track which new File objects to upload
+	this.editPhotoNewFiles = [];
 
 	// Clone to remove old listeners
 	var newInput = input.cloneNode(true);
@@ -1087,12 +1129,17 @@ GartenPlaner.prototype.setupPhotoUploadEdit = function (task) {
 		}
 
 		for (var i = 0; i < files.length; i++) {
-			try {
-				var dataUrl = await self.processPhotoFile(files[i]);
-				self.editPhotos.push(dataUrl);
-			} catch (err) {
-				self.showNotification("Fehler beim Verarbeiten: " + err.message, "error");
+			if (!self.validatePhotoFile(files[i])) {
+				self.showNotification("Ungueltige Datei: " + files[i].name + " (nur jpg, png, gif, webp bis 5 MB)", "error");
+				continue;
 			}
+			var item = {
+				filename: null,
+				file: files[i],
+				previewUrl: URL.createObjectURL(files[i]),
+			};
+			self.editPhotos.push(item);
+			self.editPhotoNewFiles.push(item);
 		}
 
 		self.renderPhotoPreviewEdit();
@@ -1115,10 +1162,11 @@ GartenPlaner.prototype.renderPhotoPreviewEdit = function () {
 
 	var self = this;
 	container.innerHTML = this.editPhotos
-		.map(function (photo, index) {
+		.map(function (item, index) {
+			var src = item.previewUrl || item;
 			return (
 				'<div class="photo-preview-item">' +
-				'<img src="' + photo + '" alt="Foto ' + (index + 1) + '" />' +
+				'<img src="' + src + '" alt="Foto ' + (index + 1) + '" />' +
 				'<button type="button" class="photo-remove-btn" data-photo-index="' + index + '" aria-label="Foto entfernen">&times;</button>' +
 				"</div>"
 			);
@@ -1134,6 +1182,14 @@ GartenPlaner.prototype.renderPhotoPreviewEdit = function () {
 	container.querySelectorAll(".photo-remove-btn").forEach(function (btn) {
 		btn.addEventListener("click", function () {
 			var idx = parseInt(btn.dataset.photoIndex);
+			var removed = self.editPhotos[idx];
+			// Revoke object URL if it was a new file
+			if (removed && removed.file && removed.previewUrl) {
+				URL.revokeObjectURL(removed.previewUrl);
+				// Remove from new files list
+				var fileIdx = self.editPhotoNewFiles.indexOf(removed);
+				if (fileIdx !== -1) self.editPhotoNewFiles.splice(fileIdx, 1);
+			}
 			self.editPhotos.splice(idx, 1);
 			self.renderPhotoPreviewEdit();
 		});

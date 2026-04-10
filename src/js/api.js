@@ -192,6 +192,63 @@ const TaskAPI = {
         }
     },
 
+    /**
+     * Upload photos for a task via multipart/form-data.
+     * @param {string} taskId - Task UUID
+     * @param {File[]} files - Array of File objects
+     * @returns {Promise<{photos: string[], uploaded: string[]}>}
+     */
+    async uploadPhotos(taskId, files) {
+        const formData = new FormData();
+        files.forEach(file => formData.append('photos', file));
+
+        const res = await fetch(`${this.baseUrl}/tasks/${encodeURIComponent(taskId)}/photos`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData,
+            // Note: Do NOT set Content-Type header - browser sets it with boundary
+        });
+        if (res.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Authentication required');
+        }
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.message || `HTTP ${res.status}`);
+        }
+        return res.json();
+    },
+
+    /**
+     * Delete a photo from a task.
+     * @param {string} taskId - Task UUID
+     * @param {string} filename - Photo filename
+     * @returns {Promise<{photos: string[]}>}
+     */
+    async deletePhoto(taskId, filename) {
+        return this._fetch(`/tasks/${encodeURIComponent(taskId)}/photos/${encodeURIComponent(filename)}`, {
+            method: 'DELETE',
+        });
+    },
+
+    /**
+     * Get the URL for a photo thumbnail.
+     * @param {string} filename - Photo filename
+     * @returns {string} Thumbnail URL
+     */
+    getPhotoThumbUrl(filename) {
+        return `${this.baseUrl}/photos/${encodeURIComponent(filename)}/thumb`;
+    },
+
+    /**
+     * Get the URL for a full-size photo.
+     * @param {string} filename - Photo filename
+     * @returns {string} Full-size photo URL
+     */
+    getPhotoUrl(filename) {
+        return `${this.baseUrl}/photos/${encodeURIComponent(filename)}`;
+    },
+
     async archiveTask(id) {
         return this._fetch(`/tasks/${encodeURIComponent(id)}/archive`, { method: "POST" });
     },

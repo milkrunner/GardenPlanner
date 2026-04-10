@@ -23,6 +23,7 @@ function rowToTask(row) {
         recurrence: row.recurrence,
         subtasks: row.subtasks || [],
         history: row.history || [],
+        photos: row.photos || [],
         comments: row.comments || [],
         sortOrder: parseInt(row.sort_order),
         completedAt: row.completed_at,
@@ -61,13 +62,14 @@ async function readArchivedTasks() {
  */
 async function createTask(task) {
     const { rows } = await query(`
-        INSERT INTO tasks (id, title, employee, location, description, notes, status, priority, recurrence, subtasks, history, sort_order, created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        INSERT INTO tasks (id, title, employee, location, description, notes, status, priority, recurrence, subtasks, history, photos, sort_order, created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
         RETURNING *
     `, [
         task.id, task.title, task.employee, task.location,
         task.description, task.notes, task.status, task.priority, task.recurrence,
         JSON.stringify(task.subtasks), JSON.stringify(task.history),
+        JSON.stringify(task.photos || []),
         task.sortOrder, task.createdAt
     ]);
     return rowToTask(rows[0]);
@@ -114,6 +116,10 @@ async function updateTask(id, fields) {
     if (fields.history !== undefined) {
         setClauses.push(`history = $${idx++}`);
         values.push(JSON.stringify(fields.history));
+    }
+    if (fields.photos !== undefined) {
+        setClauses.push(`photos = $${idx++}`);
+        values.push(JSON.stringify(fields.photos));
     }
     if (fields.comments !== undefined) {
         setClauses.push(`comments = $${idx++}`);
