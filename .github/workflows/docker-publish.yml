@@ -68,6 +68,7 @@ jobs:
           severity: 'HIGH,CRITICAL'
           exit-code: '1'
           vuln-type: 'os,library'
+          trivyignores: '.trivyignore'
 
       - name: Trivy Scan (MEDIUM — nicht blockierend)
         if: always()

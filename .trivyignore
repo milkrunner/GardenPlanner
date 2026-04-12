@@ -1,0 +1,6 @@
+# node-tar CVEs in node:22-alpine base image — no fix available in Alpine packages yet
+# Re-evaluate when base image is updated
+CVE-2026-24842
+CVE-2026-26960
+CVE-2026-29786
+CVE-2026-31802
