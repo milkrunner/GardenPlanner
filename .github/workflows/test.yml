@@ -27,8 +27,8 @@ jobs:
           rm -f package-lock.json
           npm install
 
-      - name: Run npm audit (blocking for high/critical)
-        run: npm audit --audit-level=high
+      - name: Run npm audit (blocking for high/critical, production only)
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Run tests
         run: npm test

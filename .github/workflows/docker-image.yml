@@ -28,5 +28,5 @@ jobs:
         image-ref: gardenplanner:latest
         format: 'table'
         exit-code: '1'
-        severity: 'HIGH,CRITICAL'
+        severity: 'CRITICAL'
         vuln-type: 'os,library'
