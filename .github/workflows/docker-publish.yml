@@ -59,7 +59,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trivy Vulnerability Scan
+      - name: Trivy Scan (HIGH/CRITICAL — blockierend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'gardenplanner:local'
+          format: 'table'
+          output: 'trivy-critical.txt'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          vuln-type: 'os,library'
+
+      - name: Trivy Scan (MEDIUM — nicht blockierend)
+        if: always()
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'gardenplanner:local'
@@ -72,10 +83,11 @@ jobs:
       - name: Trivy Scan Summary
         if: always()
         run: |
-          echo "## 🔍 Trivy Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
+          echo "## Trivy Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** gardenplanner:local" >> $GITHUB_STEP_SUMMARY
-          echo "**Severity-Filter:** MEDIUM, HIGH, CRITICAL" >> $GITHUB_STEP_SUMMARY
+          echo "**Blocking:** HIGH, CRITICAL" >> $GITHUB_STEP_SUMMARY
+          echo "**Warning:** MEDIUM" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ -s trivy-report.txt ]; then
             echo '```' >> $GITHUB_STEP_SUMMARY

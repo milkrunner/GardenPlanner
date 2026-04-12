@@ -1,0 +1,154 @@
+name: Weekly Security Scan
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Jeden Montag um 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: develop
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --package-lock-only
+
+      - name: Run npm audit
+        id: audit
+        run: |
+          npm audit --json > audit-report.json 2>&1 || true
+          VULNS=$(node -p "
+            const r = require('./audit-report.json');
+            const m = r.metadata?.vulnerabilities || {};
+            JSON.stringify({ high: m.high || 0, critical: m.critical || 0, total: (m.high || 0) + (m.critical || 0) })
+          ")
+          echo "high=$(echo $VULNS | node -p 'JSON.parse(require("fs").readFileSync("/dev/stdin","utf8")).high')" >> "$GITHUB_OUTPUT"
+          echo "critical=$(echo $VULNS | node -p 'JSON.parse(require("fs").readFileSync("/dev/stdin","utf8")).critical')" >> "$GITHUB_OUTPUT"
+          echo "total=$(echo $VULNS | node -p 'JSON.parse(require("fs").readFileSync("/dev/stdin","utf8")).total')" >> "$GITHUB_OUTPUT"
+
+      - name: Create issue for npm vulnerabilities
+        if: steps.audit.outputs.total != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const high = ${{ steps.audit.outputs.high }};
+            const critical = ${{ steps.audit.outputs.critical }};
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,automated'
+            });
+            const existing = issues.find(i => i.title.includes('npm Schwachstellen'));
+            const title = `fix: ${critical + high} npm Schwachstellen gefunden (${critical} critical, ${high} high)`;
+            const body = `## Automatischer Security Scan\n\n` +
+              `Der woechentliche npm audit hat Schwachstellen gefunden:\n\n` +
+              `- **Critical:** ${critical}\n- **High:** ${high}\n\n` +
+              `Bitte \`npm audit\` ausfuehren und betroffene Pakete aktualisieren.\n\n` +
+              `_Erstellt durch den Weekly Security Scan Workflow._`;
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                title, body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title, body,
+                labels: ['security', 'automated']
+              });
+            }
+
+  docker-scan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tag: [beta, latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Pull Docker image
+        id: pull
+        run: |
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/gardenplanner:${{ matrix.tag }}"
+          if docker pull "$IMAGE" 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trivy Scan
+        if: steps.pull.outputs.exists == 'true'
+        uses: aquasecurity/trivy-action@master
+        id: trivy
+        with:
+          image-ref: ${{ steps.pull.outputs.image }}
+          format: 'json'
+          output: 'trivy-results.json'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '0'
+          vuln-type: 'os,library'
+
+      - name: Check results and create issue
+        if: steps.pull.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('trivy-results.json', 'utf8'));
+            const vulns = (results.Results || []).flatMap(r => r.Vulnerabilities || []);
+            const critical = vulns.filter(v => v.Severity === 'CRITICAL').length;
+            const high = vulns.filter(v => v.Severity === 'HIGH').length;
+            if (critical + high === 0) return;
+
+            const tag = '${{ matrix.tag }}';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'security,automated'
+            });
+            const existing = issues.find(i => i.title.includes(`Docker ${tag}`));
+            const title = `fix: ${critical + high} CVEs im Docker-Image :${tag} (${critical} critical, ${high} high)`;
+            const top5 = vulns.slice(0, 5).map(v =>
+              `| ${v.VulnerabilityID} | ${v.Severity} | ${v.PkgName} | ${v.InstalledVersion} | ${v.FixedVersion || '-'} |`
+            ).join('\n');
+            const body = `## Automatischer Docker Image Scan\n\n` +
+              `**Image:** gardenplanner:${tag}\n` +
+              `**Critical:** ${critical} | **High:** ${high}\n\n` +
+              `| CVE | Severity | Package | Version | Fix |\n|-----|----------|---------|---------|-----|\n${top5}\n\n` +
+              (vulns.length > 5 ? `_...und ${vulns.length - 5} weitere._\n\n` : '') +
+              `_Erstellt durch den Weekly Security Scan Workflow._`;
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                title, body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title, body,
+                labels: ['security', 'automated']
+              });
+            }

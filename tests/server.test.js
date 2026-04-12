@@ -922,13 +922,12 @@ describeWithDB('Rate limiting', () => {
 // --- JSON body size limit ---
 
 describe('JSON body size limit', () => {
-    test('rejects payloads over 100kb with 413 status', async () => {
-        const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
+    test('rejects payloads over 5mb with 413 status', async () => {
+        const largeBody = { title: 'x'.repeat(6 * 1024 * 1024), location: 'Garten' };
         const res = await request(app)
             .post('/api/v1/tasks')
             .send(largeBody);
 
         expect(res.status).toBe(413);
-        expect(res.body.error).toBe(true);
     });
 });

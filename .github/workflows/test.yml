@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 permissions:
   contents: read
@@ -27,9 +27,8 @@ jobs:
           rm -f package-lock.json
           npm install
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+      - name: Run npm audit (blocking for high/critical, production only)
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Run tests
         run: npm test

@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 permissions:
   contents: read
@@ -29,3 +29,4 @@ jobs:
         format: 'table'
         exit-code: '1'
         severity: 'CRITICAL'
+        vuln-type: 'os,library'
