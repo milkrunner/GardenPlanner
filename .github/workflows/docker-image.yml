@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 permissions:
   contents: read
@@ -28,4 +28,5 @@ jobs:
         image-ref: gardenplanner:latest
         format: 'table'
         exit-code: '1'
-        severity: 'CRITICAL'
+        severity: 'HIGH,CRITICAL'
+        vuln-type: 'os,library'
