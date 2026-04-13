@@ -301,12 +301,16 @@ body {
 /* ---------- Empty State ---------- */
 .display-empty {
   flex: 1;
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--d-space-lg);
   color: var(--d-empty-color);
+}
+
+.display-empty.visible {
+  display: flex;
 }
 
 .display-empty svg {

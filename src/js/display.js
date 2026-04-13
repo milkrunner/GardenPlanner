@@ -193,11 +193,11 @@
 
         if (sorted.length === 0) {
           tasksGrid.innerHTML = '';
-          tasksGrid.hidden = true;
-          emptyState.hidden = false;
+          tasksGrid.style.display = 'none';
+          emptyState.classList.add('visible');
         } else {
-          emptyState.hidden = true;
-          tasksGrid.hidden = false;
+          emptyState.classList.remove('visible');
+          tasksGrid.style.display = '';
 
           // Fade-Effekt
           tasksGrid.classList.add('display-fade-out');
