@@ -1,0 +1,197 @@
+/* ==========================================
+   BASE — Reset, CSS Variables, Body, Typography
+   ========================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Screen Reader Only - Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary);
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 9999;
+  border-radius: 0 0 4px 0;
+  font-weight: 600;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
+/* Focus visible improvements */
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+[data-theme="dark"] :focus-visible,
+[data-theme="dark"] button:focus-visible,
+[data-theme="dark"] a:focus-visible,
+[data-theme="dark"] input:focus-visible,
+[data-theme="dark"] select:focus-visible,
+[data-theme="dark"] textarea:focus-visible {
+  outline-color: var(--primary);
+}
+
+:root {
+  /* ==========================================
+     Design Tokens
+     ========================================== */
+
+  /* Spacing Scale (4px base) */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  /* Duration (transitions) */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.2s;
+  --duration-slow: 0.3s;
+
+  /* Radii (organic, larger) */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows (Elevation) */
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 8%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 12%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 15%);
+  --shadow-xl: 0 20px 60px rgb(0 0 0 / 30%);
+
+  /* Typography */
+  --font-heading: "DM Serif Display", Georgia, serif;
+  --font-body: "Nunito", system-ui, sans-serif;
+
+  /* Status Colors */
+  --success: #16A34A;
+  --success-light: #bbf7d0;
+  --warning: #EA580C;
+  --warning-light: #fed7aa;
+  --error: #E11D48;
+  --error-light: #fecaca;
+  --info: #7C3AED;
+  --info-light: #bfdbfe;
+
+  --primary: #365E3D;
+  --primary-light: #A8D5BA;
+  --primary-dark: #1B3D22;
+  --accent: #7C3AED;
+  --accent-warm: #FBBF24;
+  --danger: #E11D48;
+  --text: #1C1917;
+  --text-light: #78716C;
+  --bg: #FBF9F4;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F5F3EE;
+  --border: #E7E5E4;
+  --shadow: rgb(0 0 0 / 8%);
+  --focus-ring: rgb(54 94 61 / 50%);
+}
+
+[data-theme="dark"] {
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 20%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 35%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 50%);
+  --shadow-xl: 0 20px 60px rgb(0 0 0 / 70%);
+  --success: #4ade80;
+  --success-light: #14532d;
+  --warning: #fb923c;
+  --warning-light: #431407;
+  --error: #f87171;
+  --error-light: #450a0a;
+  --info: #A78BFA;
+  --info-light: #172554;
+  --primary: #A8D5BA;
+  --primary-light: #365E3D;
+  --primary-dark: #7BC4A0;
+  --accent: #A78BFA;
+  --danger: #f87171;
+  --text: #F5F5F4;
+  --text-light: #A8A29E;
+  --bg: #0C0A09;
+  --focus-ring: rgb(168 213 186 / 60%);
+  --bg-secondary: #1C1917;
+  --bg-tertiary: #292524;
+  --border: #44403C;
+  --border-light: #57534E;
+  --shadow: rgb(0 0 0 / 50%);
+  --shadow-heavy: rgb(0 0 0 / 80%);
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 400;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+  /* Verhindert ungewollte Zoom-Gesten */
+  touch-action: manipulation;
+}
+
+/* Headings use serif font */
+h1, h2, h3 {
+  font-family: var(--font-heading);
+}
+
+h1 { font-size: var(--text-2xl); font-weight: 700; }
+h2 { font-size: var(--text-xl); font-weight: 600; }
+h3 { font-size: var(--text-base); font-weight: 600; }
+
+textarea {
+  resize: vertical;
+  font-family: inherit;
+  min-height: 100px;
+}

@@ -1,0 +1,312 @@
+/* ==========================================
+   UTILITIES — Animations, Print-Styles,
+               Responsive Helpers, Reduced Motion
+   ========================================== */
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  /* Allgemeine Print-Optimierungen */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  /* Seiten-Layout */
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+
+  /* Verstecke nicht-druckbare Elemente */
+  .theme-toggle,
+  .theme-toggle-btn,
+  .main-nav,
+  nav,
+  footer,
+  .task-actions,
+  .task-checkbox,
+  .drag-handle,
+  button,
+  .btn,
+  .filter-section,
+  .view-controls,
+  .bulk-actions,
+  .archive-controls,
+  .stats-link-card,
+  .modal,
+  .toast,
+  #taskForm,
+  .form-section {
+    display: none !important;
+  }
+
+  /* Header anpassen */
+  header {
+    background: white !important;
+    border-bottom: 2px solid #1b5e3f !important;
+    padding: 1cm 0 0.5cm 0 !important;
+    margin-bottom: 0.5cm;
+  }
+
+  header h1 {
+    color: #1b5e3f !important;
+    font-size: 18pt;
+    margin: 0;
+  }
+
+  header p {
+    color: #333 !important;
+    font-size: 10pt;
+    margin: 0.2cm 0 0 0;
+  }
+
+  /* Statistik-Karten */
+  .stats-section {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5cm;
+    margin-bottom: 0.5cm;
+    page-break-inside: avoid;
+  }
+
+  .stat-card {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    padding: 0.4cm;
+    page-break-inside: avoid;
+  }
+
+  .stat-card h3 {
+    color: #333 !important;
+    font-size: 9pt;
+    margin: 0 0 0.2cm 0;
+  }
+
+  .stat-number {
+    color: #1b5e3f !important;
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0;
+  }
+
+  /* Sektions-Header */
+  .section-header {
+    background: white !important;
+    border-bottom: 2px solid #1b5e3f !important;
+    padding: 0.3cm 0;
+    margin: 0.5cm 0 0.3cm 0;
+    page-break-after: avoid;
+  }
+
+  .section-header h2 {
+    color: #1b5e3f !important;
+    font-size: 14pt;
+    margin: 0;
+  }
+
+  /* Task-Karten */
+  .task-card {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    border-left: 4px solid #1b5e3f !important;
+    padding: 0.4cm;
+    margin-bottom: 0.3cm;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  .task-card.completed {
+    border-left-color: #27ae60 !important;
+    background: #f0f9f4 !important;
+  }
+
+  .task-card.archived {
+    border-left-color: #95a5a6 !important;
+    background: #f5f5f5 !important;
+  }
+
+  .task-header {
+    margin-bottom: 0.2cm;
+  }
+
+  .task-title {
+    color: #1b5e3f !important;
+    font-size: 11pt;
+    font-weight: 600;
+  }
+
+  .task-card.completed .task-title {
+    text-decoration: line-through;
+    color: #27ae60 !important;
+  }
+
+  .task-meta {
+    display: flex;
+    gap: 0.5cm;
+    margin-bottom: 0.2cm;
+    font-size: 9pt;
+  }
+
+  .task-meta span {
+    color: #555 !important;
+  }
+
+  .task-meta svg {
+    width: 12px;
+    height: 12px;
+    stroke: #555;
+  }
+
+  .task-description {
+    color: #333 !important;
+    font-size: 9pt;
+    line-height: 1.4;
+    margin-top: 0.2cm;
+  }
+
+  /* Status-Badge */
+  .archived-badge {
+    color: #666 !important;
+    font-size: 8pt;
+    padding: 0.1cm 0.2cm;
+    border: 1px solid #999;
+    border-radius: 3px;
+  }
+
+  .archived-badge svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  /* Charts fuer Statistik-Seite */
+  .charts-section {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 0.5cm;
+    page-break-inside: avoid;
+  }
+
+  .chart-card {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    padding: 0.4cm;
+    page-break-inside: avoid;
+  }
+
+  .chart-card h3 {
+    color: #1b5e3f !important;
+    font-size: 11pt;
+    margin: 0 0 0.3cm 0;
+  }
+
+  .chart-bar {
+    margin-bottom: 0.2cm;
+  }
+
+  .chart-bar-label {
+    color: #333 !important;
+    font-size: 8pt;
+  }
+
+  .chart-bar-fill {
+    background: #1b5e3f !important;
+    print-color-adjust: exact;
+  }
+
+  .chart-bar-value {
+    color: white !important;
+    font-size: 8pt;
+  }
+
+  .chart-bar-count {
+    color: #555 !important;
+    font-size: 8pt;
+  }
+
+  /* Fortschrittsbalken */
+  .progress-bar {
+    background: #e0e0e0 !important;
+    border: 1px solid #ccc;
+  }
+
+  .progress-fill {
+    background: #1b5e3f !important;
+    print-color-adjust: exact;
+  }
+
+  /* Leere-State ausblenden beim Drucken */
+  .empty-state {
+    display: none !important;
+  }
+
+  /* Seitenumbrueche optimieren */
+  .dashboard-section,
+  .statistics-section {
+    page-break-inside: avoid;
+  }
+
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+
+  /* Footer fuer Druckinfo */
+  .container::after {
+    content: "Ausgedruckt am " attr(data-print-date) " | Gartenplaner \00A9  2025";
+    display: block;
+    text-align: center;
+    color: #999 !important;
+    font-size: 8pt;
+    margin-top: 1cm;
+    padding-top: 0.5cm;
+    border-top: 1px solid #ddd;
+  }
+
+  /* Verbesserte Lesbarkeit */
+  .task-list {
+    display: block !important;
+  }
+
+  /* Sicherstellen, dass Farben gedruckt werden */
+  .stat-number,
+  .task-title,
+  .chart-bar-fill {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION - Accessibility
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .offline-sync-toast { animation: none; }
+
+  .view-toggle-btn {
+    transition: none;
+  }
+
+  .tile-view .task-card {
+    animation: none;
+  }
+}
