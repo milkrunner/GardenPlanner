@@ -1,3 +1,4 @@
+---
 name: Publish Docker Image
 
 # Hinweis: Sobald dieser Workflow auf dem Default-Branch (main) liegt,
@@ -88,16 +89,16 @@ jobs:
       - name: Trivy Scan Summary
         if: always()
         run: |
-          echo "## Trivy Vulnerability Scan" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** gardenplanner:local" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Trivy Vulnerability Scan" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Image:** gardenplanner:local" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ -s trivy-report.txt ]; then
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            cat trivy-report.txt >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            cat trivy-report.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "Keine Schwachstellen gefunden." >> $GITHUB_STEP_SUMMARY
+            echo "Keine Schwachstellen gefunden." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Upload Trivy Report
