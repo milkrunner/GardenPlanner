@@ -166,7 +166,12 @@ const jsBundles = {
     ],
     // garden.html
     'garden-bundle.js': [
-        'src/js/garden-planner.js',
+        'src/js/garden-core.js',
+        'src/js/garden-canvas.js',
+        'src/js/garden-tools.js',
+        'src/js/garden-sidebar.js',
+        'src/js/garden-edit.js',
+        'src/js/garden-export.js',
         'src/js/offline-store.js',
         'src/js/sync-manager.js',
         'src/js/offline-ui.js'

@@ -7,7 +7,11 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 
 if (require.main === module) {
     if (process.env.NODE_ENV === 'production' && !JWT_SECRET) {
-        process.stderr.write('\u26a0\ufe0f  WARNUNG: JWT_SECRET ist nicht gesetzt \u2014 Authentifizierung ist deaktiviert!\n');
+        process.stderr.write('FATAL: JWT_SECRET ist nicht gesetzt. Server-Start in Production ohne JWT_SECRET ist nicht erlaubt (Auth-Bypass-Gefahr).\n');
+        process.exit(1);
+    }
+    if (!JWT_SECRET) {
+        process.stderr.write('WARNUNG: JWT_SECRET ist nicht gesetzt — Authentifizierung ist deaktiviert (nur fuer lokale Entwicklung).\n');
     }
 
     migrate().then(() => {

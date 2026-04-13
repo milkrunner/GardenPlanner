@@ -1,44 +1,18 @@
-# Git
+node_modules
 .git
+.github
+tests
+docs
+mockups
+.claude
+.superpowers
+.env*
+*.md
+!README.md
 .gitignore
-
-# Documentation
-docs/
-
-# Tests
-tests/
-
-# Claude Code
-.claude/
-
-# GitHub Actions
-.github/
-
-# Dependencies (rebuilt in container)
-node_modules/
-
-# Runtime data (mounted as volume)
-data/
-
-# Environment
-.env
-.env.local
-
-# Editor
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Docker files
-Dockerfile
+.eslintrc*
+eslint.config.*
+jest.config.*
+.prettierrc*
+.editorconfig
 docker-compose.yml
-.dockerignore
-
-# Logs
-*.log
-logs/
