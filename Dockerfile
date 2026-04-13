@@ -25,7 +25,7 @@ COPY package.json package-lock.json* ./
 RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
     && npm config set registry ${NPM_REGISTRY} \
     && npm ci --omit=dev \
-    && (npm audit fix --force || true)
+    && npm install minimatch@9.0.7 glob@10.5.0 picomatch@4.0.4 brace-expansion@2.0.3 --no-save 2>/dev/null || true
 RUN npm audit --audit-level=high --omit=dev || echo "WARN: npm audit found vulnerabilities (non-blocking)"
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
