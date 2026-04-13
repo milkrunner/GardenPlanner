@@ -39,20 +39,30 @@ function writeBundle(name, content) {
 
 // ── CSS bundles ──────────────────────────────────────────────────────
 
+// Core CSS files (replacing the monolithic styles.css)
+const coreCss = [
+    'src/css/base.css',
+    'src/css/layout.css',
+    'src/css/tasks.css',
+    'src/css/forms.css',
+    'src/css/components.css',
+    'src/css/utilities.css'
+];
+
 const cssBundles = {
     'styles.css': [
-        'src/css/styles.css'
+        ...coreCss
     ],
     'plants.css': [
-        'src/css/styles.css',
+        ...coreCss,
         'src/css/plants.css'
     ],
     'logs.css': [
-        'src/css/styles.css',
+        ...coreCss,
         'src/css/logs.css'
     ],
     'garden.css': [
-        'src/css/styles.css',
+        ...coreCss,
         'src/css/garden.css'
     ]
 };
