@@ -10,10 +10,10 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 WORKDIR /app
 
 # Update Alpine packages to fix known vulnerabilities
-# CVE-2025-60876 (busybox), CVE-2026-28390, CVE-2026-31790 & CVE-2026-2673 (openssl)
-ARG CACHE_BUST=1
-RUN apk update && apk upgrade --no-cache \
-    && apk add --no-cache 'openssl>=3.3.7' 'busybox>=1.37.0-r15' \
+# CVE-2025-60876 (busybox), CVE-2026-28390, CVE-2026-31790 (openssl)
+RUN apk update \
+    && apk upgrade --no-cache \
+    && apk add --no-cache openssl \
     && apk info -v openssl busybox
 
 # Dependencies installieren
@@ -25,7 +25,6 @@ COPY package.json package-lock.json* ./
 RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
     && npm config set registry ${NPM_REGISTRY} \
     && npm ci --omit=dev \
-    && npm update tar minimatch glob picomatch brace-expansion 2>/dev/null || true \
     && (npm audit fix --force || true)
 RUN npm audit --audit-level=high --omit=dev || echo "WARN: npm audit found vulnerabilities (non-blocking)"
 
