@@ -1,7 +1,10 @@
 // Dashboard-spezifische Initialisierung (#71)
+// Debug-Logging: nur aktiv wenn localStorage.debug === 'true'
+var debug = (localStorage.getItem('debug') === 'true') ? console.log.bind(console) : function() {};
+
 document.addEventListener('DOMContentLoaded', function () {
     if (window.gartenPlaner) {
-        console.log('📊 Dashboard geladen');
+        debug('📊 Dashboard geladen');
     }
 
     // View Toggle: Liste / Kacheln (#238)

@@ -2,6 +2,9 @@
 // Orchestrator: Defines class, constructor, init, and Weather integration.
 // Methods are added by module files via prototype extension:
 //   task-state.js, task-filters.js, task-renderer.js, task-events.js, task-export.js
+
+// Debug-Logging: nur aktiv wenn localStorage.debug === 'true'
+var debug = (localStorage.getItem('debug') === 'true') ? console.log.bind(console) : function() {};
 class GartenPlaner {
 	constructor() {
 		this.tasks = [];
@@ -588,19 +591,19 @@ document.addEventListener("DOMContentLoaded", () => {
 	window.announcer = announcer;
 	window.GP.announcer = announcer;
 
-	console.log("🌱 Gartenplaner erfolgreich gestartet!");
-	console.log(
+	debug("🌱 Gartenplaner erfolgreich gestartet!");
+	debug(
 		"💾 Alle Änderungen werden automatisch im Browser gespeichert (LocalStorage)",
 	);
-	console.log("🖱️ Drag & Drop aktiviert - Ziehe Aufgaben zum Sortieren!");
-	console.log(
+	debug("🖱️ Drag & Drop aktiviert - Ziehe Aufgaben zum Sortieren!");
+	debug(
 		"✓ Bulk-Aktionen aktiviert - Mehrere Aufgaben gleichzeitig bearbeiten!",
 	);
-	console.log("🌙 Dark Mode verfügbar - Klick auf den Button unten rechts!");
-	console.log(
+	debug("🌙 Dark Mode verfügbar - Klick auf den Button unten rechts!");
+	debug(
 		"🖨️ Print-Stylesheet aktiviert - Optimierte Druckansicht verfügbar!",
 	);
-	console.log(
+	debug(
 		"♿ Accessibility verbessert - ARIA-Labels und Keyboard-Navigation!",
 	);
 
