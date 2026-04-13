@@ -36,8 +36,10 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Sync package-lock.json
-        run: npm install --package-lock-only
+      - name: Sync package-lock.json (fresh resolve to apply overrides)
+        run: |
+          rm -f package-lock.json
+          npm install --package-lock-only
 
       - name: Extract version from package.json
         id: pkg
