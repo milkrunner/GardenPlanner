@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: write
+  statuses: write
+
+jobs:
+  lint:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Lint Code Base
+        uses: super-linter/super-linter@47984f49b4e87383eed97890fe2dca6063bbd9c3
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: "main"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINTER_RULES_PATH: .
+          JAVASCRIPT_ES_CONFIG_FILE: eslint.config.mjs
+          VALIDATE_JAVASCRIPT_ES: false
+          VALIDATE_JAVASCRIPT_PRETTIER: false
+          VALIDATE_HTML_PRETTIER: false
+          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
+          VALIDATE_CHECKOV: false
+          VALIDATE_JSCPD: false
+          VALIDATE_JSON: false
+          VALIDATE_BIOME_FORMAT: false
+          VALIDATE_BIOME_LINT: false
+          VALIDATE_TRIVY: false
+          VALIDATE_GITHUB_ACTIONS_ZIZMOR: false
+
+  version-check:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check version (PR — blocking)
+        if: github.event_name == 'pull_request'
+        run: |
+          PR_VERSION=$(node -p "require('./package.json').version")
+          git fetch origin ${{ github.base_ref }} --depth=1
+          BASE_VERSION=$(git show origin/${{ github.base_ref }}:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
+          if [ "$PR_VERSION" = "$BASE_VERSION" ]; then
+            echo "::error::Version in package.json ($PR_VERSION) has not changed. Please bump the version before merging."
+            exit 1
+          fi
+          echo "✓ Version bumped: $BASE_VERSION → $PR_VERSION"
+
+      - name: Check version (Push — warning only)
+        if: github.event_name == 'push'
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          PREVIOUS=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version" 2>/dev/null || echo "unknown")
+          if [ "$PREVIOUS" = "unknown" ]; then
+            echo "✓ Could not determine previous version. Current: $CURRENT"
+            exit 0
+          fi
+          if git diff HEAD~1 HEAD --name-only | grep -q "^package.json$"; then
+            if [ "$CURRENT" = "$PREVIOUS" ]; then
+              echo "::warning::package.json was modified but version was not bumped ($CURRENT)."
+            else
+              echo "✓ Version bumped: $PREVIOUS → $CURRENT"
+            fi
+          fi
+
+  test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Sync lockfile
+        run: npm install --package-lock-only
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit (production only, blocking)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run tests
+        run: npm test
+
+  lockfile-sync:
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Update lockfile
+        run: npm install --package-lock-only
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet package-lock.json; then
+            echo "No changes to package-lock.json"
+          else
+            git add package-lock.json
+            git commit -m "fix: update package-lock.json — sync with package.json [skip ci]"
+            git push
+          fi
