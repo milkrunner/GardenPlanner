@@ -13,7 +13,25 @@ ARG NPM_STRICT_SSL=true
 COPY package.json ./
 RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
     && npm config set registry ${NPM_REGISTRY} \
-    && npm install --omit=dev
+    && npm install --omit=dev \
+    && echo "--- Replacing vulnerable nested packages ---" \
+    && for pkg_ver in "tar@7.5.13" "minimatch@9.0.7" "glob@10.5.0" "picomatch@4.0.4" "brace-expansion@2.0.3"; do \
+         pkg=$(echo "$pkg_ver" | cut -d@ -f1); \
+         ver=$(echo "$pkg_ver" | cut -d@ -f2); \
+         npm pack "$pkg_ver" --pack-destination /tmp 2>/dev/null || continue; \
+         find node_modules -type d -name "$pkg" | while read dir; do \
+           if [ -f "$dir/package.json" ]; then \
+             current=$(node -p "try{require('./$dir/package.json').version}catch(e){''}" 2>/dev/null); \
+             if [ -n "$current" ] && [ "$current" != "$ver" ]; then \
+               echo "  Replacing $pkg $current -> $ver in $dir"; \
+               rm -rf "$dir"/*; \
+               tar xzf "/tmp/${pkg}-${ver}.tgz" --strip-components=1 -C "$dir"; \
+             fi; \
+           fi; \
+         done; \
+         rm -f "/tmp/${pkg}-${ver}.tgz"; \
+       done \
+    && echo "--- Vulnerable packages replaced ---"
 
 # Anwendungsdateien kopieren
 COPY server.js ./
