@@ -10,10 +10,10 @@ WORKDIR /app
 ARG NPM_REGISTRY=https://registry.npmjs.org/
 ARG NPM_STRICT_SSL=true
 
-COPY package.json package-lock.json* ./
+COPY package.json ./
 RUN npm config set strict-ssl ${NPM_STRICT_SSL} \
     && npm config set registry ${NPM_REGISTRY} \
-    && npm ci --omit=dev
+    && npm install --omit=dev
 
 # Anwendungsdateien kopieren
 COPY server.js ./
