@@ -56,7 +56,7 @@ WORKDIR /app
 # bündelt intern verwundbare Pakete (tar, minimatch, glob, picomatch)
 RUN apk update \
     && apk upgrade --no-cache \
-    && apk add --no-cache openssl \
+    && apk add --no-cache openssl zlib \
     && rm -rf /var/cache/apk/* \
     && rm -rf /usr/local/lib/node_modules/npm \
               /usr/local/lib/node_modules/corepack \
