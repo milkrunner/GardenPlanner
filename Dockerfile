@@ -52,10 +52,16 @@ LABEL description="Gartenplaner - Webanwendung mit REST API zur Verwaltung von G
 WORKDIR /app
 
 # Alpine-Packages aktualisieren (CVE-2025-60876, CVE-2026-28390, CVE-2026-31790)
+# npm/npx/corepack entfernen — wird zur Laufzeit nicht gebraucht,
+# bündelt intern verwundbare Pakete (tar, minimatch, glob, picomatch)
 RUN apk update \
     && apk upgrade --no-cache \
     && apk add --no-cache openssl \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /usr/local/lib/node_modules/npm \
+              /usr/local/lib/node_modules/corepack \
+              /usr/local/bin/npm /usr/local/bin/npx \
+              /usr/local/bin/corepack
 
 # Nur Production node_modules aus Builder kopieren (ohne Build-Tools)
 COPY --from=builder /app/node_modules ./node_modules
