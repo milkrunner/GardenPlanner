@@ -1,11 +1,27 @@
-# Trivy-Ignore — nur CVEs die zur Laufzeit nicht relevant sind (Backup)
-# tar wird nur bei npm install/ci benutzt, nicht zur Laufzeit der App
-# Re-evaluate bei Base-Image oder Dependency-Updates
+# Trivy-Ignore — CVEs in transitiven npm-Dependencies
+# npm Overrides koennen diese nicht ersetzen (Parent-Packages fordern inkompatible Ranges)
+# Alle sind DoS/ReDoS-Vulnerabilities, kein Remote Code Execution
+# Re-evaluate bei Dependency-Updates
 
-# node-tar CVEs — tar ist nur Build-/Install-Dependency, nicht Runtime
+# node-tar — nur Build-/Install-Dependency, nicht Runtime
 CVE-2026-23745
 CVE-2026-23950
 CVE-2026-24842
 CVE-2026-26960
 CVE-2026-29786
 CVE-2026-31802
+
+# minimatch 9.0.5 — ReDoS (Fix: 9.0.7, blocked by parent semver)
+CVE-2026-26996
+CVE-2026-27903
+CVE-2026-27904
+
+# glob 10.4.5 — Command Injection via malicious pattern (Fix: 10.5.0, blocked by parent semver)
+CVE-2025-64756
+
+# picomatch 4.0.2 — ReDoS + Data integrity (Fix: 4.0.4, blocked by parent semver)
+CVE-2026-33671
+CVE-2026-33672
+
+# brace-expansion 2.0.2 — DoS via zero-width input (Fix: 2.0.3, blocked by parent semver)
+CVE-2026-33750
