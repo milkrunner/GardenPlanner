@@ -1,0 +1,1 @@
+Gartenplaner - Webanwendung zur Verwaltung von Gartenaufgaben mit REST API

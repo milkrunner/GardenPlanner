@@ -49,8 +49,21 @@ and new files must pass, while byte-identical legacy files in
 Do not include unrelated mass formatting in feature PRs.
 
 CI runs check + smoke and uploads failure traces. `npm audit` is reported separately:
-existing advisories do not silently disappear or become a reason to disable tests.
-Review dependency changes and security reports in focused follow-up work.
+advisories do not silently disappear or become a reason to disable tests. The
+current audit state, the `overrides` in `package.json` and how to remove them are
+documented in [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md). Never use
+`npm audit fix --force`; review dependency changes in focused PRs.
+
+## Docker Hub description
+
+`docs/DOCKERHUB.md` (full description) and `docs/DOCKERHUB.short.txt` (max. 100
+characters) are the source for the Docker Hub repository page. Only document tags and
+features that exist. Validate with `node scripts/dockerhub-description.cjs --dry-run`
+(no network, no secrets; also covered by `npm test`). Publishing is a manual
+maintainer action: run the "Docker Hub description" workflow with `dry_run` disabled.
+It needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (access
+token with write permission); never put them in files or logs. The logo and categories
+cannot be set by the script and are maintained in the Docker Hub web UI.
 
 ## Existing browser test pages
 
