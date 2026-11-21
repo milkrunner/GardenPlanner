@@ -2,6 +2,10 @@ const { logger } = require('../logger');
 
 // --- Global error handler ---
 function errorHandler(err, req, res, next) {
+    // Response already started: delegate to Express, which closes the connection
+    if (res.headersSent) {
+        return next(err);
+    }
     // Let Express-generated HTTP errors (e.g., 413 Payload Too Large) pass through with their status
     if (err.status && err.status < 500) {
         return res.status(err.status).json({ error: err.message });

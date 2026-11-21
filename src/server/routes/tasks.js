@@ -1,14 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { asyncHandler } = require('../middleware/async-handler');
 const { validateIdParam } = require('../validation/task-validator');
-const {
-    listTasks,
-    searchTasks,
-    getTask,
-    createTask,
-    updateTask,
-    deleteTask
-} = require('../services/task-service');
+const { listTasks, searchTasks, getTask, createTask, updateTask, deleteTask } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
 router.get('/', (req, res) => {
@@ -28,31 +22,42 @@ router.get('/:id', validateIdParam, (req, res) => {
 });
 
 // POST /api/tasks - Create a new task
-router.post('/', async (req, res) => {
-    const result = await createTask(req.body);
-    if (result.error) {
-        return res.status(result.status).json({ errors: result.errors });
-    }
-    res.status(201).json(result.task);
-});
+router.post(
+    '/',
+    asyncHandler(async (req, res) => {
+        const result = await createTask(req.body);
+        if (result.error) {
+            return res.status(result.status).json({ errors: result.errors });
+        }
+        res.status(201).json(result.task);
+    }),
+);
 
 // PUT /api/tasks/:id - Update a task
-router.put('/:id', validateIdParam, async (req, res) => {
-    const result = await updateTask(req.params.id, req.body);
-    if (result.error) {
-        if (result.status === 400) return res.status(400).json({ errors: result.errors });
-        return res.status(result.status).json({ error: result.message });
-    }
-    res.json(result.task);
-});
+router.put(
+    '/:id',
+    validateIdParam,
+    asyncHandler(async (req, res) => {
+        const result = await updateTask(req.params.id, req.body);
+        if (result.error) {
+            if (result.status === 400) return res.status(400).json({ errors: result.errors });
+            return res.status(result.status).json({ error: result.message });
+        }
+        res.json(result.task);
+    }),
+);
 
 // DELETE /api/tasks/:id - Delete a task
-router.delete('/:id', validateIdParam, async (req, res) => {
-    const result = await deleteTask(req.params.id);
-    if (result.error) {
-        return res.status(result.status).json({ error: result.message });
-    }
-    res.status(204).send();
-});
+router.delete(
+    '/:id',
+    validateIdParam,
+    asyncHandler(async (req, res) => {
+        const result = await deleteTask(req.params.id);
+        if (result.error) {
+            return res.status(result.status).json({ error: result.message });
+        }
+        res.status(204).send();
+    }),
+);
 
 module.exports = router;

@@ -16,8 +16,29 @@
 
 Keep HTTP contracts in routes, domain behavior in services and file access in storage.
 JSON files and in-process locks are single-instance storage, not a shared database.
-`API_KEY` is optional; absence leaves the API open. There is no JWT/password backend
-on this main branch. Tests must clear ambient API_KEY before imports for isolation.
+`API_KEY` is optional outside production; absence leaves the API open. With
+`NODE_ENV=production` `server.js` refuses to start without `API_KEY` unless
+`ALLOW_UNAUTHENTICATED=true` is set (`src/server/config.js`). There is no JWT/password
+backend on this main branch. Tests must clear ambient API_KEY before imports for isolation.
+
+Async route handlers must be wrapped in `middleware/async-handler.js` (Express 4 does not
+forward rejected promises); a test fails if a raw `async` handler is registered. Storage
+failures reach the final error handler as HTTP 500 and are never swallowed: only a missing
+file is an empty collection, corrupt/unreadable files raise instead of being overwritten.
+Operations spanning tasks and archive lock in a fixed order (`withLockedTasksAndArchive`)
+and write the destination first, so a failed write duplicates rather than loses a task.
+
+## Betriebsgrenzen
+
+Run exactly **one** server instance per `DATA_DIR`. Task files are guarded by in-process
+locks, the read cache is per process, and the rate limiter (`express-rate-limit`, 100
+requests per 15 minutes, configured in `app.js`) uses its default in-memory store. A second
+instance on the same data would lose updates (no cross-process locking), so a shared rate
+limit store such as Redis alone would not make multi-instance operation safe and is
+deliberately not used. Consequences of the single-instance design: rate-limit counters reset
+on restart, and behind a reverse proxy `trust proxy` is not configured, so all clients share
+the proxy's address bucket. Scaling out requires a shared database first; that is a separate
+architecture change, not a configuration option.
 
 ## Frontend
 

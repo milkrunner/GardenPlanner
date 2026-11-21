@@ -109,10 +109,19 @@ curl -X POST http://localhost:8080/api/tasks \
 
 Umgebungsvariablen (siehe `.env.example`):
 
-| Variable  | Beschreibung                 | Standard             |
-| --------- | ---------------------------- | -------------------- |
-| `API_KEY` | API-Key für externen Zugriff | _(leer = kein Auth)_ |
-| `PORT`    | Server-Port                  | `3000`               |
+| Variable                | Beschreibung                                                                               | Standard             |
+| ----------------------- | ------------------------------------------------------------------------------------------ | -------------------- |
+| `API_KEY`               | API-Key für externen Zugriff (Header `X-API-Key`)                                          | _(leer = kein Auth)_ |
+| `ALLOW_UNAUTHENTICATED` | `true` erlaubt den Produktionsstart ohne `API_KEY` (bewusster Opt-out, nur hinter Gateway) | _(nicht gesetzt)_    |
+| `PORT`                  | Server-Port                                                                                | `3000`               |
+
+**Produktionsstart:** Mit `NODE_ENV=production` (Docker-Image-Standard) verweigert der Server den Start, wenn
+`API_KEY` fehlt oder leer ist, und beendet sich mit Exit-Code 1 und einer Fehlermeldung. Ohne `NODE_ENV=production`
+(lokale Entwicklung, `npm run dev`) bleibt die API ohne `API_KEY` offen und loggt nur eine Warnung. Wer
+produktiv bewusst ohne Auth laufen will, setzt zusätzlich `ALLOW_UNAUTHENTICATED=true`.
+
+**Betriebsgrenze:** Gartenplaner ist für genau **eine** Server-Instanz ausgelegt (JSON-Dateien, In-Process-Locks,
+In-Memory-Rate-Limit). Siehe [Architektur](docs/ARCHITECTURE.md#betriebsgrenzen).
 
 ## Entwicklung und Coding Agents
 
