@@ -2,7 +2,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
 	if (window.gartenPlaner) {
 		await window.gartenPlaner.whenReady();
-		console.log("📊 Statistiken-Seite geladen");
+		window.GP?.debug?.("📊 Statistiken-Seite geladen");
 
 		window.gartenPlaner.updateStatistics();
 		window.gartenPlaner.updateCharts();

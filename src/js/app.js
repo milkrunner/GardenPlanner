@@ -545,19 +545,5 @@ document.addEventListener("DOMContentLoaded", () => {
 	window.announcer = announcer;
 	window.GP.announcer = announcer;
 
-	console.log("🌱 Gartenplaner erfolgreich gestartet!");
-	console.log(
-		"💾 Alle Änderungen werden automatisch im Browser gespeichert (LocalStorage)",
-	);
-	console.log("🖱️ Drag & Drop aktiviert - Ziehe Aufgaben zum Sortieren!");
-	console.log(
-		"✓ Bulk-Aktionen aktiviert - Mehrere Aufgaben gleichzeitig bearbeiten!",
-	);
-	console.log("🌙 Dark Mode verfügbar - Klick auf den Button unten rechts!");
-	console.log(
-		"🖨️ Print-Stylesheet aktiviert - Optimierte Druckansicht verfügbar!",
-	);
-	console.log(
-		"♿ Accessibility verbessert - ARIA-Labels und Keyboard-Navigation!",
-	);
+	window.GP?.debug?.("🌱 Gartenplaner gestartet");
 });

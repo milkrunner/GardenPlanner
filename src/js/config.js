@@ -87,6 +87,21 @@ const APP_CONFIG = {
 window.GP = window.GP || {};
 window.GP.APP_CONFIG = APP_CONFIG;
 
+// Explizites Debug-Logging (#281): standardmäßig still. Aktivierung über
+// window.GP_DEBUG = true oder localStorage.setItem("gp_debug", 'true') + Reload.
+// Fehler und Warnungen laufen weiter über console.error/warn bzw. den Logger.
+window.GP.isDebugEnabled = function () {
+	if (window.GP_DEBUG === true) return true;
+	try {
+		return window.localStorage.getItem("gp_debug") === "true";
+	} catch (error) {
+		return false; // Storage gesperrt (z. B. Privatmodus)
+	}
+};
+window.GP.debug = function (...args) {
+	if (window.GP.isDebugEnabled()) console.debug(...args);
+};
+
 // Rückwärtskompatibilität
 window.APP_CONFIG = APP_CONFIG;
 

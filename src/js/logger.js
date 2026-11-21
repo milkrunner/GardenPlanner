@@ -41,7 +41,7 @@ class Logger {
 		// Auto-Cleanup alle 5 Minuten
 		this.startAutoCleanup();
 
-		console.log(
+		window.GP?.debug?.(
 			"📊 Logger initialisiert - Level:",
 			Object.keys(this.levels)[this.config.minLevel],
 		);
@@ -286,7 +286,7 @@ class Logger {
 			const stored = localStorage.getItem(this.config.storageKey);
 			if (stored) {
 				this.logs = JSON.parse(stored);
-				console.log(`📊 ${this.logs.length} Logs aus Storage geladen`);
+				window.GP?.debug?.(`📊 ${this.logs.length} Logs aus Storage geladen`);
 			}
 		} catch (error) {
 			console.warn("Logger: Could not load logs from storage", error);
@@ -515,7 +515,9 @@ class Logger {
 
 		if (before !== after) {
 			this._persistLogs();
-			console.log(`🧹 Logger cleanup: ${before - after} alte Logs entfernt`);
+			window.GP?.debug?.(
+				`🧹 Logger cleanup: ${before - after} alte Logs entfernt`,
+			);
 		}
 	}
 
@@ -539,7 +541,7 @@ class Logger {
 		this._persistLogs();
 		this.listeners.clear();
 		this.performanceMarks.clear();
-		console.log("📊 Logger destroyed");
+		window.GP?.debug?.("📊 Logger destroyed");
 	}
 }
 
@@ -615,4 +617,4 @@ window.GP.logger = window.logger;
 window.LoggerHelpers = LoggerHelpers;
 window.GP.LoggerHelpers = LoggerHelpers;
 
-console.log("📊 Logger-System initialisiert");
+window.GP?.debug?.("📊 Logger-System initialisiert");

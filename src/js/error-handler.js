@@ -41,7 +41,7 @@ class ErrorBoundary {
             });
         });
 
-        console.log('🛡️ Error Boundary initialisiert');
+        window.GP?.debug?.('🛡️ Error Boundary initialisiert');
     }
 
     handleError(errorInfo) {
@@ -188,7 +188,7 @@ class ErrorBoundary {
             );
             localStorage.setItem('gartenplaner_presence', JSON.stringify(cleaned));
 
-            console.log('✅ Storage Cleanup durchgeführt');
+            window.GP?.debug?.('✅ Storage Cleanup durchgeführt');
         } catch (e) {
             console.error('Storage Cleanup fehlgeschlagen:', e);
         }
@@ -295,7 +295,7 @@ class ErrorBoundary {
             intervalMinutes * 60 * 1000,
         );
 
-        console.log(`📊 Storage-Monitoring gestartet (alle ${intervalMinutes} Minuten)`);
+        window.GP?.debug?.(`📊 Storage-Monitoring gestartet (alle ${intervalMinutes} Minuten)`);
     }
 
     // Stoppe Storage-Überwachung
@@ -303,7 +303,7 @@ class ErrorBoundary {
         if (this.storageMonitorInterval) {
             clearInterval(this.storageMonitorInterval);
             this.storageMonitorInterval = null;
-            console.log('📊 Storage-Monitoring gestoppt');
+            window.GP?.debug?.('📊 Storage-Monitoring gestoppt');
         }
     }
 

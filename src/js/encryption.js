@@ -39,7 +39,7 @@ class DataEncryption {
 		try {
 			// Lade oder generiere Verschlüsselungskey
 			await this.loadOrGenerateKey();
-			console.log("🔐 Encryption initialisiert");
+			window.GP?.debug?.("🔐 Encryption initialisiert");
 		} catch (error) {
 			console.error("Fehler bei Encryption-Initialisierung:", error);
 			this.isSupported = false;
@@ -111,7 +111,7 @@ class DataEncryption {
 			await this._saveKeyToIDB(cryptoKey);
 			// Entferne alten localStorage-Eintrag
 			localStorage.removeItem("_gartenplaner_enc_key");
-			console.log("🔑 Key von localStorage nach IndexedDB migriert");
+			window.GP?.debug?.("🔑 Key von localStorage nach IndexedDB migriert");
 			return cryptoKey;
 		} catch (error) {
 			console.error("Fehler bei Key-Migration von localStorage:", error);
@@ -127,7 +127,7 @@ class DataEncryption {
 			if (idbKey) {
 				this.encryptionKey = idbKey;
 				this.keyGenerated = true;
-				console.log("🔑 Verschlüsselungskey aus IndexedDB geladen");
+				window.GP?.debug?.("🔑 Verschlüsselungskey aus IndexedDB geladen");
 				return;
 			}
 
@@ -136,13 +136,13 @@ class DataEncryption {
 			if (migratedKey) {
 				this.encryptionKey = migratedKey;
 				this.keyGenerated = true;
-				console.log("🔑 Verschlüsselungskey aus localStorage migriert");
+				window.GP?.debug?.("🔑 Verschlüsselungskey aus localStorage migriert");
 				return;
 			}
 
 			// 3. Generiere neuen Key
 			await this.generateNewKey();
-			console.log("🔑 Neuer Verschlüsselungskey generiert");
+			window.GP?.debug?.("🔑 Neuer Verschlüsselungskey generiert");
 		} catch (error) {
 			console.error("Fehler beim Key-Management:", error);
 			throw error;
@@ -425,7 +425,7 @@ class DataEncryption {
 		const encryptedItems = [];
 
 		try {
-			console.log("🔄 Starte Key-Rotation...");
+			window.GP?.debug?.("🔄 Starte Key-Rotation...");
 
 			// Sammle alle verschlüsselten Daten
 			for (let key in localStorage) {
@@ -462,7 +462,7 @@ class DataEncryption {
 				localStorage.setItem(item.key, JSON.stringify(encrypted));
 			}
 
-			console.log(
+			window.GP?.debug?.(
 				`✅ Key-Rotation abgeschlossen - ${encryptedItems.length} Einträge neu verschlüsselt`,
 			);
 			return true;
@@ -620,7 +620,7 @@ class DataEncryption {
 			await this._saveKeyToIDB(this.encryptionKey);
 			this.keyGenerated = true;
 
-			console.log("✅ Key erfolgreich importiert");
+			window.GP?.debug?.("✅ Key erfolgreich importiert");
 			return true;
 		} catch (error) {
 			console.error("Fehler beim Key-Import:", error);
@@ -751,7 +751,7 @@ class DataEncryption {
 
 			this.encryptionKey = null;
 			this.keyGenerated = false;
-			console.log("🗑️ Verschlüsselungskeys gelöscht");
+			window.GP?.debug?.("🗑️ Verschlüsselungskeys gelöscht");
 			return true;
 		} catch (error) {
 			console.error("Fehler beim Löschen der Keys:", error);

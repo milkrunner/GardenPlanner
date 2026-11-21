@@ -37,7 +37,7 @@ const logViewer = {
 		// Auto-Refresh alle 5 Sekunden
 		this.startAutoRefresh();
 
-		console.log("Log Viewer initialisiert");
+		window.GP?.debug?.("Log Viewer initialisiert");
 	},
 
 	applyFilters() {

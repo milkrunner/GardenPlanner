@@ -31,7 +31,7 @@ class RateLimiter {
 		// Starte automatisches Cleanup
 		this.startCleanup();
 
-		console.log("⏱️ Rate Limiter initialisiert");
+		window.GP?.debug?.("⏱️ Rate Limiter initialisiert");
 	}
 
 	// Erstelle neuen Limiter
@@ -312,7 +312,7 @@ class RateLimiter {
 			limiter.blockedUntil = null;
 		}
 
-		console.log(`🔄 Rate Limiter '${limiterName}' zurückgesetzt`);
+		window.GP?.debug?.(`🔄 Rate Limiter '${limiterName}' zurückgesetzt`);
 		return true;
 	}
 
@@ -323,7 +323,7 @@ class RateLimiter {
 			limiter.blocked = false;
 			limiter.blockedUntil = null;
 		}
-		console.log("🔄 Alle Rate Limiter zurückgesetzt");
+		window.GP?.debug?.("🔄 Alle Rate Limiter zurückgesetzt");
 	}
 
 	// Registriere Callback für Events
@@ -384,7 +384,7 @@ class RateLimiter {
 			}
 
 			if (cleaned > 0) {
-				console.log(
+				window.GP?.debug?.(
 					`🧹 Rate Limiter Cleanup: ${cleaned} alte Requests entfernt`,
 				);
 			}
@@ -420,7 +420,10 @@ class RateLimiter {
 			limiter.windowMs = config.windowMs;
 		}
 
-		console.log(`⚙️ Rate Limiter '${limiterName}' aktualisiert:`, config);
+		window.GP?.debug?.(
+			`⚙️ Rate Limiter '${limiterName}' aktualisiert:`,
+			config,
+		);
 		return true;
 	}
 
@@ -457,7 +460,7 @@ class RateLimiter {
 		this.stopCleanup();
 		this.limiters.clear();
 		this.callbacks.clear();
-		console.log("🗑️ Rate Limiter zerstört");
+		window.GP?.debug?.("🗑️ Rate Limiter zerstört");
 	}
 }
 

@@ -250,7 +250,7 @@ const Security = {
 			if (type === "error" || type === "warning") {
 				console.warn("[Security]", event);
 			} else {
-				console.log("[Security]", event);
+				window.GP?.debug?.("[Security]", event);
 			}
 		}
 
