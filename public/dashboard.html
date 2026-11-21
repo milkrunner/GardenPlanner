@@ -23,7 +23,9 @@
 
       <div class="nav-container">
         <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
-          <a href="/dashboard" class="nav-link active" aria-current="page">📋 Dashboard</a>
+          <a href="/dashboard" class="nav-link active" aria-current="page"
+            >📋 Dashboard</a
+          >
           <a href="/statistics" class="nav-link">📊 Statistiken</a>
           <a href="/plants" class="nav-link">🌱 Pflanzen</a>
           <a href="/logs" class="nav-link">📜 Logs</a>
@@ -317,12 +319,12 @@
             <input type="text" id="editTaskTitle" required />
           </div>
           <div class="form-group">
-            <label for="editTaskEmployee">Mitarbeiter *</label>
-            <input type="text" id="editTaskEmployee" required />
+            <label for="editTaskEmployee">Mitarbeiter (optional)</label>
+            <input type="text" id="editTaskEmployee" />
           </div>
           <div class="form-group">
-            <label for="editTaskLocation">Standort</label>
-            <input type="text" id="editTaskLocation" />
+            <label for="editTaskLocation">Standort *</label>
+            <input type="text" id="editTaskLocation" required />
           </div>
           <div class="form-group">
             <label for="editTaskDescription">Beschreibung</label>

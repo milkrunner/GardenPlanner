@@ -2,7 +2,9 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '..', '..', '..', 'data');
+const DATA_DIR = process.env.DATA_DIR
+    ? path.resolve(process.env.DATA_DIR)
+    : path.join(__dirname, '..', '..', '..', 'data');
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
 
@@ -67,7 +69,7 @@ async function writeJSON(file, data) {
             return;
         } catch (err) {
             if (attempt === 2 || err.code !== 'EPERM') throw err;
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
         }
     }
 }
@@ -76,10 +78,18 @@ function resetCaches() {
     cache.clear();
 }
 
-function readTasks() { return readJSON(TASKS_FILE); }
-async function writeTasks(tasks) { await writeJSON(TASKS_FILE, tasks); }
-function readArchivedTasks() { return readJSON(ARCHIVED_FILE); }
-async function writeArchivedTasks(tasks) { await writeJSON(ARCHIVED_FILE, tasks); }
+function readTasks() {
+    return readJSON(TASKS_FILE);
+}
+async function writeTasks(tasks) {
+    await writeJSON(TASKS_FILE, tasks);
+}
+function readArchivedTasks() {
+    return readJSON(ARCHIVED_FILE);
+}
+async function writeArchivedTasks(tasks) {
+    await writeJSON(ARCHIVED_FILE, tasks);
+}
 
 async function withLockedTasks(fn) {
     await acquireLock(TASKS_FILE);
@@ -119,5 +129,5 @@ module.exports = {
     readArchivedTasks,
     writeArchivedTasks,
     withLockedTasks,
-    withLockedArchive
+    withLockedArchive,
 };
