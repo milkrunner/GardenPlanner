@@ -360,7 +360,7 @@ describe('other scripts', () => {
   });
   test('plant library cards are keyboard operable dialog openers', async () => {
     const html = fs.readFileSync(path.join(ROOT, 'public/plants.html'), 'utf8');
-    const window = createWindow(html.replace(/<script[\s\S]*?<\/script>/g, ''));
+    const window = createWindow(html);
     const plants = [
       {
         id: 'p"1',
