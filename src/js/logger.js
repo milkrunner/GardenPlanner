@@ -14,7 +14,7 @@ class Logger {
 		};
 
 		this.config = {
-			minLevel: config.minLevel || this.levels.INFO,
+			minLevel: config.minLevel ?? this.levels.INFO,
 			maxLogs: config.maxLogs || 1000,
 			persistLogs: config.persistLogs !== false,
 			storageKey: config.storageKey || "_gartenplaner_logs",
@@ -606,7 +606,7 @@ const LoggerHelpers = {
 
 // Globales Logger-Objekt erstellen
 window.logger = new Logger({
-	minLevel: 1, // INFO
+	minLevel: window.GP?.isDebugEnabled?.() ? 0 : 1, // DEBUG nur im Debug-Modus, sonst INFO
 	maxLogs: 1000,
 	persistLogs: true,
 	consoleOutput: true,
