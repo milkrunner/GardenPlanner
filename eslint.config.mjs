@@ -1,39 +1,56 @@
+import js from '@eslint/js';
+import globals from 'globals';
+
 export default [
-	{
-		languageOptions: {
-			ecmaVersion: 2021,
-			globals: {
-				// Browser globals
-				window: "readonly",
-				document: "readonly",
-				localStorage: "readonly",
-				console: "readonly",
-				fetch: "readonly",
-				URL: "readonly",
-				Blob: "readonly",
-				setTimeout: "readonly",
-				setInterval: "readonly",
-				clearInterval: "readonly",
-				alert: "readonly",
-				confirm: "readonly",
-				prompt: "readonly",
-				atob: "readonly",
-				btoa: "readonly",
-				FileReader: "readonly",
-				URLSearchParams: "readonly",
-				HTMLElement: "readonly",
-				// Node globals
-				require: "readonly",
-				module: "readonly",
-				exports: "readonly",
-				process: "readonly",
-				__dirname: "readonly",
-				__filename: "readonly",
-			},
-		},
-		rules: {
-			"no-unused-vars": "warn",
-			"no-undef": "off",
-		},
-	},
+  {
+    ignores: [
+      'node_modules/**',
+      'data/**',
+      'src/data/**',
+      'coverage/**',
+      'test-results/**',
+      'playwright-report/**',
+    ],
+  },
+  js.configs.recommended,
+  {
+    files: ['**/*.{js,cjs,mjs}'],
+    rules: {
+      'no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', caughtErrors: 'none' },
+      ],
+    },
+  },
+  {
+    files: ['server.js', 'src/server/**/*.js', 'scripts/**/*.cjs', '*.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+  },
+  {
+    files: ['src/js/**/*.js'],
+    rules: { 'no-redeclare': ['error', { builtinGlobals: false }] },
+    languageOptions: {
+      sourceType: 'script',
+      globals: {
+        ...globals.browser,
+        APP_CONFIG: 'readonly',
+        GartenPlaner: 'readonly',
+        Security: 'readonly',
+        TaskAPI: 'readonly',
+        LoggerHelpers: 'readonly',
+        RateLimitHelpers: 'readonly',
+        SafeStorage: 'readonly',
+        SafeDOM: 'readonly',
+        safeExecute: 'readonly',
+        safeAsync: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['tests/**/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { ...globals.node, ...globals.jest },
+    },
+  },
 ];

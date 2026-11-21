@@ -13,7 +13,7 @@ class ErrorBoundary {
         this.maxErrors = (window.APP_CONFIG && window.APP_CONFIG.errors.maxStoredErrors) || 50;
         this.isProduction = window.location.hostname !== 'localhost';
         this.errorCallbacks = new Map();
-        
+
         this.init();
     }
 
@@ -27,7 +27,7 @@ class ErrorBoundary {
                 lineno: event.lineno,
                 colno: event.colno,
                 error: event.error,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
         });
 
@@ -37,7 +37,7 @@ class ErrorBoundary {
                 type: 'promise',
                 message: event.reason?.message || 'Unhandled Promise Rejection',
                 error: event.reason,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
             });
         });
 
@@ -77,12 +77,12 @@ class ErrorBoundary {
         try {
             const errorLog = JSON.parse(localStorage.getItem('gartenplaner_errors') || '[]');
             errorLog.push(errorInfo);
-            
+
             // Nur letzte 100 Fehler behalten
             if (errorLog.length > 100) {
                 errorLog.shift();
             }
-            
+
             localStorage.setItem('gartenplaner_errors', JSON.stringify(errorLog));
         } catch (e) {
             console.error('Konnte Fehler nicht in LocalStorage speichern:', e);
@@ -96,16 +96,16 @@ class ErrorBoundary {
             /quota.*exceed/i,
             /cannot read property/i,
             /undefined is not/i,
-            /null is not/i
+            /null is not/i,
         ];
 
         const message = errorInfo.message || '';
-        return criticalPatterns.some(pattern => pattern.test(message));
+        return criticalPatterns.some((pattern) => pattern.test(message));
     }
 
     showErrorNotification(errorInfo) {
         const message = this.getUserFriendlyMessage(errorInfo);
-        
+
         // Toast-Benachrichtigung erstellen
         const toast = document.createElement('div');
         toast.className = 'error-toast';
@@ -119,9 +119,9 @@ class ErrorBoundary {
                 <button class="error-toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
         `;
-        
+
         document.body.appendChild(toast);
-        
+
         // Auto-remove nach konfigurierbarer Dauer (mehr Lesezeit für Fehlermeldungen)
         const duration = (window.APP_CONFIG && window.APP_CONFIG.ui.errorNotificationDuration) || 15000;
         setTimeout(() => {
@@ -132,32 +132,32 @@ class ErrorBoundary {
 
     getUserFriendlyMessage(errorInfo) {
         const message = errorInfo.message || '';
-        
+
         // Benutzerfreundliche Nachrichten
         if (/localStorage/i.test(message) || /quota.*exceed/i.test(message)) {
             return 'Ihr Browser-Speicher ist voll. Bitte löschen Sie alte Aufgaben oder leeren Sie den Cache.';
         }
-        
+
         if (/network/i.test(message) || /fetch/i.test(message)) {
             return 'Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung.';
         }
-        
+
         if (/cannot read property/i.test(message) || /undefined is not/i.test(message)) {
             return 'Ein Datenfehler ist aufgetreten. Bitte laden Sie die Seite neu.';
         }
-        
+
         // Fallback
         return 'Ein unerwarteter Fehler ist aufgetreten. Die Anwendung versucht sich zu erholen.';
     }
 
     attemptRecovery(errorInfo) {
         const message = errorInfo.message || '';
-        
+
         // LocalStorage-Fehler: Versuche Cleanup
         if (/localStorage/i.test(message) || /quota.*exceed/i.test(message)) {
             this.cleanupStorage();
         }
-        
+
         // DOM-Fehler: Versuche Re-Render
         if (/cannot read property/i.test(message) && errorInfo.type === 'runtime') {
             setTimeout(() => {
@@ -179,15 +179,15 @@ class ErrorBoundary {
             if (errorLog.length > 10) {
                 localStorage.setItem('gartenplaner_errors', JSON.stringify(errorLog.slice(-10)));
             }
-            
+
             // Entferne alte Präsenz-Daten (Collaboration)
             const presence = JSON.parse(localStorage.getItem('gartenplaner_presence') || '{}');
             const now = Date.now();
             const cleaned = Object.fromEntries(
-                Object.entries(presence).filter(([_, timestamp]) => now - timestamp < 60000)
+                Object.entries(presence).filter(([_, timestamp]) => now - timestamp < 60000),
             );
             localStorage.setItem('gartenplaner_presence', JSON.stringify(cleaned));
-            
+
             console.log('✅ Storage Cleanup durchgeführt');
         } catch (e) {
             console.error('Storage Cleanup fehlgeschlagen:', e);
@@ -202,18 +202,18 @@ class ErrorBoundary {
             const details = {};
 
             for (let key in localStorage) {
-                if (localStorage.hasOwnProperty(key)) {
+                if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
                     const value = localStorage.getItem(key);
                     const size = new Blob([value]).size;
                     totalSize += size;
                     itemCount++;
-                    
+
                     // Details für Gartenplaner-Keys sammeln
                     if (key.startsWith('gartenplaner_')) {
                         details[key] = {
                             size: size,
                             sizeKB: (size / 1024).toFixed(2),
-                            preview: value.substring(0, 50)
+                            preview: value.substring(0, 50),
                         };
                     }
                 }
@@ -221,7 +221,7 @@ class ErrorBoundary {
 
             // Geschätzte Quota (normalerweise 5-10MB, wir nehmen konservativ 5MB an)
             const estimatedQuota = 5 * 1024 * 1024; // 5MB in Bytes
-            const usagePercent = (totalSize / estimatedQuota * 100).toFixed(2);
+            const usagePercent = ((totalSize / estimatedQuota) * 100).toFixed(2);
 
             return {
                 totalSize: totalSize,
@@ -233,7 +233,7 @@ class ErrorBoundary {
                 usagePercent: usagePercent,
                 details: details,
                 isCritical: usagePercent > 90,
-                isWarning: usagePercent > 75
+                isWarning: usagePercent > 75,
             };
         } catch (e) {
             console.error('Fehler beim Ermitteln der Storage-Nutzung:', e);
@@ -266,13 +266,13 @@ class ErrorBoundary {
             warning: {
                 title: '⚠️ Speicherplatz wird knapp',
                 text: `LocalStorage ist zu ${usage.usagePercent}% voll (${usage.totalSizeMB} MB von ~${usage.estimatedQuotaMB} MB). Bitte löschen Sie alte Aufgaben oder archivieren Sie diese.`,
-                duration: 10000
+                duration: 10000,
             },
             critical: {
                 title: '🚨 Speicherplatz kritisch!',
                 text: `LocalStorage ist zu ${usage.usagePercent}% voll! Neue Aufgaben können möglicherweise nicht gespeichert werden. Bitte löschen Sie dringend alte Daten.`,
-                duration: 0 // Bleibt sichtbar bis Benutzer schließt
-            }
+                duration: 0, // Bleibt sichtbar bis Benutzer schließt
+            },
         };
 
         const config = messages[level];
@@ -288,9 +288,12 @@ class ErrorBoundary {
         this.checkStorageQuota();
 
         // Periodische Prüfung
-        this.storageMonitorInterval = setInterval(() => {
-            this.checkStorageQuota();
-        }, intervalMinutes * 60 * 1000);
+        this.storageMonitorInterval = setInterval(
+            () => {
+                this.checkStorageQuota();
+            },
+            intervalMinutes * 60 * 1000,
+        );
 
         console.log(`📊 Storage-Monitoring gestartet (alle ${intervalMinutes} Minuten)`);
     }
@@ -314,7 +317,7 @@ class ErrorBoundary {
 
     triggerCallbacks(errorInfo) {
         const callbacks = this.errorCallbacks.get(errorInfo.type) || [];
-        callbacks.forEach(callback => {
+        callbacks.forEach((callback) => {
             try {
                 callback(errorInfo);
             } catch (e) {
@@ -343,10 +346,10 @@ class ErrorBoundary {
         const stats = {
             total: this.errors.length,
             byType: {},
-            recent: this.errors.slice(-5)
+            recent: this.errors.slice(-5),
         };
 
-        this.errors.forEach(error => {
+        this.errors.forEach((error) => {
             stats.byType[error.type] = (stats.byType[error.type] || 0) + 1;
         });
 
@@ -356,7 +359,7 @@ class ErrorBoundary {
 
 // Safe Function Wrapper - Wraps Funktionen mit Error Handling
 function safeExecute(fn, fallback = null, context = null) {
-    return function(...args) {
+    return function (...args) {
         try {
             return fn.apply(context || this, args);
         } catch (error) {
@@ -366,10 +369,10 @@ function safeExecute(fn, fallback = null, context = null) {
                     message: error.message,
                     error: error,
                     function: fn.name || 'anonymous',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             }
-            
+
             console.error('Error in safe execute:', error);
             return fallback;
         }
@@ -378,7 +381,7 @@ function safeExecute(fn, fallback = null, context = null) {
 
 // Safe Async Wrapper
 function safeAsync(fn, fallback = null) {
-    return async function(...args) {
+    return async function (...args) {
         try {
             return await fn.apply(this, args);
         } catch (error) {
@@ -388,10 +391,10 @@ function safeAsync(fn, fallback = null) {
                     message: error.message,
                     error: error,
                     function: fn.name || 'anonymous',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             }
-            
+
             console.error('Error in async execute:', error);
             return fallback;
         }
@@ -403,8 +406,7 @@ const SafeStorage = {
     // Prüfe ob Key verschlüsselt werden soll
     shouldEncrypt(key) {
         // Verschlüssele alle gartenplaner_ Keys außer interne Keys
-        return key.startsWith('gartenplaner_') && 
-               !key.startsWith('_gartenplaner_');
+        return key.startsWith('gartenplaner_') && !key.startsWith('_gartenplaner_');
     },
 
     async getItem(key, defaultValue = null) {
@@ -413,13 +415,13 @@ const SafeStorage = {
             if (!item) return defaultValue;
 
             const parsed = JSON.parse(item);
-            
+
             // Wenn Daten verschlüsselt sind und Encryption verfügbar ist
             if (parsed && parsed.encrypted && window.dataEncryption) {
                 const decrypted = await window.dataEncryption.decrypt(parsed);
                 return decrypted !== null ? decrypted : defaultValue;
             }
-            
+
             // Unverschlüsselte Daten
             return parsed;
         } catch (error) {
@@ -430,7 +432,7 @@ const SafeStorage = {
                     message: `Failed to read localStorage: ${error.message}`,
                     key: key,
                     error: error,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             }
             return defaultValue;
@@ -470,22 +472,22 @@ const SafeStorage = {
             return true;
         } catch (error) {
             console.error(`Error writing to localStorage [${key}]:`, error);
-            
+
             // Rollback Rate-Limiter bei Fehler
             if (window.rateLimiter && key.startsWith('gartenplaner_')) {
                 window.rateLimiter.rollbackRequest('storage', key);
             }
-            
+
             if (window.errorBoundary) {
                 window.errorBoundary.handleError({
                     type: 'storage',
                     message: `Failed to write localStorage: ${error.message}`,
                     key: key,
                     error: error,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
                 });
             }
-            
+
             // Versuche Cleanup bei Quota-Fehler
             if (error.name === 'QuotaExceededError') {
                 if (window.errorBoundary) {
@@ -497,7 +499,7 @@ const SafeStorage = {
                     }
                 }
             }
-            
+
             return false;
         }
     },
@@ -520,7 +522,7 @@ const SafeStorage = {
             console.error('Error clearing localStorage:', error);
             return false;
         }
-    }
+    },
 };
 
 // DOM Safety Helpers
@@ -585,7 +587,7 @@ const SafeDOM = {
             console.error('Error setting textContent:', error);
             return false;
         }
-    }
+    },
 };
 
 // Global verfügbar machen

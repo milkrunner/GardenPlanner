@@ -6,7 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "jest --verbose --forceExit --detectOpenHandles"
+    "test": "jest",
+    "test:server": "jest tests/server.test.js",
+    "test:frontend": "jest tests/frontend.test.js",
+    "test:smoke": "playwright test",
+    "lint": "eslint . --max-warnings 12",
+    "format:check": "node scripts/format-check.cjs",
+    "check": "npm run lint && npm run format:check && npm test"
   },
   "dependencies": {
     "compression": "^1.7.5",
@@ -17,7 +23,17 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
     "jest": "^30.3.0",
+    "prettier": "3.10.1",
     "supertest": "^7.2.2"
-  }
+  },
+  "engines": {
+    "node": ">=22.13 <23",
+    "npm": ">=10 <11"
+  },
+  "packageManager": "npm@10.9.4"
 }

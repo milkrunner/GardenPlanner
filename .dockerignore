@@ -30,3 +30,17 @@ docker-compose.yml
 # Logs
 *.log
 logs/
+
+node_modules/
+data/
+src/data/
+.claude/
+test-results/
+playwright-report/
+coverage/
+
+# Development-only content
+tests/
+docs/
+.github/
+scripts/

@@ -266,9 +266,9 @@ GartenPlaner.prototype.updateStatistics = function () {
 			(t) => t.status === "pending",
 		).length;
 
-		var statPending = document.getElementById("statPending");
-		var statCompleted = document.getElementById("statCompleted");
-		var statEmployees = document.getElementById("statEmployees");
+		const statPending = document.getElementById("statPending");
+		const statCompleted = document.getElementById("statCompleted");
+		const statEmployees = document.getElementById("statEmployees");
 
 		if (statPending) statPending.textContent = archivedPending;
 		if (statCompleted) statCompleted.textContent = archivedCompleted;
@@ -280,9 +280,9 @@ GartenPlaner.prototype.updateStatistics = function () {
 		var total = this.tasks.length;
 		var employees = new Set(this.tasks.map((t) => t.employee)).size;
 
-		var statPending = document.getElementById("statPending");
-		var statCompleted = document.getElementById("statCompleted");
-		var statEmployees = document.getElementById("statEmployees");
+		const statPending = document.getElementById("statPending");
+		const statCompleted = document.getElementById("statCompleted");
+		const statEmployees = document.getElementById("statEmployees");
 
 		if (statPending) statPending.textContent = pending;
 		if (statCompleted) statCompleted.textContent = completed;
@@ -477,16 +477,21 @@ GartenPlaner.prototype.updateCompletionTrendChart = function () {
 	}
 
 	// Collect all completed tasks (active + archived)
-	var allTasks = this.tasks.concat(this.archivedTasks);
+	const allTasks = this.tasks.concat(this.archivedTasks);
 
 	var dayCounts = days.map((day) => {
 		var dayStr = day.toISOString().split("T")[0];
 		return {
 			date: day,
-			label: day.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }),
+			label: day.toLocaleDateString("de-DE", {
+				day: "2-digit",
+				month: "2-digit",
+			}),
 			count: allTasks.filter((task) => {
 				if (!task.completedAt) return false;
-				var completedDate = new Date(task.completedAt).toISOString().split("T")[0];
+				var completedDate = new Date(task.completedAt)
+					.toISOString()
+					.split("T")[0];
 				return completedDate === dayStr;
 			}).length,
 		};
@@ -496,7 +501,8 @@ GartenPlaner.prototype.updateCompletionTrendChart = function () {
 	var totalCompleted = dayCounts.reduce((sum, d) => sum + d.count, 0);
 
 	if (totalCompleted === 0) {
-		chartEl.innerHTML = '<div class="chart-empty">Noch keine erledigten Aufgaben in den letzten 30 Tagen</div>';
+		chartEl.innerHTML =
+			'<div class="chart-empty">Noch keine erledigten Aufgaben in den letzten 30 Tagen</div>';
 		return;
 	}
 
@@ -540,7 +546,7 @@ GartenPlaner.prototype.updateAdditionalStats = function () {
 	}
 
 	if (statThisWeek) {
-		var weekAgo = new Date();
+		const weekAgo = new Date();
 		weekAgo.setDate(weekAgo.getDate() - 7);
 		var weekTasks = this.tasks.filter((task) => {
 			return new Date(task.createdAt) >= weekAgo;
@@ -551,9 +557,9 @@ GartenPlaner.prototype.updateAdditionalStats = function () {
 	// Completed this week
 	var statCompletedThisWeek = document.getElementById("statCompletedThisWeek");
 	if (statCompletedThisWeek) {
-		var weekAgo = new Date();
+		const weekAgo = new Date();
 		weekAgo.setDate(weekAgo.getDate() - 7);
-		var allTasks = this.tasks.concat(this.archivedTasks);
+		const allTasks = this.tasks.concat(this.archivedTasks);
 		var completedThisWeek = allTasks.filter((task) => {
 			return task.completedAt && new Date(task.completedAt) >= weekAgo;
 		});
@@ -563,8 +569,10 @@ GartenPlaner.prototype.updateAdditionalStats = function () {
 	// Average completion time
 	var statAvgCompletionTime = document.getElementById("statAvgCompletionTime");
 	if (statAvgCompletionTime) {
-		var allTasks = this.tasks.concat(this.archivedTasks);
-		var completedWithTime = allTasks.filter((t) => t.completedAt && t.createdAt);
+		const allTasks = this.tasks.concat(this.archivedTasks);
+		var completedWithTime = allTasks.filter(
+			(t) => t.completedAt && t.createdAt,
+		);
 		if (completedWithTime.length > 0) {
 			var totalHours = completedWithTime.reduce((sum, t) => {
 				var diff = new Date(t.completedAt) - new Date(t.createdAt);
@@ -576,7 +584,8 @@ GartenPlaner.prototype.updateAdditionalStats = function () {
 			} else if (avgHours < 24) {
 				statAvgCompletionTime.textContent = avgHours.toFixed(1) + " Std.";
 			} else {
-				statAvgCompletionTime.textContent = (avgHours / 24).toFixed(1) + " Tage";
+				statAvgCompletionTime.textContent =
+					(avgHours / 24).toFixed(1) + " Tage";
 			}
 		} else {
 			statAvgCompletionTime.textContent = "-";
@@ -870,8 +879,8 @@ GartenPlaner.prototype.showNotification = (message, type) => {
 	var config = (window.APP_CONFIG && window.APP_CONFIG.ui) || {};
 	var isError = type === "error" || message.startsWith("❌");
 	var duration = isError
-		? (config.errorNotificationDuration || 15000)
-		: (config.successNotificationDuration || 5000);
+		? config.errorNotificationDuration || 15000
+		: config.successNotificationDuration || 5000;
 	var bgColor = isError ? "#e74c3c" : "#2ecc71";
 
 	var notification = document.createElement("div");
@@ -1031,9 +1040,9 @@ GartenPlaner.prototype.showConfirm = function (options) {
 GartenPlaner.prototype._trapFocus = function (modal, e) {
 	const focusableSelectors =
 		'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), a[href]';
-	const focusable = Array.from(modal.querySelectorAll(focusableSelectors)).filter(
-		(el) => el.offsetParent !== null,
-	);
+	const focusable = Array.from(
+		modal.querySelectorAll(focusableSelectors),
+	).filter((el) => el.offsetParent !== null);
 	if (focusable.length === 0) return;
 
 	const firstFocusable = focusable[0];
@@ -1053,7 +1062,11 @@ GartenPlaner.prototype._trapFocus = function (modal, e) {
 };
 
 // Loading State für Buttons - verhindert Doppelklicks
-GartenPlaner.prototype.setButtonLoading = function (button, loading, originalText) {
+GartenPlaner.prototype.setButtonLoading = function (
+	button,
+	loading,
+	originalText,
+) {
 	if (!button) return;
 	if (loading) {
 		button.dataset.originalText = button.innerHTML;
@@ -1061,7 +1074,9 @@ GartenPlaner.prototype.setButtonLoading = function (button, loading, originalTex
 		button.classList.add("btn-loading");
 		button.setAttribute("aria-busy", "true");
 		const spinnerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
-		button.innerHTML = originalText ? spinnerHTML + " " + originalText : spinnerHTML;
+		button.innerHTML = originalText
+			? spinnerHTML + " " + originalText
+			: spinnerHTML;
 	} else {
 		button.disabled = false;
 		button.classList.remove("btn-loading");
@@ -1099,18 +1114,24 @@ GartenPlaner.prototype._showUndoNotification = function (message) {
 		const lastAction = this.undoStack.pop();
 		if (lastAction && lastAction.undo) {
 			lastAction.undo();
-			this.showNotification("\u21a9\ufe0f R\u00fcckg\u00e4ngig gemacht: " + lastAction.description);
-			this.announce("Aktion r\u00fcckg\u00e4ngig gemacht: " + lastAction.description);
+			this.showNotification(
+				"\u21a9\ufe0f R\u00fcckg\u00e4ngig gemacht: " + lastAction.description,
+			);
+			this.announce(
+				"Aktion r\u00fcckg\u00e4ngig gemacht: " + lastAction.description,
+			);
 		}
 		notification.remove();
 		if (this.undoTimeout) clearTimeout(this.undoTimeout);
 	});
 
-	notification.querySelector(".undo-close-btn").addEventListener("click", () => {
-		notification.classList.add("undo-notification-hiding");
-		setTimeout(() => notification.remove(), 300);
-		if (this.undoTimeout) clearTimeout(this.undoTimeout);
-	});
+	notification
+		.querySelector(".undo-close-btn")
+		.addEventListener("click", () => {
+			notification.classList.add("undo-notification-hiding");
+			setTimeout(() => notification.remove(), 300);
+			if (this.undoTimeout) clearTimeout(this.undoTimeout);
+		});
 
 	this.undoTimeout = setTimeout(() => {
 		if (notification.parentElement) {

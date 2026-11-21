@@ -1,35 +1,35 @@
 name: Tests
-
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
-
+    branches: [main]
 permissions:
   contents: read
-
 jobs:
   test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          rm -f package-lock.json
-          npm install
-
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@10.9.4
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:smoke
+      - name: Upload smoke failure traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-results
+          path: test-results/
+          if-no-files-found: ignore
+      - name: Report dependency audit
+        if: always()
         continue-on-error: true
-
-      - name: Run tests
-        run: npm test
+        run: npm audit --audit-level=moderate
