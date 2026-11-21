@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "jest",
-    "test:server": "jest tests/server.test.js",
+    "test:server": "jest tests/server",
     "test:frontend": "jest tests/frontend.test.js",
     "test:smoke": "playwright test",
     "lint": "eslint . --max-warnings 12",

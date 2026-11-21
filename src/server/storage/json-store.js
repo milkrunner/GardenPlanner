@@ -46,31 +46,43 @@ function releaseLock(file) {
 // --- In-memory cache ---
 const cache = new Map();
 
+// A missing file is an empty collection. Any other failure (corrupt JSON, EIO, EACCES) is thrown:
+// treating it as "empty" would let the next write silently overwrite the unreadable data.
 function readJSON(file) {
     const cached = cache.get(file);
     if (cached !== undefined) return cached;
+    let data;
     try {
-        const data = fs.readFileSync(file, 'utf8');
-        const parsed = JSON.parse(data);
-        cache.set(file, parsed);
-        return parsed;
-    } catch {
-        return [];
+        data = fs.readFileSync(file, 'utf8');
+    } catch (err) {
+        if (err.code === 'ENOENT') return [];
+        throw err;
     }
+    const parsed = JSON.parse(data);
+    cache.set(file, parsed);
+    return parsed;
 }
 
 async function writeJSON(file, data) {
     cache.set(file, data);
     const tmp = file + '.tmp';
-    await fsp.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8');
-    for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-            await fsp.rename(tmp, file);
-            return;
-        } catch (err) {
-            if (attempt === 2 || err.code !== 'EPERM') throw err;
-            await new Promise((resolve) => setTimeout(resolve, 50));
+    try {
+        await fsp.writeFile(tmp, JSON.stringify(data, null, 2), 'utf8');
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                await fsp.rename(tmp, file);
+                return;
+            } catch (err) {
+                if (attempt === 2 || err.code !== 'EPERM') throw err;
+                await new Promise((resolve) => setTimeout(resolve, 50));
+            }
         }
+    } catch (err) {
+        // The cached (and in-place mutated) data was never persisted: drop it so the next read
+        // reflects what is really on disk, and do not leave a stale temp file behind.
+        cache.delete(file);
+        await fsp.rm(tmp, { force: true }).catch(() => {});
+        throw err;
     }
 }
 
@@ -115,6 +127,23 @@ async function withLockedArchive(fn) {
     }
 }
 
+// Lock several files in one fixed order (tasks, then archive) so that concurrent operations on both
+// files (archive/unarchive) can never wait on each other. Locks are always released again, even when
+// acquiring the second one times out.
+async function withLockedTasksAndArchive(fn) {
+    await acquireLock(TASKS_FILE);
+    try {
+        await acquireLock(ARCHIVED_FILE);
+        try {
+            return await fn();
+        } finally {
+            releaseLock(ARCHIVED_FILE);
+        }
+    } finally {
+        releaseLock(TASKS_FILE);
+    }
+}
+
 module.exports = {
     DATA_DIR,
     TASKS_FILE,
@@ -130,4 +159,5 @@ module.exports = {
     writeArchivedTasks,
     withLockedTasks,
     withLockedArchive,
+    withLockedTasksAndArchive,
 };

@@ -110,3 +110,23 @@ Alle Sicherheits-relevanten Ereignisse werden geloggt:
 - Niemals `eval()` oder `innerHTML` mit User-Input verwenden
 - Immer Validierung vor localStorage.setItem()
 - Bei Unsicherheit: Security.escapeHtml() verwenden
+
+## Backend: Authentifizierung und CSRF
+
+Die API authentifiziert ausschließlich über den Header `X-API-Key` (`middleware/auth.js`,
+timing-sicherer Vergleich). Es gibt **keine Cookies, keine Sessions und kein CORS**; der
+Browser sendet den Key nur, wenn `src/js/api.js` ihn aktiv als Header setzt.
+
+Ein klassischer CSRF-Angriff nutzt automatisch mitgesendete Anmeldedaten (Cookies). Hier
+gibt es keine, daher ist ein CSRF-Token (`csurf`, Double-Submit-Cookie) nicht nötig und
+würde nur Cookie-/Session-Infrastruktur ohne Schutzgewinn einführen. Eine fremde Seite
+kann den benutzerdefinierten Header `X-API-Key` nur nach einem CORS-Preflight senden, den der
+Server nicht freigibt (`Access-Control-*` wird nie gesetzt; `form-action 'self'` in der CSP).
+`SameSite` ist nicht relevant, weil keine Cookies gesetzt werden. Die Annahmen sind in
+`tests/server-resilience.test.js` abgesichert (Cookie authentifiziert nicht, kein
+`Set-Cookie`, keine CORS-Freigabe). Wird später ein Cookie-/Session-Login eingeführt, muss
+CSRF-Schutz zeitgleich ergänzt werden.
+
+Ohne `API_KEY` (lokale Entwicklung oder bewusst mit `ALLOW_UNAUTHENTICATED=true`) ist die
+API offen; dann schützt auch kein CSRF-Token, weil jeder Client direkt zugreifen kann.
+Produktion startet ohne `API_KEY` nicht (siehe README, Abschnitt Konfiguration).

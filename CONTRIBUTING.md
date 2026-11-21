@@ -13,7 +13,9 @@ npm run dev
 
 Open <http://localhost:3000>. The server reads environment variables; it does not
 load `.env` automatically. For example, `API_KEY=... npm start` enables API-key
-authentication. Never paste real keys into issues, logs or tracked files.
+authentication. With `NODE_ENV=production` the server refuses to start without
+`API_KEY` (opt-out: `ALLOW_UNAUTHENTICATED=true`). Never paste real keys into issues,
+logs or tracked files.
 `DATA_DIR` overrides task/archive/plant storage (default: repository `data/`).
 `LOG_DIR` overrides server logs (legacy default: `src/data/logs/`). Relative paths
 are relative to the process working directory; prefer absolute paths for tooling.
