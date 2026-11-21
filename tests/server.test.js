@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { app, validateTask, escapeHtml, sanitizeTaskData, paginate, resetCaches } = require('../src/server/app');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+const DATA_DIR = process.env.DATA_DIR;
 const TASKS_FILE = path.join(DATA_DIR, 'tasks.json');
 const ARCHIVED_FILE = path.join(DATA_DIR, 'archived-tasks.json');
 
@@ -21,7 +21,7 @@ describe('validateTask', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
-        location: 'Garten'
+        location: 'Garten',
     };
 
     test('accepts valid task', () => {
@@ -92,19 +92,28 @@ describe('validateTask', () => {
     });
 
     test('rejects description over 2000 chars', () => {
-        const result = validateTask({ ...validTask, description: 'x'.repeat(2001) });
+        const result = validateTask({
+            ...validTask,
+            description: 'x'.repeat(2001),
+        });
         expect(result.valid).toBe(false);
     });
 
     test('rejects more than 50 subtasks', () => {
-        const subtasks = Array.from({ length: 51 }, (_, i) => ({ text: `Subtask ${i}`, completed: false }));
+        const subtasks = Array.from({ length: 51 }, (_, i) => ({
+            text: `Subtask ${i}`,
+            completed: false,
+        }));
         const result = validateTask({ ...validTask, subtasks });
         expect(result.valid).toBe(false);
         expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining('50')]));
     });
 
     test('accepts exactly 50 subtasks', () => {
-        const subtasks = Array.from({ length: 50 }, (_, i) => ({ text: `Subtask ${i}`, completed: false }));
+        const subtasks = Array.from({ length: 50 }, (_, i) => ({
+            text: `Subtask ${i}`,
+            completed: false,
+        }));
         const result = validateTask({ ...validTask, subtasks });
         expect(result.valid).toBe(true);
     });
@@ -151,10 +160,7 @@ describe('validateTask', () => {
     });
 
     test('accepts valid subtasks (mixed strings and objects)', () => {
-        const subtasks = [
-            { text: 'Object subtask', completed: true },
-            'String subtask'
-        ];
+        const subtasks = [{ text: 'Object subtask', completed: true }, 'String subtask'];
         const result = validateTask({ ...validTask, subtasks });
         expect(result.valid).toBe(true);
     });
@@ -164,9 +170,7 @@ describe('validateTask', () => {
 
 describe('escapeHtml', () => {
     test('escapes HTML special characters', () => {
-        expect(escapeHtml('<script>alert("xss")</script>')).toBe(
-            '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
-        );
+        expect(escapeHtml('<script>alert("xss")</script>')).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
     });
 
     test('escapes ampersand', () => {
@@ -174,7 +178,7 @@ describe('escapeHtml', () => {
     });
 
     test('escapes single quotes', () => {
-        expect(escapeHtml("it's")).toBe("it&#039;s");
+        expect(escapeHtml("it's")).toBe('it&#039;s');
     });
 
     test('handles null/undefined', () => {
@@ -194,7 +198,7 @@ describe('sanitizeTaskData', () => {
         const result = sanitizeTaskData({
             title: '  <b>Test</b>  ',
             employee: ' Max ',
-            location: ' Garten '
+            location: ' Garten ',
         });
         expect(result.title).toBe('<b>Test</b>');
         expect(result.employee).toBe('Max');
@@ -216,10 +220,10 @@ describe('sanitizeTaskData', () => {
     test('preserves special characters without HTML escaping', () => {
         const result = sanitizeTaskData({
             title: 'Tom & Jerry',
-            employee: 'O\'Brien',
+            employee: "O'Brien",
             location: 'Garten <Süd>',
             description: 'Use "quotes" & ampersands',
-            notes: '<script>alert("xss")</script>'
+            notes: '<script>alert("xss")</script>',
         });
         expect(result.title).toBe('Tom & Jerry');
         expect(result.employee).toBe("O'Brien");
@@ -236,14 +240,12 @@ describe('API Endpoints', () => {
         title: 'Rasen mähen',
         employee: 'Max',
         location: 'Garten',
-        description: 'Vorgarten mähen'
+        description: 'Vorgarten mähen',
     };
 
     describe('POST /api/tasks', () => {
         test('creates a task and returns 201', async () => {
-            const res = await request(app)
-                .post('/api/tasks')
-                .send(validTask);
+            const res = await request(app).post('/api/tasks').send(validTask);
 
             expect(res.status).toBe(201);
             expect(res.body).toHaveProperty('id');
@@ -252,9 +254,7 @@ describe('API Endpoints', () => {
         });
 
         test('rejects invalid task with 400', async () => {
-            const res = await request(app)
-                .post('/api/tasks')
-                .send({ title: '' });
+            const res = await request(app).post('/api/tasks').send({ title: '' });
 
             expect(res.status).toBe(400);
             expect(res.body).toHaveProperty('errors');
@@ -304,18 +304,14 @@ describe('API Endpoints', () => {
     describe('PUT /api/tasks/:id', () => {
         test('updates a task', async () => {
             const created = await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
-                .send({ title: 'Hecke schneiden' });
+            const res = await request(app).put(`/api/tasks/${created.body.id}`).send({ title: 'Hecke schneiden' });
 
             expect(res.status).toBe(200);
             expect(res.body.title).toBe('Hecke schneiden');
         });
 
         test('returns 400 for invalid ID format', async () => {
-            const res = await request(app)
-                .put('/api/tasks/nonexistent')
-                .send({ title: 'Test' });
+            const res = await request(app).put('/api/tasks/nonexistent').send({ title: 'Test' });
             expect(res.status).toBe(400);
             expect(res.body.error).toMatch(/Invalid ID format/);
         });
@@ -332,10 +328,7 @@ describe('API Endpoints', () => {
             const res = await request(app)
                 .put(`/api/tasks/${created.body.id}`)
                 .send({
-                    subtasks: [
-                        { text: 'Object subtask', completed: true },
-                        'String subtask'
-                    ]
+                    subtasks: [{ text: 'Object subtask', completed: true }, 'String subtask'],
                 });
 
             expect(res.status).toBe(200);
@@ -350,10 +343,11 @@ describe('API Endpoints', () => {
 
         test('rejects subtasks exceeding max count via PUT', async () => {
             const created = await request(app).post('/api/tasks').send(validTask);
-            const subtasks = Array.from({ length: 51 }, (_, i) => ({ text: `Sub ${i}`, completed: false }));
-            const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
-                .send({ subtasks });
+            const subtasks = Array.from({ length: 51 }, (_, i) => ({
+                text: `Sub ${i}`,
+                completed: false,
+            }));
+            const res = await request(app).put(`/api/tasks/${created.body.id}`).send({ subtasks });
 
             expect(res.status).toBe(400);
             expect(res.body.errors).toEqual(expect.arrayContaining([expect.stringContaining('50')]));
@@ -361,9 +355,7 @@ describe('API Endpoints', () => {
 
         test('tracks status change in history', async () => {
             const created = await request(app).post('/api/tasks').send(validTask);
-            const res = await request(app)
-                .put(`/api/tasks/${created.body.id}`)
-                .send({ status: 'completed' });
+            const res = await request(app).put(`/api/tasks/${created.body.id}`).send({ status: 'completed' });
 
             expect(res.body.status).toBe('completed');
             expect(res.body.completedAt).toBeDefined();
@@ -429,11 +421,11 @@ describe('API Endpoints', () => {
     describe('POST /api/tasks/search', () => {
         test('filters by employee via POST body', async () => {
             await request(app).post('/api/tasks').send(validTask);
-            await request(app).post('/api/tasks').send({ ...validTask, employee: 'Lisa' });
+            await request(app)
+                .post('/api/tasks')
+                .send({ ...validTask, employee: 'Lisa' });
 
-            const res = await request(app)
-                .post('/api/tasks/search')
-                .send({ employee: 'Max' });
+            const res = await request(app).post('/api/tasks/search').send({ employee: 'Max' });
 
             expect(res.body).toHaveLength(1);
             expect(res.body[0].employee).toBe('Max');
@@ -494,7 +486,7 @@ describe('GET /api/tasks with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
-        location: 'Garten'
+        location: 'Garten',
     };
 
     test('returns array without pagination params (backwards-compatible)', async () => {
@@ -505,7 +497,9 @@ describe('GET /api/tasks with pagination', () => {
 
     test('returns paginated object with page param', async () => {
         for (let i = 0; i < 5; i++) {
-            await request(app).post('/api/tasks').send({ ...validTask, title: `Task ${i}` });
+            await request(app)
+                .post('/api/tasks')
+                .send({ ...validTask, title: `Task ${i}` });
         }
         const res = await request(app).get('/api/tasks?page=1&limit=2');
         expect(res.body).toHaveProperty('data');
@@ -530,7 +524,7 @@ describe('POST /api/tasks/search with pagination', () => {
     const validTask = {
         title: 'Rasen mähen',
         employee: 'Max',
-        location: 'Garten'
+        location: 'Garten',
     };
 
     test('returns array without pagination (backwards-compatible)', async () => {
@@ -543,9 +537,7 @@ describe('POST /api/tasks/search with pagination', () => {
         for (let i = 0; i < 5; i++) {
             await request(app).post('/api/tasks').send(validTask);
         }
-        const res = await request(app)
-            .post('/api/tasks/search')
-            .send({ employee: 'Max', page: 1, limit: 2 });
+        const res = await request(app).post('/api/tasks/search').send({ employee: 'Max', page: 1, limit: 2 });
         expect(res.body).toHaveProperty('data');
         expect(res.body.data).toHaveLength(2);
         expect(res.body.total).toBe(5);
@@ -613,9 +605,7 @@ describe('Security', () => {
         // This verifies the sec-fetch-site bypass has been removed.
         // Since API_KEY is not set in tests, all requests are allowed,
         // but the header should have no special effect on auth logic.
-        const res = await request(app)
-            .get('/api/tasks')
-            .set('sec-fetch-site', 'same-origin');
+        const res = await request(app).get('/api/tasks').set('sec-fetch-site', 'same-origin');
         expect(res.status).toBe(200);
     });
 
@@ -645,13 +635,11 @@ describe('Security', () => {
     });
 
     test('stores raw text without HTML escaping (escaping happens on frontend render)', async () => {
-        const res = await request(app)
-            .post('/api/tasks')
-            .send({
-                title: '<script>alert("xss")</script>',
-                employee: 'Max',
-                location: 'Garten'
-            });
+        const res = await request(app).post('/api/tasks').send({
+            title: '<script>alert("xss")</script>',
+            employee: 'Max',
+            location: 'Garten',
+        });
 
         expect(res.status).toBe(201);
         // API returns raw text — frontend is responsible for escaping on render
@@ -659,14 +647,12 @@ describe('Security', () => {
     });
 
     test('returns special characters as-is in API responses', async () => {
-        const res = await request(app)
-            .post('/api/tasks')
-            .send({
-                title: 'Tom & Jerry',
-                employee: "O'Brien",
-                location: 'Garten <Süd>',
-                description: 'Use "quotes" & ampersands'
-            });
+        const res = await request(app).post('/api/tasks').send({
+            title: 'Tom & Jerry',
+            employee: "O'Brien",
+            location: 'Garten <Süd>',
+            description: 'Use "quotes" & ampersands',
+        });
 
         expect(res.status).toBe(201);
         expect(res.body.title).toBe('Tom & Jerry');
@@ -675,9 +661,7 @@ describe('Security', () => {
         expect(res.body.description).toBe('Use "quotes" & ampersands');
 
         // Verify the data round-trips correctly (no double-escaping on edit)
-        const updated = await request(app)
-            .put(`/api/tasks/${res.body.id}`)
-            .send({ title: 'Tom & Jerry' });
+        const updated = await request(app).put(`/api/tasks/${res.body.id}`).send({ title: 'Tom & Jerry' });
 
         expect(updated.status).toBe(200);
         expect(updated.body.title).toBe('Tom & Jerry');
@@ -689,10 +673,7 @@ describe('Security', () => {
             .send({
                 title: 'Task with subtasks',
                 location: 'Garten',
-                subtasks: [
-                    { text: 'Tom & Jerry <subtask>', completed: false },
-                    'Plain string with "quotes"'
-                ]
+                subtasks: [{ text: 'Tom & Jerry <subtask>', completed: false }, 'Plain string with "quotes"'],
             });
 
         expect(res.status).toBe(201);
@@ -706,9 +687,7 @@ describe('Security', () => {
 describe('JSON body size limit', () => {
     test('rejects payloads over 100kb with 413 status', async () => {
         const largeBody = { title: 'x'.repeat(200 * 1024), location: 'Garten' };
-        const res = await request(app)
-            .post('/api/tasks')
-            .send(largeBody);
+        const res = await request(app).post('/api/tasks').send(largeBody);
 
         expect(res.status).toBe(413);
     });

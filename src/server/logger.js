@@ -26,8 +26,9 @@ function rotateIfNeeded(filePath) {
                 // Keep only last 5 rotated files
                 const dir = path.dirname(filePath);
                 const base = path.basename(filePath);
-                const rotatedFiles = fs.readdirSync(dir)
-                    .filter(f => f.startsWith(base + '.'))
+                const rotatedFiles = fs
+                    .readdirSync(dir)
+                    .filter((f) => f.startsWith(base + '.'))
                     .sort()
                     .reverse();
 
@@ -45,41 +46,46 @@ rotateIfNeeded(logFile);
 rotateIfNeeded(auditFile);
 
 // Main application logger
-const transport = process.env.NODE_ENV === 'test'
-    ? undefined
-    : pino.transport({
-        targets: [
-            {
-                target: 'pino/file',
-                options: { destination: logFile, mkdir: true },
-                level: LOG_LEVEL
-            },
-            {
-                target: 'pino-pretty',
-                options: { colorize: true, translateTime: 'SYS:yyyy-mm-dd HH:MM:ss' },
-                level: LOG_LEVEL
-            }
-        ]
-    });
+const transport =
+    process.env.NODE_ENV === 'test'
+        ? undefined
+        : pino.transport({
+              targets: [
+                  {
+                      target: 'pino/file',
+                      options: { destination: logFile, mkdir: true },
+                      level: LOG_LEVEL,
+                  },
+                  {
+                      target: 'pino-pretty',
+                      options: {
+                          colorize: true,
+                          translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+                      },
+                      level: LOG_LEVEL,
+                  },
+              ],
+          });
 
 const logger = pino({ level: LOG_LEVEL }, transport);
 
 // Audit logger - separate file for security/data events
-const auditTransport = process.env.NODE_ENV === 'test'
-    ? undefined
-    : pino.transport({
-        target: 'pino/file',
-        options: { destination: auditFile, mkdir: true }
-    });
+const auditTransport =
+    process.env.NODE_ENV === 'test'
+        ? undefined
+        : pino.transport({
+              target: 'pino/file',
+              options: { destination: auditFile, mkdir: true },
+          });
 
-const auditLogger = pino({ level: 'info' }, auditTransport);
+const auditLogger = pino({ level: process.env.NODE_ENV === 'test' ? LOG_LEVEL : 'info' }, auditTransport);
 
 // Structured audit log entry
 function audit(event, details = {}) {
     auditLogger.info({
         event,
         ...details,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 }
 
@@ -95,7 +101,7 @@ function requestLogger(req, res, next) {
             status: res.statusCode,
             duration: duration + 'ms',
             ip: req.ip || req.connection.remoteAddress,
-            userAgent: req.get('user-agent') || '-'
+            userAgent: req.get('user-agent') || '-',
         };
 
         if (res.statusCode >= 500) {

@@ -1,0 +1,31 @@
+name: Scoped coding task
+description: A concrete task with enough context for an agent or contributor
+title: 'chore: '
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and desired behavior
+      description: Include a concrete trigger and expected outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and non-goals
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Target branch, relevant files and dependencies
+      description: Verify assumptions against this branch; link prerequisite issues.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and validation
+      description: Observable behavior and commands a reviewer can reproduce.
+    validations:
+      required: true

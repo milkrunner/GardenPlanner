@@ -33,3 +33,9 @@ Desktop.ini
 *.tmp
 *.temp
 .cache/
+
+# Agent-local permissions and generated test artifacts
+.claude/settings.local.json
+playwright-report/
+test-results/
+coverage/

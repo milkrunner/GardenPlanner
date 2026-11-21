@@ -43,7 +43,8 @@ npm start
 
 ## REST API
 
-Die API ermöglicht externe Integration, z.B. mit n8n, um Tasks automatisiert zu erstellen und zu verwalten.
+Die API ermöglicht externe Integration, z.B. mit n8n, um Tasks
+automatisiert zu erstellen und zu verwalten.
 
 ### Authentifizierung
 
@@ -58,32 +59,34 @@ Browser-Anfragen von der Anwendung selbst benötigen keinen API-Key.
 
 ### Endpoints
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|-------------|
-| `GET` | `/api/tasks` | Alle Tasks auflisten |
-| `GET` | `/api/tasks/:id` | Einzelnen Task abrufen |
-| `POST` | `/api/tasks` | Neuen Task erstellen |
-| `PUT` | `/api/tasks/:id` | Task aktualisieren |
-| `DELETE` | `/api/tasks/:id` | Task löschen |
-| `POST` | `/api/tasks/:id/archive` | Task archivieren |
-| `POST` | `/api/tasks/:id/unarchive` | Task wiederherstellen |
-| `GET` | `/api/archived-tasks` | Archivierte Tasks auflisten |
-| `DELETE` | `/api/archived-tasks/:id` | Archivierten Task löschen |
+| Methode  | Endpoint                   | Beschreibung                |
+| -------- | -------------------------- | --------------------------- |
+| `GET`    | `/api/tasks`               | Alle Tasks auflisten        |
+| `GET`    | `/api/tasks/:id`           | Einzelnen Task abrufen      |
+| `POST`   | `/api/tasks`               | Neuen Task erstellen        |
+| `PUT`    | `/api/tasks/:id`           | Task aktualisieren          |
+| `DELETE` | `/api/tasks/:id`           | Task löschen                |
+| `POST`   | `/api/tasks/:id/archive`   | Task archivieren            |
+| `POST`   | `/api/tasks/:id/unarchive` | Task wiederherstellen       |
+| `GET`    | `/api/archived-tasks`      | Archivierte Tasks auflisten |
+| `DELETE` | `/api/archived-tasks/:id`  | Archivierten Task löschen   |
 
 ### Filter
 
 `GET /api/tasks` unterstützt Query-Parameter:
+
 - `?status=pending` / `in-progress` / `completed`
 - `?employee=Max`
 - `?location=Gewächshaus`
 
-### Beispiel: Task erstellen (curl)
+### Beispiel: Task erstellen (cURL)
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $API_KEY" \
-  -d '{"title":"Rasen mähen","employee":"Max","location":"Garten","description":"Vorgarten und Hinterhof"}'
+  -d '{"title":"Rasen mähen","employee":"Max","location":"Garten",
+       "description":"Vorgarten und Hinterhof"}'
 ```
 
 ### Beispiel: n8n HTTP Request Node
@@ -92,6 +95,7 @@ curl -X POST http://localhost:8080/api/tasks \
 - **URL:** `http://gartenplaner:3000/api/tasks`
 - **Headers:** `X-API-Key: YOUR_API_KEY_HERE`
 - **Body (JSON):**
+
   ```json
   {
     "title": "Bewässerung prüfen",
@@ -105,7 +109,13 @@ curl -X POST http://localhost:8080/api/tasks \
 
 Umgebungsvariablen (siehe `.env.example`):
 
-| Variable | Beschreibung | Standard |
-|----------|-------------|----------|
+| Variable  | Beschreibung                 | Standard             |
+| --------- | ---------------------------- | -------------------- |
 | `API_KEY` | API-Key für externen Zugriff | _(leer = kein Auth)_ |
-| `PORT` | Server-Port | `3000` |
+| `PORT`    | Server-Port                  | `3000`               |
+
+## Entwicklung und Coding Agents
+
+Setup, Prüfungen und PR-Ablauf: [CONTRIBUTING.md](CONTRIBUTING.md).
+Agent-Anleitung: [AGENTS.md](AGENTS.md).
+Code-Einstiegspunkte: [Architektur](docs/ARCHITECTURE.md).

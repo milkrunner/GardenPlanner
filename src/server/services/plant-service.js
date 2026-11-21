@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const PLANTS_FILE = path.join(__dirname, '..', '..', '..', 'data', 'plants.json');
+const { DATA_DIR } = require('../storage/json-store');
+const PLANTS_FILE = path.join(DATA_DIR, 'plants.json');
 const DEFAULT_PLANTS_FILE = path.join(__dirname, '..', 'defaults', 'default-plants.json');
 
 function loadDefaultPlants() {
@@ -17,7 +18,9 @@ function readPlants() {
         if (fs.existsSync(PLANTS_FILE)) {
             return JSON.parse(fs.readFileSync(PLANTS_FILE, 'utf8'));
         }
-    } catch { /* ignore */ }
+    } catch {
+        /* ignore */
+    }
     return loadDefaultPlants();
 }
 
@@ -27,13 +30,14 @@ function listPlants(query) {
     const search = typeof query.search === 'string' ? query.search.trim().toLowerCase() : '';
 
     if (category) {
-        plants = plants.filter(p => p.category === category);
+        plants = plants.filter((p) => p.category === category);
     }
     if (search) {
-        plants = plants.filter(p =>
-            p.name.toLowerCase().includes(search) ||
-            p.category.toLowerCase().includes(search) ||
-            p.tips.toLowerCase().includes(search)
+        plants = plants.filter(
+            (p) =>
+                p.name.toLowerCase().includes(search) ||
+                p.category.toLowerCase().includes(search) ||
+                p.tips.toLowerCase().includes(search),
         );
     }
     return plants;
@@ -41,12 +45,12 @@ function listPlants(query) {
 
 function getPlant(id) {
     const plants = readPlants();
-    return plants.find(p => p.id === id) || null;
+    return plants.find((p) => p.id === id) || null;
 }
 
 function listCategories() {
     const plants = readPlants();
-    return [...new Set(plants.map(p => p.category))].sort();
+    return [...new Set(plants.map((p) => p.category))].sort();
 }
 
 module.exports = { readPlants, listPlants, getPlant, listCategories };

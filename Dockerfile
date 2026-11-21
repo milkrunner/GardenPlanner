@@ -14,9 +14,8 @@ WORKDIR /app
 RUN apk update && apk upgrade --no-cache || true
 
 # Dependencies installieren
-COPY package.json package-lock.json* ./
-RUN npm install --omit=dev \
-    && npm audit --audit-level=moderate || true
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 # Anwendungsdateien kopieren (#7: no tests/docs in production)
 COPY server.js ./
