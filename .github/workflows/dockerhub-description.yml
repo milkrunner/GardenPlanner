@@ -1,0 +1,32 @@
+name: Docker Hub description
+
+# Manual only: nothing is published automatically. Dry run is the default and needs no secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only validate the description files; do not contact Docker Hub
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Validate description
+        run: node scripts/dockerhub-description.cjs --dry-run
+      - name: Update Docker Hub description
+        if: ${{ !inputs.dry_run }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: node scripts/dockerhub-description.cjs

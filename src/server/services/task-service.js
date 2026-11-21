@@ -6,12 +6,9 @@ const {
     readArchivedTasks,
     withLockedTasks,
     withLockedArchive,
-    acquireLock,
-    releaseLock,
+    withLockedTasksAndArchive,
     writeTasks,
     writeArchivedTasks,
-    TASKS_FILE,
-    ARCHIVED_FILE
 } = require('../storage/json-store');
 
 // --- Pagination helper ---
@@ -23,8 +20,8 @@ function paginate(tasks, query) {
     // No pagination params -> return raw array (backwards-compatible)
     if (!page && !limit) return null;
 
-    const safePage = (Number.isInteger(page) && page > 0) ? page : 1;
-    const safeLimit = (Number.isInteger(limit) && limit > 0 && limit <= 200) ? limit : 50;
+    const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+    const safeLimit = Number.isInteger(limit) && limit > 0 && limit <= 200 ? limit : 50;
     const total = tasks.length;
     const pages = Math.ceil(total / safeLimit);
     const start = (safePage - 1) * safeLimit;
@@ -43,7 +40,7 @@ function listTasks(query) {
     if (status) {
         const validStatuses = ['pending', 'in-progress', 'completed'];
         if (validStatuses.includes(status)) {
-            tasks = tasks.filter(t => t.status === status);
+            tasks = tasks.filter((t) => t.status === status);
         }
     }
 
@@ -58,14 +55,14 @@ function searchTasks(body) {
     if (typeof status === 'string' && status.trim()) {
         const validStatuses = ['pending', 'in-progress', 'completed'];
         if (validStatuses.includes(status.trim())) {
-            tasks = tasks.filter(t => t.status === status.trim());
+            tasks = tasks.filter((t) => t.status === status.trim());
         }
     }
     if (typeof employee === 'string' && employee.trim()) {
-        tasks = tasks.filter(t => t.employee === employee.trim());
+        tasks = tasks.filter((t) => t.employee === employee.trim());
     }
     if (typeof location === 'string' && location.trim()) {
-        tasks = tasks.filter(t => t.location === location.trim());
+        tasks = tasks.filter((t) => t.location === location.trim());
     }
 
     const paginated = paginate(tasks, { page, limit });
@@ -74,7 +71,7 @@ function searchTasks(body) {
 
 function getTask(id) {
     const tasks = readTasks();
-    return tasks.find(t => String(t.id) === String(id)) || null;
+    return tasks.find((t) => String(t.id) === String(id)) || null;
 }
 
 async function createTask(body) {
@@ -95,21 +92,25 @@ async function createTask(body) {
         priority: sanitized.priority || 'medium',
         recurrence: sanitized.recurrence || 'none',
         createdAt: new Date().toISOString(),
-        history: [{
-            timestamp: new Date().toISOString(),
-            action: 'created',
-            details: {
-                title: sanitized.title,
-                employee: sanitized.employee,
-                location: sanitized.location
-            }
-        }],
-        subtasks: Array.isArray(sanitized.subtasks) ? sanitized.subtasks.map(st => ({
-            id: Date.now() + Math.random(),
-            text: typeof st === 'string' ? st : (st.text || ''),
-            completed: typeof st === 'object' ? !!st.completed : false
-        })) : [],
-        sortOrder: Date.now()
+        history: [
+            {
+                timestamp: new Date().toISOString(),
+                action: 'created',
+                details: {
+                    title: sanitized.title,
+                    employee: sanitized.employee,
+                    location: sanitized.location,
+                },
+            },
+        ],
+        subtasks: Array.isArray(sanitized.subtasks)
+            ? sanitized.subtasks.map((st) => ({
+                  id: Date.now() + Math.random(),
+                  text: typeof st === 'string' ? st : st.text || '',
+                  completed: typeof st === 'object' ? !!st.completed : false,
+              }))
+            : [],
+        sortOrder: Date.now(),
     };
 
     await withLockedTasks((tasks) => {
@@ -129,7 +130,7 @@ async function updateTask(id, body) {
 
     const sanitized = sanitizeTaskData(body);
     const result = await withLockedTasks((tasks) => {
-        const index = tasks.findIndex(t => String(t.id) === String(id));
+        const index = tasks.findIndex((t) => String(t.id) === String(id));
         if (index === -1) return { tasks: undefined, notFound: true };
 
         const task = tasks[index];
@@ -167,17 +168,19 @@ async function updateTask(id, body) {
             task.history.push({
                 timestamp: new Date().toISOString(),
                 action: sanitized.status === 'completed' ? 'completed' : 'reopened',
-                details: { from: oldStatus, to: sanitized.status }
+                details: { from: oldStatus, to: sanitized.status },
             });
         }
         if (sanitized.priority !== undefined) task.priority = sanitized.priority;
         if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
         if (sanitized.subtasks !== undefined) {
-            task.subtasks = Array.isArray(sanitized.subtasks) ? sanitized.subtasks.map(st => ({
-                id: Date.now() + Math.random(),
-                text: typeof st === 'string' ? st : (st.text || ''),
-                completed: typeof st === 'object' ? !!st.completed : false
-            })) : [];
+            task.subtasks = Array.isArray(sanitized.subtasks)
+                ? sanitized.subtasks.map((st) => ({
+                      id: Date.now() + Math.random(),
+                      text: typeof st === 'string' ? st : st.text || '',
+                      completed: typeof st === 'object' ? !!st.completed : false,
+                  }))
+                : [];
         }
 
         if (changes.length > 0) {
@@ -185,7 +188,7 @@ async function updateTask(id, body) {
             task.history.push({
                 timestamp: new Date().toISOString(),
                 action: 'edited',
-                details: { changes }
+                details: { changes },
             });
         }
 
@@ -201,7 +204,7 @@ async function updateTask(id, body) {
 
 async function deleteTask(id) {
     const result = await withLockedTasks((tasks) => {
-        const index = tasks.findIndex(t => String(t.id) === String(id));
+        const index = tasks.findIndex((t) => String(t.id) === String(id));
         if (index === -1) return { tasks: undefined, notFound: true };
         const deletedTask = tasks.splice(index, 1)[0];
         return { tasks, deletedTask };
@@ -213,68 +216,52 @@ async function deleteTask(id) {
     return { error: false };
 }
 
+// Archive/unarchive touch two files. The destination is written first, so a failed second write leaves
+// a duplicate (recoverable) instead of losing the task. In-memory data is re-read from disk on failure.
 async function archiveTask(id) {
-    await acquireLock(TASKS_FILE);
-    await acquireLock(ARCHIVED_FILE);
-    try {
+    return withLockedTasksAndArchive(async () => {
         const tasks = readTasks();
-        const index = tasks.findIndex(t => String(t.id) === String(id));
+        const index = tasks.findIndex((t) => String(t.id) === String(id));
         if (index === -1) {
-            releaseLock(ARCHIVED_FILE);
-            releaseLock(TASKS_FILE);
             return { error: true, status: 404, message: 'Task not found' };
         }
 
-        const task = tasks[index];
+        const task = { ...tasks[index] };
         task.archivedAt = new Date().toISOString();
-        if (!task.history) task.history = [];
-        task.history.push({ timestamp: new Date().toISOString(), action: 'archived', details: {} });
+        task.history = [
+            ...(task.history || []),
+            { timestamp: new Date().toISOString(), action: 'archived', details: {} },
+        ];
 
-        tasks.splice(index, 1);
-        const archived = readArchivedTasks();
-        archived.push(task);
-
-        await writeTasks(tasks);
-        await writeArchivedTasks(archived);
+        await writeArchivedTasks([...readArchivedTasks(), task]);
+        await writeTasks(tasks.filter((_, i) => i !== index));
 
         audit('task_archived', { taskId: task.id, title: task.title });
         return { error: false, task };
-    } finally {
-        releaseLock(ARCHIVED_FILE);
-        releaseLock(TASKS_FILE);
-    }
+    });
 }
 
 async function unarchiveTask(id) {
-    await acquireLock(ARCHIVED_FILE);
-    await acquireLock(TASKS_FILE);
-    try {
+    return withLockedTasksAndArchive(async () => {
         const archived = readArchivedTasks();
-        const index = archived.findIndex(t => String(t.id) === String(id));
+        const index = archived.findIndex((t) => String(t.id) === String(id));
         if (index === -1) {
-            releaseLock(TASKS_FILE);
-            releaseLock(ARCHIVED_FILE);
             return { error: true, status: 404, message: 'Archived task not found' };
         }
 
-        const task = archived[index];
+        const task = { ...archived[index] };
         delete task.archivedAt;
-        if (!task.history) task.history = [];
-        task.history.push({ timestamp: new Date().toISOString(), action: 'unarchived', details: {} });
+        task.history = [
+            ...(task.history || []),
+            { timestamp: new Date().toISOString(), action: 'unarchived', details: {} },
+        ];
 
-        archived.splice(index, 1);
-        const tasks = readTasks();
-        tasks.push(task);
-
-        await writeArchivedTasks(archived);
-        await writeTasks(tasks);
+        await writeTasks([...readTasks(), task]);
+        await writeArchivedTasks(archived.filter((_, i) => i !== index));
 
         audit('task_unarchived', { taskId: task.id, title: task.title });
         return { error: false, task };
-    } finally {
-        releaseLock(TASKS_FILE);
-        releaseLock(ARCHIVED_FILE);
-    }
+    });
 }
 
 function listArchivedTasks() {
@@ -283,7 +270,7 @@ function listArchivedTasks() {
 
 async function deleteArchivedTask(id) {
     const result = await withLockedArchive((archived) => {
-        const index = archived.findIndex(t => String(t.id) === String(id));
+        const index = archived.findIndex((t) => String(t.id) === String(id));
         if (index === -1) return { tasks: undefined, notFound: true };
         const deletedArchived = archived.splice(index, 1)[0];
         return { tasks: archived, deletedArchived };
@@ -306,5 +293,5 @@ module.exports = {
     archiveTask,
     unarchiveTask,
     listArchivedTasks,
-    deleteArchivedTask
+    deleteArchivedTask,
 };
