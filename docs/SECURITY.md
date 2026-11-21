@@ -129,4 +129,4 @@ CSRF-Schutz zeitgleich ergänzt werden.
 
 Ohne `API_KEY` (lokale Entwicklung oder bewusst mit `ALLOW_UNAUTHENTICATED=true`) ist die
 API offen; dann schützt auch kein CSRF-Token, weil jeder Client direkt zugreifen kann.
-Produktion startet ohne `API_KEY` nicht (siehe README, Abschnitt Konfiguration).
+Produktion startet ohne `API_KEY` nicht (siehe `README.md`, Abschnitt Konfiguration).
