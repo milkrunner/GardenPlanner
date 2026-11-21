@@ -21,23 +21,24 @@
         <p class="subtitle">Alle Aufgaben und Statistiken im Überblick</p>
       </header>
 
-      <div class="nav-container">
-        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+      <nav class="nav-container" aria-label="Hauptnavigation">
+        <div class="main-nav">
           <a href="/dashboard" class="nav-link active" aria-current="page"
             >📋 Dashboard</a
           >
           <a href="/statistics" class="nav-link">📊 Statistiken</a>
           <a href="/plants" class="nav-link">🌱 Pflanzen</a>
           <a href="/logs" class="nav-link">📜 Logs</a>
-        </nav>
+        </div>
         <a href="/index" class="btn btn-primary nav-action-btn"
           >➕ Neue Aufgabe</a
         >
-      </div>
+      </nav>
 
       <main role="main">
         <!-- Statistiken Schnellübersicht -->
         <section class="stats-section">
+          <h2 class="sr-only">Schnellübersicht</h2>
           <div class="stat-card">
             <h3>Offene Aufgaben</h3>
             <p class="stat-number" id="statPending">0</p>
@@ -58,6 +59,8 @@
             <h2>🌤️ Wettervorhersage - 7 Tage</h2>
             <div class="weather-location">
               <svg
+                aria-hidden="true"
+                focusable="false"
                 width="16"
                 height="16"
                 viewBox="0 0 24 24"
@@ -82,8 +85,11 @@
                 id="changeLocationBtn"
                 class="btn-change-location"
                 title="Standort ändern"
+                aria-label="Standort ändern"
               >
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   width="14"
                   height="14"
                   viewBox="0 0 24 24"
@@ -150,6 +156,8 @@
             <div class="search-container">
               <div class="search-input-wrapper">
                 <svg
+                  aria-hidden="true"
+                  focusable="false"
                   class="search-icon"
                   width="20"
                   height="20"
@@ -189,6 +197,8 @@
                   aria-label="Suche löschen"
                 >
                   <svg
+                    aria-hidden="true"
+                    focusable="false"
                     width="16"
                     height="16"
                     viewBox="0 0 24 24"
@@ -281,6 +291,7 @@
             type="file"
             id="importFile"
             accept=".json"
+            aria-label="JSON-Datei importieren"
             style="display: none"
           />
         </section>
@@ -340,6 +351,7 @@
                   type="text"
                   id="newSubtaskInput"
                   placeholder="Neue Teilaufgabe hinzufügen..."
+                  aria-label="Neue Teilaufgabe"
                   class="subtask-input"
                 />
                 <button
@@ -347,8 +359,11 @@
                   id="addSubtaskBtn"
                   class="btn-add-subtask"
                   title="Teilaufgabe hinzufügen"
+                  aria-label="Teilaufgabe hinzufügen"
                 >
                   <svg
+                    aria-hidden="true"
+                    focusable="false"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
@@ -430,6 +445,8 @@
         title="Dark Mode umschalten"
       >
         <svg
+          aria-hidden="true"
+          focusable="false"
           id="themeIcon"
           class="theme-icon"
           width="24"

@@ -93,35 +93,68 @@ const logViewer = {
 		const tbody = document.getElementById("logTableBody");
 
 		if (logs.length === 0) {
-			tbody.innerHTML = `
-                <tr>
-                    <td colspan="5">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">🔍</div>
-                            <p>Keine Logs gefunden</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
+			const icon = document.createElement("div");
+			icon.className = "empty-state-icon";
+			icon.setAttribute("aria-hidden", "true");
+			icon.textContent = "🔍";
+			const text = document.createElement("p");
+			text.textContent = "Keine Logs gefunden";
+			const box = document.createElement("div");
+			box.className = "empty-state";
+			box.append(icon, text);
+			const cell = document.createElement("td");
+			cell.colSpan = 5;
+			cell.appendChild(box);
+			const row = document.createElement("tr");
+			row.appendChild(cell);
+			tbody.replaceChildren(row);
 			return;
 		}
 
-		tbody.innerHTML = logs.map((log) => this.createLogRow(log)).join("");
+		// Auto-Refresh darf den Tastaturfokus nicht verlieren
+		const focusedId = tbody.contains(document.activeElement)
+			? document.activeElement.dataset.logId
+			: null;
+		tbody.replaceChildren(...logs.map((log) => this.createLogRow(log)));
+		if (focusedId) {
+			Array.from(tbody.rows)
+				.find((row) => row.dataset.logId === focusedId)
+				?.focus();
+		}
 	},
 
+	// Log-Daten sind untrusted (Nachrichten können Task-Inhalte enthalten):
+	// alle Zellen werden per textContent gesetzt.
 	createLogRow(log) {
-		const timestamp = new Date(log.timestamp).toLocaleString("de-DE");
-		const contextPreview = Object.keys(log.context).length > 0 ? `{...}` : "-";
+		const cell = (className, text) => {
+			const td = document.createElement("td");
+			if (className) td.className = className;
+			if (text !== undefined) td.textContent = text;
+			return td;
+		};
+		const badge = (className, text) => {
+			const span = document.createElement("span");
+			span.className = className;
+			span.textContent = text;
+			const td = document.createElement("td");
+			td.appendChild(span);
+			return td;
+		};
 
-		return `
-            <tr data-log-id="${this.escapeHtml(log.id)}" class="log-row-clickable">
-                <td class="log-timestamp">${timestamp}</td>
-                <td><span class="log-level ${log.level.toLowerCase()}">${log.level}</span></td>
-                <td><span class="log-category">${log.category}</span></td>
-                <td class="log-message">${this.escapeHtml(log.message)}</td>
-                <td class="log-context">${contextPreview}</td>
-            </tr>
-        `;
+		const row = document.createElement("tr");
+		row.dataset.logId = log.id;
+		row.className = "log-row-clickable";
+		// Tastaturbedienung: Enter/Leertaste öffnet das Detail (siehe Delegation unten)
+		row.tabIndex = 0;
+		row.setAttribute("aria-haspopup", "dialog");
+		row.append(
+			cell("log-timestamp", new Date(log.timestamp).toLocaleString("de-DE")),
+			badge(`log-level ${String(log.level).toLowerCase()}`, log.level),
+			badge("log-category", log.category),
+			cell("log-message", log.message),
+			cell("log-context", Object.keys(log.context).length > 0 ? "{...}" : "-"),
+		);
+		return row;
 	},
 
 	showDetail(logId) {
@@ -133,16 +166,16 @@ const logViewer = {
 
 		const content = `
             <div class="log-detail-section">
-                <h2><span class="log-level ${log.level.toLowerCase()}">${log.level}</span> ${this.escapeHtml(log.message)}</h2>
+                <h2><span class="log-level ${this.escapeHtml(String(log.level).toLowerCase())}">${this.escapeHtml(log.level)}</span> ${this.escapeHtml(log.message)}</h2>
             </div>
 
             <div class="log-detail-section">
                 <h3>ℹ️ Informationen</h3>
                 <div class="log-detail-json">
                     <strong>Zeitstempel:</strong> ${timestamp}<br>
-                    <strong>Kategorie:</strong> ${log.category}<br>
-                    <strong>Level:</strong> ${log.level}<br>
-                    <strong>ID:</strong> ${log.id}
+                    <strong>Kategorie:</strong> ${this.escapeHtml(log.category)}<br>
+                    <strong>Level:</strong> ${this.escapeHtml(log.level)}<br>
+                    <strong>ID:</strong> ${this.escapeHtml(log.id)}
                 </div>
             </div>
 
@@ -182,11 +215,15 @@ const logViewer = {
         `;
 
 		document.getElementById("logDetailContent").innerHTML = content;
+		this.lastFocus = document.activeElement;
 		document.getElementById("logDetailModal").classList.add("active");
+		document.getElementById("logDetailCloseBtn")?.focus();
 	},
 
 	closeDetail() {
 		document.getElementById("logDetailModal").classList.remove("active");
+		if (this.lastFocus && this.lastFocus.isConnected) this.lastFocus.focus();
+		this.lastFocus = null;
 	},
 
 	exportJSON() {
@@ -224,10 +261,14 @@ const logViewer = {
 		}
 	},
 
+	// Escaping für Text- und Attributkontext (inkl. Anführungszeichen)
 	escapeHtml(text) {
-		const div = document.createElement("div");
-		div.textContent = text;
-		return div.innerHTML;
+		return String(text ?? "")
+			.replace(/&/g, "&amp;")
+			.replace(/</g, "&lt;")
+			.replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;")
+			.replace(/'/g, "&#039;");
 	},
 };
 
@@ -239,6 +280,22 @@ window.addEventListener("DOMContentLoaded", () => {
 	document.getElementById("logTableBody").addEventListener("click", (e) => {
 		const row = e.target.closest("tr[data-log-id]");
 		if (row) logViewer.showDetail(row.dataset.logId);
+	});
+
+	document.getElementById("logTableBody").addEventListener("keydown", (e) => {
+		if (e.key !== "Enter" && e.key !== " ") return;
+		const row = e.target.closest("tr[data-log-id]");
+		if (row && e.target === row) {
+			e.preventDefault();
+			logViewer.showDetail(row.dataset.logId);
+		}
+	});
+
+	document.addEventListener("keydown", (e) => {
+		const modal = document.getElementById("logDetailModal");
+		if (e.key === "Escape" && modal.classList.contains("active")) {
+			logViewer.closeDetail();
+		}
 	});
 
 	// Modal bei Klick außerhalb schließen

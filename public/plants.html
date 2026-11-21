@@ -37,16 +37,35 @@
             />
           </div>
           <div class="category-filters" id="categoryFilters">
-            <button class="category-btn active" data-category="">Alle</button>
+            <button
+              type="button"
+              class="category-btn active"
+              data-category=""
+              aria-pressed="true"
+            >
+              Alle
+            </button>
           </div>
         </section>
 
-        <section class="plant-grid" id="plantGrid">
+        <h2 class="sr-only" id="plantGridHeading">Pflanzen</h2>
+        <section
+          class="plant-grid"
+          id="plantGrid"
+          aria-labelledby="plantGridHeading"
+        >
           <div class="loading">Lade Pflanzenbibliothek...</div>
         </section>
 
         <!-- Plant Detail Modal -->
-        <div class="plant-modal" id="plantModal" style="display: none">
+        <div
+          class="plant-modal"
+          id="plantModal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="plantModalTitle"
+          style="display: none"
+        >
           <div class="plant-modal-content" id="plantModalContent"></div>
         </div>
       </main>
@@ -64,6 +83,8 @@
         title="Dark Mode umschalten"
       >
         <svg
+          aria-hidden="true"
+          focusable="false"
           id="themeIcon"
           class="theme-icon"
           width="24"

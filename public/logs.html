@@ -295,142 +295,155 @@
   </head>
   <body>
     <div class="log-viewer-container">
-      <h1>📊 System Logs</h1>
+      <div role="banner"><h1>📊 System Logs</h1></div>
 
-      <div class="nav-container">
-        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+      <nav class="nav-container" aria-label="Hauptnavigation">
+        <div class="main-nav">
           <a href="/dashboard" class="nav-link">📋 Dashboard</a>
           <a href="/statistics" class="nav-link">📊 Statistiken</a>
           <a href="/plants" class="nav-link">🌱 Pflanzen</a>
           <a href="/logs" class="nav-link active" aria-current="page"
             >📜 Logs</a
           >
-        </nav>
+        </div>
         <a href="/index" class="btn btn-primary nav-action-btn"
           >➕ Neue Aufgabe</a
         >
-      </div>
+      </nav>
 
-      <!-- Statistiken -->
-      <div class="log-stats" id="logStats">
-        <div class="stat-item">
-          <div class="stat-value" id="statTotal">0</div>
-          <div class="stat-label">Total Logs</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statErrors">0</div>
-          <div class="stat-label">Errors (1h)</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statCategories">0</div>
-          <div class="stat-label">Categories</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="statSize">0 KB</div>
-          <div class="stat-label">Log Size</div>
-        </div>
-      </div>
-
-      <!-- Filter und Aktionen -->
-      <div class="log-controls">
-        <div class="log-filters">
-          <div class="filter-group">
-            <label>Log Level</label>
-            <select id="filterLevel">
-              <option value="">Alle Levels</option>
-              <option value="DEBUG">Debug</option>
-              <option value="INFO">Info</option>
-              <option value="WARN">Warnung</option>
-              <option value="ERROR">Error</option>
-              <option value="CRITICAL">Critical</option>
-            </select>
+      <main>
+        <!-- Statistiken -->
+        <div class="log-stats" id="logStats">
+          <div class="stat-item">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total Logs</div>
           </div>
-
-          <div class="filter-group">
-            <label>Kategorie</label>
-            <select id="filterCategory">
-              <option value="">Alle Kategorien</option>
-              <option value="app">App</option>
-              <option value="security">Security</option>
-              <option value="storage">Storage</option>
-              <option value="encryption">Encryption</option>
-              <option value="rate-limit">Rate Limit</option>
-              <option value="performance">Performance</option>
-            </select>
+          <div class="stat-item">
+            <div class="stat-value" id="statErrors">0</div>
+            <div class="stat-label">Errors (1h)</div>
           </div>
-
-          <div class="filter-group">
-            <label>Suche</label>
-            <input
-              type="text"
-              id="filterSearch"
-              placeholder="Suche in Logs..."
-            />
+          <div class="stat-item">
+            <div class="stat-value" id="statCategories">0</div>
+            <div class="stat-label">Categories</div>
           </div>
-
-          <div class="filter-group">
-            <label>Limit</label>
-            <select id="filterLimit">
-              <option value="50">50 Einträge</option>
-              <option value="100" selected>100 Einträge</option>
-              <option value="200">200 Einträge</option>
-              <option value="">Alle Einträge</option>
-            </select>
+          <div class="stat-item">
+            <div class="stat-value" id="statSize">0 KB</div>
+            <div class="stat-label">Log Size</div>
           </div>
         </div>
 
-        <div class="log-actions">
-          <button class="btn btn-primary" onclick="logViewer.refresh()">
-            🔄 Aktualisieren
-          </button>
-          <button class="btn" onclick="logViewer.exportJSON()">
-            💾 Export JSON
-          </button>
-          <button class="btn" onclick="logViewer.exportCSV()">
-            📊 Export CSV
-          </button>
-          <button class="btn" onclick="logViewer.exportText()">
-            📄 Export Text
-          </button>
-          <button class="btn btn-danger" onclick="logViewer.clearLogs()">
-            🗑️ Logs löschen
-          </button>
-          <div style="margin-left: auto">
-            <span id="healthIndicator" class="health-indicator"></span>
+        <!-- Filter und Aktionen -->
+        <div class="log-controls">
+          <div class="log-filters">
+            <div class="filter-group">
+              <label for="filterLevel">Log Level</label>
+              <select id="filterLevel">
+                <option value="">Alle Levels</option>
+                <option value="DEBUG">Debug</option>
+                <option value="INFO">Info</option>
+                <option value="WARN">Warnung</option>
+                <option value="ERROR">Error</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filterCategory">Kategorie</label>
+              <select id="filterCategory">
+                <option value="">Alle Kategorien</option>
+                <option value="app">App</option>
+                <option value="security">Security</option>
+                <option value="storage">Storage</option>
+                <option value="encryption">Encryption</option>
+                <option value="rate-limit">Rate Limit</option>
+                <option value="performance">Performance</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filterSearch">Suche</label>
+              <input
+                type="text"
+                id="filterSearch"
+                placeholder="Suche in Logs..."
+              />
+            </div>
+
+            <div class="filter-group">
+              <label for="filterLimit">Limit</label>
+              <select id="filterLimit">
+                <option value="50">50 Einträge</option>
+                <option value="100" selected>100 Einträge</option>
+                <option value="200">200 Einträge</option>
+                <option value="">Alle Einträge</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="log-actions">
+            <button type="button" id="logRefreshBtn" class="btn btn-primary">
+              🔄 Aktualisieren
+            </button>
+            <button type="button" id="logExportJsonBtn" class="btn">
+              💾 Export JSON
+            </button>
+            <button type="button" id="logExportCsvBtn" class="btn">
+              📊 Export CSV
+            </button>
+            <button type="button" id="logExportTextBtn" class="btn">
+              📄 Export Text
+            </button>
+            <button type="button" id="logClearBtn" class="btn btn-danger">
+              🗑️ Logs löschen
+            </button>
+            <div style="margin-left: auto">
+              <span id="healthIndicator" class="health-indicator"></span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Log-Tabelle -->
-      <div class="log-table-container">
-        <table class="log-table">
-          <thead>
-            <tr>
-              <th>Zeit</th>
-              <th>Level</th>
-              <th>Kategorie</th>
-              <th>Nachricht</th>
-              <th>Context</th>
-            </tr>
-          </thead>
-          <tbody id="logTableBody">
-            <tr>
-              <td colspan="5">
-                <div class="empty-state">
-                  <div class="empty-state-icon">📋</div>
-                  <p>Lade Logs...</p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <!-- Log-Tabelle -->
+        <div class="log-table-container">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Zeit</th>
+                <th>Level</th>
+                <th>Kategorie</th>
+                <th>Nachricht</th>
+                <th>Context</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody">
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Lade Logs...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
     </div>
 
     <!-- Detail Modal -->
-    <div class="log-detail-modal" id="logDetailModal">
+    <div
+      class="log-detail-modal"
+      id="logDetailModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Log-Details"
+    >
       <div class="log-detail-content">
-        <button class="log-detail-close" onclick="logViewer.closeDetail()">
+        <button
+          type="button"
+          id="logDetailCloseBtn"
+          class="log-detail-close"
+          aria-label="Schließen"
+        >
           ×
         </button>
         <div id="logDetailContent"></div>
@@ -449,6 +462,8 @@
         title="Dark Mode umschalten"
       >
         <svg
+          aria-hidden="true"
+          focusable="false"
           id="themeIcon"
           class="theme-icon"
           width="24"

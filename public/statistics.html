@@ -17,23 +17,24 @@
         <p class="subtitle">Detaillierte Übersicht und Auswertungen</p>
       </header>
 
-      <div class="nav-container">
-        <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
+      <nav class="nav-container" aria-label="Hauptnavigation">
+        <div class="main-nav">
           <a href="/dashboard" class="nav-link">📋 Dashboard</a>
           <a href="/statistics" class="nav-link active" aria-current="page"
             >📊 Statistiken</a
           >
           <a href="/plants" class="nav-link">🌱 Pflanzen</a>
           <a href="/logs" class="nav-link">📜 Logs</a>
-        </nav>
+        </div>
         <a href="/index" class="btn btn-primary nav-action-btn"
           >➕ Neue Aufgabe</a
         >
-      </div>
+      </nav>
 
       <main>
         <!-- Statistiken mit Fortschrittsbalken -->
         <section class="stats-section">
+          <h2 class="sr-only">Kennzahlen</h2>
           <div class="stat-card">
             <h3>Offene Aufgaben</h3>
             <p class="stat-number" id="statPending">0</p>
@@ -80,6 +81,7 @@
 
         <!-- Erweiterte Statistiken mit Diagrammen -->
         <section class="charts-section">
+          <h2 class="sr-only">Diagramme</h2>
           <div class="chart-container">
             <h3>📊 Aufgabenverteilung nach Mitarbeiter</h3>
             <div id="employeeChart" class="chart-bars">
@@ -113,42 +115,42 @@
             <div class="stat-item">
               <div class="stat-icon">📦</div>
               <div class="stat-content">
-                <h4>Archivierte Aufgaben</h4>
+                <h3>Archivierte Aufgaben</h3>
                 <p class="stat-value" id="statArchived">0</p>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-icon">📍</div>
               <div class="stat-content">
-                <h4>Aktive Standorte</h4>
+                <h3>Aktive Standorte</h3>
                 <p class="stat-value" id="statLocations">0</p>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-icon">⏱️</div>
               <div class="stat-content">
-                <h4>Heute erstellt</h4>
+                <h3>Heute erstellt</h3>
                 <p class="stat-value" id="statToday">0</p>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-icon">📅</div>
               <div class="stat-content">
-                <h4>Diese Woche</h4>
+                <h3>Diese Woche</h3>
                 <p class="stat-value" id="statThisWeek">0</p>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-icon">✅</div>
               <div class="stat-content">
-                <h4>Diese Woche erledigt</h4>
+                <h3>Diese Woche erledigt</h3>
                 <p class="stat-value" id="statCompletedThisWeek">0</p>
               </div>
             </div>
             <div class="stat-item">
               <div class="stat-icon">⏱️</div>
               <div class="stat-content">
-                <h4>Durchschn. Bearbeitungszeit</h4>
+                <h3>Durchschn. Bearbeitungszeit</h3>
                 <p class="stat-value" id="statAvgCompletionTime">-</p>
               </div>
             </div>
@@ -181,6 +183,8 @@
         title="Dark Mode umschalten"
       >
         <svg
+          aria-hidden="true"
+          focusable="false"
           id="themeIcon"
           class="theme-icon"
           width="24"

@@ -192,8 +192,10 @@ class GartenPlaner {
 	async fetchWeather(location) {
 		const weatherForecast = document.getElementById("weatherForecast");
 		if (weatherForecast) {
-			weatherForecast.innerHTML =
-				'<div class="weather-loading">Lade Wetterdaten...</div>';
+			const loading = document.createElement("div");
+			loading.className = "weather-loading";
+			loading.textContent = "Lade Wetterdaten...";
+			weatherForecast.replaceChildren(loading);
 		}
 
 		const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe/Berlin&forecast_days=7`;
@@ -421,17 +423,22 @@ class GartenPlaner {
 	showWeatherError(message) {
 		const weatherForecast = document.getElementById("weatherForecast");
 		if (weatherForecast) {
-			weatherForecast.innerHTML = `
-                <div class="weather-error">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <p>${message}</p>
-                    <button class="btn btn-secondary" onclick="window.gartenPlaner.promptLocation()">Standort eingeben</button>
-                </div>
-            `;
+			// Statisches SVG (vertrauenswürdig), Meldung nur als Text
+			const template = document.createElement("template");
+			template.innerHTML =
+				'<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+			const text = document.createElement("p");
+			text.textContent = message;
+			const retry = document.createElement("button");
+			retry.type = "button";
+			retry.className = "btn btn-secondary";
+			retry.textContent = "Standort eingeben";
+			retry.addEventListener("click", () => this.promptLocation());
+			const box = document.createElement("div");
+			box.className = "weather-error";
+			box.setAttribute("role", "alert");
+			box.append(template.content.firstElementChild, text, retry);
+			weatherForecast.replaceChildren(box);
 		}
 	}
 }
@@ -455,6 +462,14 @@ class ThemeManager {
 	applyTheme(theme) {
 		document.documentElement.setAttribute("data-theme", theme);
 		this.updateIcon(theme);
+		// Umschalter-Zustand für Hilfstechnologien (label bleibt konstant)
+		const themeToggle = document.getElementById("themeToggle");
+		if (themeToggle) {
+			themeToggle.setAttribute(
+				"aria-pressed",
+				theme === "dark" ? "true" : "false",
+			);
+		}
 		localStorage.setItem("theme", theme);
 		this.theme = theme;
 	}
@@ -462,18 +477,6 @@ class ThemeManager {
 	toggleTheme() {
 		const newTheme = this.theme === "light" ? "dark" : "light";
 		this.applyTheme(newTheme);
-
-		const themeToggle = document.getElementById("themeToggle");
-		if (themeToggle) {
-			themeToggle.setAttribute(
-				"aria-pressed",
-				newTheme === "dark" ? "true" : "false",
-			);
-			themeToggle.setAttribute(
-				"aria-label",
-				newTheme === "dark" ? "Light Mode aktivieren" : "Dark Mode aktivieren",
-			);
-		}
 	}
 
 	updateIcon(theme) {
