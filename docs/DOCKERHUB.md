@@ -35,7 +35,7 @@ docker run -d --name gartenplaner -p 8080:3000 \
 
 Danach ist die Anwendung unter <http://localhost:8080> erreichbar.
 
-### docker compose
+### Docker Compose
 
 ```yaml
 services:
