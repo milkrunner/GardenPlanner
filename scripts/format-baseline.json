@@ -26,21 +26,6 @@
   "f5b719028c332e818bbebdb7238d3f88c4d6d25021f511dfbf92b1d276531e0c": [
     "docs/SECURITY.md"
   ],
-  "69992fdf98978cc946b3a65d5549edbbe8637d61d372dfa97650d72286e3be89": [
-    "public/dashboard.html"
-  ],
-  "8865e274f852331a752e216a1c0ad99531c7a85fccf309aa8e777d62bdfb7071": [
-    "public/index.html"
-  ],
-  "0f9c530343565a4da0404e514836c7a56b8362eda85be3fc4661a70387becac2": [
-    "public/logs.html"
-  ],
-  "f6d4e223a0e62eb6580bb11c30cfbb04e4ba4a0bbd1d2b6157f0d0c0792d2d76": [
-    "public/plants.html"
-  ],
-  "10084d427a66af72618b9743993cab9171a9dbab8b9dc184a6d6ed29feafc6f2": [
-    "public/statistics.html"
-  ],
   "50b3525ffc6c87b3d75df46a23551b36e02e0cfab808472704b945d3062457a1": [
     "server.js"
   ],
@@ -50,41 +35,8 @@
   "b77b3a960c54389a1b845b8c0c66d41d21bfaf88f5c55b304020a4b3761f952e": [
     "src/css/plants.css"
   ],
-  "e20ec5fcb3535587cd384e5f3d2080b20e5e9fe14406b0ecc970c77cad46a872": [
-    "src/css/styles.css"
-  ],
   "86c73cb2068d734edb3ab4980c36c5174f95f237e416e6e1a95e27b316d16d09": [
     "src/js/api.js"
-  ],
-  "e5eecf08a40880912f53a62e5f2fec9a8adc3764ab85d40e76e5482b2846c7e0": [
-    "src/js/app.js"
-  ],
-  "0f9c795129bef94609cd8424824b230b80308142e3ad45c7ff54cac78cef049f": [
-    "src/js/config.js"
-  ],
-  "681d0a7fb8094340c4f7b40a5e2c39c85bc5679aaefcc45a48af717ac9cebb12": [
-    "src/js/dashboard-init.js"
-  ],
-  "45b376e4ed2446e620cad99cb81042724e6b0849ba02d7941611dc5358aef539": [
-    "src/js/encryption.js"
-  ],
-  "a3cc7f3e044da773f864454fcfa7c1648bf393eede209f6030e949b379cb93ee": [
-    "src/js/log-viewer.js"
-  ],
-  "d1a1f1c955179a19869182eebc1022bee0f6e2927c7b12a1b0b3f17a1a408812": [
-    "src/js/logger.js"
-  ],
-  "7a6ef77b7465272dbb1540f2ba88a3b2b5dccf7ccdcd30517164a92359c69209": [
-    "src/js/plants.js"
-  ],
-  "09871782a3c3eb835abc3f7b348cb854326f5915d56e5ce2e4e874723ce92289": [
-    "src/js/rate-limiter.js"
-  ],
-  "7d3412d9a56e4962960200a75a060d632b713efb31a002cfe4af4c5c6b2379d1": [
-    "src/js/security.js"
-  ],
-  "0635b34d8ba71d712952b707a53f1f236bf78e8453ca6935b67e8ec13953aec0": [
-    "src/js/statistics-init.js"
   ],
   "c2c7139f2824f9d65f39b48db89af63fb3f44d71de70238fe0eb2d756bac14cf": [
     "src/js/task-events.js"

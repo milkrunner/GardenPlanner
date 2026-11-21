@@ -41,7 +41,7 @@ class ErrorBoundary {
             });
         });
 
-        console.log('🛡️ Error Boundary initialisiert');
+        window.GP?.debug?.('🛡️ Error Boundary initialisiert');
     }
 
     handleError(errorInfo) {
@@ -109,16 +109,30 @@ class ErrorBoundary {
         // Toast-Benachrichtigung erstellen
         const toast = document.createElement('div');
         toast.className = 'error-toast';
-        toast.innerHTML = `
-            <div class="error-toast-content">
-                <div class="error-toast-icon">⚠️</div>
-                <div class="error-toast-text">
-                    <strong>Ein Fehler ist aufgetreten</strong>
-                    <p>${Security.escapeHtml(message)}</p>
-                </div>
-                <button class="error-toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
-            </div>
-        `;
+        toast.setAttribute('role', 'alert');
+
+        // Meldung kann Fehlertexte aus Task-Daten enthalten: nur als Text rendern
+        const icon = document.createElement('div');
+        icon.className = 'error-toast-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = '⚠️';
+        const heading = document.createElement('strong');
+        heading.textContent = 'Ein Fehler ist aufgetreten';
+        const detail = document.createElement('p');
+        detail.textContent = message;
+        const text = document.createElement('div');
+        text.className = 'error-toast-text';
+        text.append(heading, detail);
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'error-toast-close';
+        closeBtn.setAttribute('aria-label', 'Fehlermeldung schließen');
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', () => toast.remove());
+        const content = document.createElement('div');
+        content.className = 'error-toast-content';
+        content.append(icon, text, closeBtn);
+        toast.appendChild(content);
 
         document.body.appendChild(toast);
 
@@ -188,7 +202,7 @@ class ErrorBoundary {
             );
             localStorage.setItem('gartenplaner_presence', JSON.stringify(cleaned));
 
-            console.log('✅ Storage Cleanup durchgeführt');
+            window.GP?.debug?.('✅ Storage Cleanup durchgeführt');
         } catch (e) {
             console.error('Storage Cleanup fehlgeschlagen:', e);
         }
@@ -295,7 +309,7 @@ class ErrorBoundary {
             intervalMinutes * 60 * 1000,
         );
 
-        console.log(`📊 Storage-Monitoring gestartet (alle ${intervalMinutes} Minuten)`);
+        window.GP?.debug?.(`📊 Storage-Monitoring gestartet (alle ${intervalMinutes} Minuten)`);
     }
 
     // Stoppe Storage-Überwachung
@@ -303,7 +317,7 @@ class ErrorBoundary {
         if (this.storageMonitorInterval) {
             clearInterval(this.storageMonitorInterval);
             this.storageMonitorInterval = null;
-            console.log('📊 Storage-Monitoring gestoppt');
+            window.GP?.debug?.('📊 Storage-Monitoring gestoppt');
         }
     }
 

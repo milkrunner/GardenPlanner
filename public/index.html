@@ -22,7 +22,9 @@
       </header>
 
       <nav class="main-nav" role="navigation" aria-label="Hauptnavigation">
-        <a href="/index" class="nav-link active" aria-current="page">➕ Neue Aufgabe</a>
+        <a href="/index" class="nav-link active" aria-current="page"
+          >➕ Neue Aufgabe</a
+        >
         <a href="/dashboard" class="nav-link">📋 Dashboard</a>
         <a href="/statistics" class="nav-link">📊 Statistiken</a>
         <a href="/plants" class="nav-link">🌱 Pflanzen</a>
@@ -148,6 +150,8 @@
                         aria-label="Teilaufgabe hinzufügen"
                       >
                         <svg
+                          aria-hidden="true"
+                          focusable="false"
                           width="20"
                           height="20"
                           viewBox="0 0 24 24"
@@ -215,6 +219,8 @@
         title="Dark Mode umschalten"
       >
         <svg
+          aria-hidden="true"
+          focusable="false"
           id="themeIcon"
           class="theme-icon"
           width="24"
@@ -251,18 +257,18 @@
 
     <!-- Inline validation for progressive disclosure form -->
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
+      document.addEventListener('DOMContentLoaded', function () {
         // Inline validation for required fields
         var requiredFields = [
           {
-            input: "taskTitle",
-            error: "taskTitleError",
-            message: "Bitte geben Sie eine Aufgabe ein.",
+            input: 'taskTitle',
+            error: 'taskTitleError',
+            message: 'Bitte geben Sie eine Aufgabe ein.',
           },
           {
-            input: "taskLocation",
-            error: "taskLocationError",
-            message: "Bitte geben Sie einen Standort ein.",
+            input: 'taskLocation',
+            error: 'taskLocationError',
+            message: 'Bitte geben Sie einen Standort ein.',
           },
         ];
 
@@ -271,38 +277,38 @@
           var errorEl = document.getElementById(field.error);
           if (!input || !errorEl) return;
 
-          input.addEventListener("blur", function () {
+          input.addEventListener('blur', function () {
             if (!input.value.trim()) {
-              input.classList.add("invalid");
+              input.classList.add('invalid');
               errorEl.textContent = field.message;
-              errorEl.classList.add("visible");
+              errorEl.classList.add('visible');
             } else {
-              input.classList.remove("invalid");
-              errorEl.textContent = "";
-              errorEl.classList.remove("visible");
+              input.classList.remove('invalid');
+              errorEl.textContent = '';
+              errorEl.classList.remove('visible');
             }
           });
 
-          input.addEventListener("input", function () {
+          input.addEventListener('input', function () {
             if (input.value.trim()) {
-              input.classList.remove("invalid");
-              errorEl.textContent = "";
-              errorEl.classList.remove("visible");
+              input.classList.remove('invalid');
+              errorEl.textContent = '';
+              errorEl.classList.remove('visible');
             }
           });
         });
 
         // Update toggle arrow when details opens/closes
-        var formOptions = document.getElementById("formOptions");
+        var formOptions = document.getElementById('formOptions');
         if (formOptions) {
-          formOptions.addEventListener("toggle", function () {
+          formOptions.addEventListener('toggle', function () {
             var arrow = this.querySelector(
-              ".form-options-toggle span:first-child",
+              '.form-options-toggle span:first-child',
             );
             if (arrow) {
               arrow.textContent = this.open
-                ? "\u25BE Weitere Optionen"
-                : "\u25B8 Weitere Optionen";
+                ? '\u25BE Weitere Optionen'
+                : '\u25B8 Weitere Optionen';
             }
           });
         }

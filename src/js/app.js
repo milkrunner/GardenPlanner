@@ -51,7 +51,9 @@ class GartenPlaner {
 
 	whenReady() {
 		if (this._ready) return Promise.resolve();
-		return new Promise((resolve) => { this._onReady = resolve; });
+		return new Promise((resolve) => {
+			this._onReady = resolve;
+		});
 	}
 
 	// ===== WEATHER API INTEGRATION =====
@@ -88,12 +90,12 @@ class GartenPlaner {
 			console.error("Fehler beim Laden des Wetters:", error);
 			if (window.errorBoundary) {
 				window.errorBoundary.handleError({
-					type: 'runtime',
-					message: 'Wetterdaten konnten nicht geladen werden: ' + error.message,
+					type: "runtime",
+					message: "Wetterdaten konnten nicht geladen werden: " + error.message,
 					error: error,
-					function: 'loadWeather',
+					function: "loadWeather",
 					context: {},
-					timestamp: new Date().toISOString()
+					timestamp: new Date().toISOString(),
 				});
 			}
 			this.showWeatherError("Fehler beim Laden der Wetterdaten");
@@ -175,12 +177,12 @@ class GartenPlaner {
 			console.error("Fehler beim Geocoding:", error);
 			if (window.errorBoundary) {
 				window.errorBoundary.handleError({
-					type: 'runtime',
-					message: 'Geocoding fehlgeschlagen: ' + error.message,
+					type: "runtime",
+					message: "Geocoding fehlgeschlagen: " + error.message,
 					error: error,
-					function: 'promptLocation',
+					function: "promptLocation",
 					context: {},
-					timestamp: new Date().toISOString()
+					timestamp: new Date().toISOString(),
 				});
 			}
 			alert("Fehler beim Suchen des Standorts.");
@@ -190,8 +192,10 @@ class GartenPlaner {
 	async fetchWeather(location) {
 		const weatherForecast = document.getElementById("weatherForecast");
 		if (weatherForecast) {
-			weatherForecast.innerHTML =
-				'<div class="weather-loading">Lade Wetterdaten...</div>';
+			const loading = document.createElement("div");
+			loading.className = "weather-loading";
+			loading.textContent = "Lade Wetterdaten...";
+			weatherForecast.replaceChildren(loading);
 		}
 
 		const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Europe/Berlin&forecast_days=7`;
@@ -211,12 +215,12 @@ class GartenPlaner {
 			console.error("Fehler beim Abrufen der Wetterdaten:", error);
 			if (window.errorBoundary) {
 				window.errorBoundary.handleError({
-					type: 'runtime',
-					message: 'Wetterdaten-Abruf fehlgeschlagen: ' + error.message,
+					type: "runtime",
+					message: "Wetterdaten-Abruf fehlgeschlagen: " + error.message,
 					error: error,
-					function: 'fetchWeather',
+					function: "fetchWeather",
 					context: { location: location.name },
-					timestamp: new Date().toISOString()
+					timestamp: new Date().toISOString(),
 				});
 			}
 			this.showWeatherError("Fehler beim Laden der Wetterdaten");
@@ -246,7 +250,11 @@ class GartenPlaner {
 				const todayClass = index === 0 ? "today" : "";
 
 				const precipitation = weather.daily.precipitation_sum[index] || 0;
-				const gardenTip = this.getGardenTip(weatherCode, tempMax, precipitation);
+				const gardenTip = this.getGardenTip(
+					weatherCode,
+					tempMax,
+					precipitation,
+				);
 
 				return `
                 <div class="weather-day-card ${todayClass}">
@@ -340,39 +348,66 @@ class GartenPlaner {
 		const tomorrowPrecip = weather.daily.precipitation_sum[1] || 0;
 
 		// Rainy today — skip watering
-		if ((todayCode >= 51 && todayCode <= 65) || (todayCode >= 80 && todayCode <= 82)) {
-			reminders.push({ icon: "💧", text: "Heute regnet es — Bewässerung kann ausgesetzt werden." });
+		if (
+			(todayCode >= 51 && todayCode <= 65) ||
+			(todayCode >= 80 && todayCode <= 82)
+		) {
+			reminders.push({
+				icon: "💧",
+				text: "Heute regnet es — Bewässerung kann ausgesetzt werden.",
+			});
 		} else if (todayTemp > 25 && todayPrecip < 1) {
-			reminders.push({ icon: "🚿", text: "Heiß und trocken heute — Pflanzen gut gießen, am besten morgens oder abends." });
+			reminders.push({
+				icon: "🚿",
+				text: "Heiß und trocken heute — Pflanzen gut gießen, am besten morgens oder abends.",
+			});
 		}
 
 		// Frost warning
 		const minTemps = weather.daily.temperature_2m_min.slice(0, 3);
-		if (minTemps.some(t => t <= 2)) {
-			reminders.push({ icon: "❄️", text: "Frost möglich in den nächsten Tagen — empfindliche Pflanzen schützen!" });
+		if (minTemps.some((t) => t <= 2)) {
+			reminders.push({
+				icon: "❄️",
+				text: "Frost möglich in den nächsten Tagen — empfindliche Pflanzen schützen!",
+			});
 		}
 
 		// Storm warning
 		if (todayCode >= 95 || tomorrowCode >= 95) {
-			reminders.push({ icon: "⛈️", text: "Gewitter erwartet — Gartenmöbel und lose Gegenstände sichern." });
+			reminders.push({
+				icon: "⛈️",
+				text: "Gewitter erwartet — Gartenmöbel und lose Gegenstände sichern.",
+			});
 		}
 
 		// Good planting conditions
 		if (todayTemp > 15 && todayTemp < 25 && todayPrecip < 5 && todayCode <= 3) {
-			reminders.push({ icon: "🌱", text: "Ideale Bedingungen heute zum Pflanzen und Arbeiten im Garten." });
+			reminders.push({
+				icon: "🌱",
+				text: "Ideale Bedingungen heute zum Pflanzen und Arbeiten im Garten.",
+			});
 		}
 
 		// Rain tomorrow — plan outdoor work today
-		if ((tomorrowCode >= 51 && tomorrowCode <= 65) || (tomorrowCode >= 80 && tomorrowCode <= 82)) {
+		if (
+			(tomorrowCode >= 51 && tomorrowCode <= 65) ||
+			(tomorrowCode >= 80 && tomorrowCode <= 82)
+		) {
 			if (todayCode <= 3) {
-				reminders.push({ icon: "📋", text: "Morgen wird es nass — Außenarbeiten besser heute erledigen." });
+				reminders.push({
+					icon: "📋",
+					text: "Morgen wird es nass — Außenarbeiten besser heute erledigen.",
+				});
 			}
 		}
 
 		// Wind warning
 		const windMax = weather.daily.wind_speed_10m_max?.[0] || 0;
 		if (windMax > 50) {
-			reminders.push({ icon: "💨", text: `Starker Wind heute (${Math.round(windMax)} km/h) — Gewächshäuser prüfen.` });
+			reminders.push({
+				icon: "💨",
+				text: `Starker Wind heute (${Math.round(windMax)} km/h) — Gewächshäuser prüfen.`,
+			});
 		}
 
 		if (reminders.length === 0) return "";
@@ -380,7 +415,7 @@ class GartenPlaner {
 		return `<div class="weather-reminders">
 			<h3>🌿 Garten-Empfehlungen</h3>
 			<ul class="reminder-list">
-				${reminders.map(r => `<li><span class="reminder-icon">${r.icon}</span> ${r.text}</li>`).join("")}
+				${reminders.map((r) => `<li><span class="reminder-icon">${r.icon}</span> ${r.text}</li>`).join("")}
 			</ul>
 		</div>`;
 	}
@@ -388,17 +423,22 @@ class GartenPlaner {
 	showWeatherError(message) {
 		const weatherForecast = document.getElementById("weatherForecast");
 		if (weatherForecast) {
-			weatherForecast.innerHTML = `
-                <div class="weather-error">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                        <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <p>${message}</p>
-                    <button class="btn btn-secondary" onclick="window.gartenPlaner.promptLocation()">Standort eingeben</button>
-                </div>
-            `;
+			// Statisches SVG (vertrauenswürdig), Meldung nur als Text
+			const template = document.createElement("template");
+			template.innerHTML =
+				'<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+			const text = document.createElement("p");
+			text.textContent = message;
+			const retry = document.createElement("button");
+			retry.type = "button";
+			retry.className = "btn btn-secondary";
+			retry.textContent = "Standort eingeben";
+			retry.addEventListener("click", () => this.promptLocation());
+			const box = document.createElement("div");
+			box.className = "weather-error";
+			box.setAttribute("role", "alert");
+			box.append(template.content.firstElementChild, text, retry);
+			weatherForecast.replaceChildren(box);
 		}
 	}
 }
@@ -422,6 +462,14 @@ class ThemeManager {
 	applyTheme(theme) {
 		document.documentElement.setAttribute("data-theme", theme);
 		this.updateIcon(theme);
+		// Umschalter-Zustand für Hilfstechnologien (label bleibt konstant)
+		const themeToggle = document.getElementById("themeToggle");
+		if (themeToggle) {
+			themeToggle.setAttribute(
+				"aria-pressed",
+				theme === "dark" ? "true" : "false",
+			);
+		}
 		localStorage.setItem("theme", theme);
 		this.theme = theme;
 	}
@@ -429,18 +477,6 @@ class ThemeManager {
 	toggleTheme() {
 		const newTheme = this.theme === "light" ? "dark" : "light";
 		this.applyTheme(newTheme);
-
-		const themeToggle = document.getElementById("themeToggle");
-		if (themeToggle) {
-			themeToggle.setAttribute(
-				"aria-pressed",
-				newTheme === "dark" ? "true" : "false",
-			);
-			themeToggle.setAttribute(
-				"aria-label",
-				newTheme === "dark" ? "Light Mode aktivieren" : "Dark Mode aktivieren",
-			);
-		}
 	}
 
 	updateIcon(theme) {
@@ -512,19 +548,5 @@ document.addEventListener("DOMContentLoaded", () => {
 	window.announcer = announcer;
 	window.GP.announcer = announcer;
 
-	console.log("🌱 Gartenplaner erfolgreich gestartet!");
-	console.log(
-		"💾 Alle Änderungen werden automatisch im Browser gespeichert (LocalStorage)",
-	);
-	console.log("🖱️ Drag & Drop aktiviert - Ziehe Aufgaben zum Sortieren!");
-	console.log(
-		"✓ Bulk-Aktionen aktiviert - Mehrere Aufgaben gleichzeitig bearbeiten!",
-	);
-	console.log("🌙 Dark Mode verfügbar - Klick auf den Button unten rechts!");
-	console.log(
-		"🖨️ Print-Stylesheet aktiviert - Optimierte Druckansicht verfügbar!",
-	);
-	console.log(
-		"♿ Accessibility verbessert - ARIA-Labels und Keyboard-Navigation!",
-	);
+	window.GP?.debug?.("🌱 Gartenplaner gestartet");
 });

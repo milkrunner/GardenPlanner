@@ -72,8 +72,10 @@ cannot be set by the script and are maintained in the Docker Hub web UI.
 `tests/{form,security,storage,encryption,rate-limit,error}-test.html` are manual
 legacy harnesses, not Jest suites. Access them via a development server under
 `/tests/` using disposable data and a fresh browser profile. Automated frontend
-logic tests and the Chromium task smoke are the repeatable baseline. Broader DOM,
-accessibility and failure-injection coverage belongs in validated #284/#289 scope.
+logic tests, the jsdom DOM tests (`tests/frontend-dom.test.js`), the axe-core/keyboard
+smoke (`tests/smoke/a11y.spec.js`) and the Chromium task smoke are the repeatable
+baseline. Failure-injection coverage remains separate (#284). To see debug output
+in the browser set `localStorage.gp_debug = 'true'` and reload.
 
 ## Issues and PRs
 

@@ -2,6 +2,80 @@
 // Extends GartenPlaner.prototype - must be loaded AFTER app.js defines the class.
 // Do NOT add defer or async to script tags.
 
+// DOM-Helfer (#288): reine Texte immer per textContent setzen, nie per innerHTML.
+// innerHTML bleibt nur für bewusst gerendertes Markup mit Security.escapeHtml
+// (z. B. createTaskCard) bzw. für statische, vertrauenswürdige SVG-Konstanten.
+GartenPlaner.prototype._el = (tag, className, text) => {
+	var el = document.createElement(tag);
+	if (className) el.className = className;
+	if (text !== undefined && text !== null) el.textContent = text;
+	return el;
+};
+
+// Dekoratives Icon neben sichtbarem Text bzw. in Buttons mit aria-label (#287)
+GartenPlaner.prototype._decorativeIcon = (svgMarkup) => {
+	var holder = document.createElement("template");
+	holder.innerHTML = svgMarkup;
+	var svg = holder.content.firstElementChild;
+	svg.setAttribute("aria-hidden", "true");
+	svg.setAttribute("focusable", "false");
+	return svg;
+};
+
+GartenPlaner.prototype._renderEmptyState = function (container, options) {
+	var box = this._el("div", "empty-state");
+	var icon = this._el("div", "empty-state-icon", options.icon);
+	icon.setAttribute("aria-hidden", "true");
+	box.appendChild(icon);
+	box.appendChild(this._el("h3", "", options.title));
+	box.appendChild(this._el("p", "", options.message));
+	if (options.actionHref) {
+		var link = this._el(
+			"a",
+			"btn btn-primary empty-state-btn",
+			options.actionText,
+		);
+		link.href = options.actionHref;
+		box.appendChild(link);
+	}
+	container.replaceChildren(box);
+};
+
+GartenPlaner.prototype._renderChartEmpty = function (container) {
+	container.replaceChildren(
+		this._el("div", "chart-empty", "Noch keine Daten verfügbar"),
+	);
+};
+
+GartenPlaner.prototype._renderBarChart = function (container, entries) {
+	var maxCount = Math.max(...entries.map((entry) => entry[1]));
+	container.replaceChildren(
+		...entries.map(([name, count]) => {
+			var item = this._el("div", "chart-bar-item");
+			var label = this._el("div", "chart-bar-label", name);
+			label.title = name;
+			var fill = this._el("div", "chart-bar-fill");
+			fill.style.width = `${(count / maxCount) * 100}%`;
+			fill.appendChild(this._el("span", "chart-bar-value", count));
+			var barContainer = this._el("div", "chart-bar-container");
+			barContainer.appendChild(fill);
+			item.append(
+				label,
+				barContainer,
+				this._el("div", "chart-bar-count", count),
+			);
+			return item;
+		}),
+	);
+};
+
+GartenPlaner.prototype._fillSelect = function (select, allLabel, values) {
+	select.replaceChildren(
+		new Option(allLabel, ""),
+		...values.map((value) => new Option(value, value)),
+	);
+};
+
 GartenPlaner.prototype.renderTasks = function () {
 	var filteredTasks = this.getFilteredTasks();
 	var tasksList = document.getElementById("tasksList");
@@ -12,29 +86,22 @@ GartenPlaner.prototype.renderTasks = function () {
 	}
 
 	if (filteredTasks.length === 0) {
-		var emptyMessage = this.showArchive
-			? {
-					icon: "📦",
-					title: "Archiv ist leer",
-					message: "Hier werden archivierte Aufgaben angezeigt.",
-					action: "",
-				}
-			: {
-					icon: "🌱",
-					title: "Noch keine Aufgaben vorhanden",
-					message: "Beginnen Sie mit Ihrer Gartenplanung!",
-					action:
-						'<a href="index.html" class="btn btn-primary empty-state-btn">➕ Erste Aufgabe erstellen</a>',
-				};
-
-		tasksList.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">${emptyMessage.icon}</div>
-                <h3>${emptyMessage.title}</h3>
-                <p>${emptyMessage.message}</p>
-                ${emptyMessage.action}
-            </div>
-        `;
+		this._renderEmptyState(
+			tasksList,
+			this.showArchive
+				? {
+						icon: "📦",
+						title: "Archiv ist leer",
+						message: "Hier werden archivierte Aufgaben angezeigt.",
+					}
+				: {
+						icon: "🌱",
+						title: "Noch keine Aufgaben vorhanden",
+						message: "Beginnen Sie mit Ihrer Gartenplanung!",
+						actionHref: "index.html",
+						actionText: "➕ Erste Aufgabe erstellen",
+					},
+		);
 		return;
 	}
 
@@ -141,14 +208,14 @@ GartenPlaner.prototype.createTaskCard = function (task) {
 						}
             <div class="task-info">
                 <div class="task-header">
-                    ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ""}
+                    ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ""}
                     <span class="task-title">${safeTitle}</span>
                     ${task.recurrence && task.recurrence !== "none" ? this.getRecurrenceBadge(task.recurrence) : ""}
-                    ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString("de-DE")}</span>` : ""}
+                    ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString("de-DE")}</span>` : ""}
                 </div>
                 <div class="task-meta">
-                    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeEmployee}</span>
-                    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>${safeLocation}</span>
+                    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Mitarbeiter: </span>${safeEmployee}</span>
+                    <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Standort: </span>${safeLocation}</span>
                 </div>
                 ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
                 ${this.renderSubtasksProgress(task)}
@@ -194,19 +261,18 @@ GartenPlaner.prototype.switchView = function () {
 	}
 };
 
-GartenPlaner.prototype.renderCalendar = () => {
+GartenPlaner.prototype.renderCalendar = function () {
 	var calendarDiv = document.getElementById("calendarView");
 	if (!calendarDiv) {
 		return;
 	}
 
-	calendarDiv.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-state-icon">📅</div>
-            <h3>Kalenderansicht nicht verfügbar</h3>
-            <p>Die Kalenderansicht ist deaktiviert, da Aufgaben keine Datumsinformationen enthalten.</p>
-        </div>
-    `;
+	this._renderEmptyState(calendarDiv, {
+		icon: "📅",
+		title: "Kalenderansicht nicht verfügbar",
+		message:
+			"Die Kalenderansicht ist deaktiviert, da Aufgaben keine Datumsinformationen enthalten.",
+	});
 };
 
 GartenPlaner.prototype.updateEmployeeFilter = function () {
@@ -218,15 +284,8 @@ GartenPlaner.prototype.updateEmployeeFilter = function () {
 	var employees = [...new Set(this.tasks.map((task) => task.employee))].sort();
 	var currentValue = filterSelect.value;
 
-	// XSS-sicher: Escape alle Mitarbeiternamen
-	filterSelect.innerHTML =
-		'<option value="">Alle Mitarbeiter</option>' +
-		employees
-			.map((emp) => {
-				var safe = Security.escapeHtml(emp);
-				return `<option value="${safe}">${safe}</option>`;
-			})
-			.join("");
+	// Option-Texte werden über textContent/value gesetzt (kein HTML-Parsing)
+	this._fillSelect(filterSelect, "Alle Mitarbeiter", employees);
 
 	filterSelect.value = currentValue;
 };
@@ -242,15 +301,8 @@ GartenPlaner.prototype.updateLocationFilter = function () {
 	].sort();
 	var currentValue = filterSelect.value;
 
-	// XSS-sicher: Escape alle Standorte
-	filterSelect.innerHTML =
-		'<option value="">Alle Standorte</option>' +
-		locations
-			.map((loc) => {
-				var safe = Security.escapeHtml(loc);
-				return `<option value="${safe}">${safe}</option>`;
-			})
-			.join("");
+	// Option-Texte werden über textContent/value gesetzt (kein HTML-Parsing)
+	this._fillSelect(filterSelect, "Alle Standorte", locations);
 
 	filterSelect.value = currentValue;
 };
@@ -355,30 +407,12 @@ GartenPlaner.prototype.updateEmployeeChart = function () {
 		.slice(0, 10); // Top 10
 
 	if (sortedEmployees.length === 0) {
-		employeeChart.innerHTML =
-			'<div class="chart-empty">Noch keine Daten verfügbar</div>';
+		this._renderChartEmpty(employeeChart);
 		return;
 	}
 
-	var maxCount = Math.max(...sortedEmployees.map((e) => e[1]));
-
-	// XSS-sicher: Escape Mitarbeiternamen
-	employeeChart.innerHTML = sortedEmployees
-		.map(([name, count]) => {
-			var safeName = Security.escapeHtml(name);
-			return `
-        <div class="chart-bar-item">
-            <div class="chart-bar-label" title="${safeName}">${safeName}</div>
-            <div class="chart-bar-container">
-                <div class="chart-bar-fill" style="width: ${(count / maxCount) * 100}%">
-                    <span class="chart-bar-value">${count}</span>
-                </div>
-            </div>
-            <div class="chart-bar-count">${count}</div>
-        </div>
-    `;
-		})
-		.join("");
+	// Namen werden als Text gerendert (kein HTML-Parsing)
+	this._renderBarChart(employeeChart, sortedEmployees);
 };
 
 GartenPlaner.prototype.updateLocationChart = function () {
@@ -397,30 +431,12 @@ GartenPlaner.prototype.updateLocationChart = function () {
 		.slice(0, 10); // Top 10
 
 	if (sortedLocations.length === 0) {
-		locationChart.innerHTML =
-			'<div class="chart-empty">Noch keine Daten verfügbar</div>';
+		this._renderChartEmpty(locationChart);
 		return;
 	}
 
-	var maxCount = Math.max(...sortedLocations.map((l) => l[1]));
-
-	// XSS-sicher: Escape Standortnamen
-	locationChart.innerHTML = sortedLocations
-		.map(([name, count]) => {
-			var safeName = Security.escapeHtml(name);
-			return `
-        <div class="chart-bar-item">
-            <div class="chart-bar-label" title="${safeName}">${safeName}</div>
-            <div class="chart-bar-container">
-                <div class="chart-bar-fill" style="width: ${(count / maxCount) * 100}%">
-                    <span class="chart-bar-value">${count}</span>
-                </div>
-            </div>
-            <div class="chart-bar-count">${count}</div>
-        </div>
-    `;
-		})
-		.join("");
+	// Namen werden als Text gerendert (kein HTML-Parsing)
+	this._renderBarChart(locationChart, sortedLocations);
 };
 
 GartenPlaner.prototype.updateActivityChart = function () {
@@ -603,24 +619,22 @@ GartenPlaner.prototype.renderHistory = function () {
 	var allHistory = this.getAllHistory();
 
 	if (allHistory.length === 0) {
-		historyTimeline.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📜</div>
-                <h3>Noch keine Historie vorhanden</h3>
-                <p>Änderungen an Aufgaben werden hier angezeigt.</p>
-            </div>
-        `;
+		this._renderEmptyState(historyTimeline, {
+			icon: "📜",
+			title: "Noch keine Historie vorhanden",
+			message: "Änderungen an Aufgaben werden hier angezeigt.",
+		});
 		return;
 	}
 
 	// Limit auf 50 neueste Einträge
 	var recentHistory = allHistory.slice(0, 50);
 
-	// XSS-sicher: Escape alle User-Inputs in History
-	historyTimeline.innerHTML = recentHistory
-		.map((entry) => {
+	// Alle Task-Daten (Titel, Mitarbeiter, Details) sind untrusted und werden
+	// ausschließlich per textContent gerendert.
+	historyTimeline.replaceChildren(
+		...recentHistory.map((entry) => {
 			var date = new Date(entry.timestamp);
-			var timeAgo = this.getTimeAgo(date);
 			var formattedDate = date.toLocaleString("de-DE", {
 				day: "2-digit",
 				month: "2-digit",
@@ -628,33 +642,45 @@ GartenPlaner.prototype.renderHistory = function () {
 				hour: "2-digit",
 				minute: "2-digit",
 			});
-
 			var actionInfo = this.getActionInfo(entry.action);
-			var detailsHTML = this.getHistoryDetailsHTML(entry);
 
-			var safeTitle = Security.escapeHtml(entry.taskTitle);
-			var safeEmployee = Security.escapeHtml(entry.taskEmployee);
+			var icon = this._el("div", "history-icon", actionInfo.icon);
+			icon.style.background = actionInfo.color;
+			icon.setAttribute("aria-hidden", "true");
 
-			return `
-            <div class="history-item">
-                <div class="history-icon" style="background: ${actionInfo.color};">
-                    ${actionInfo.icon}
-                </div>
-                <div class="history-content">
-                    <div class="history-header">
-                        <strong>${actionInfo.label}</strong>
-                        <span class="history-task-title">"${safeTitle}"</span>
-                    </div>
-                    <div class="history-meta">
-                        <span class="history-employee">${safeEmployee}</span>
-                        <span class="history-time" title="${formattedDate}">${timeAgo}</span>
-                    </div>
-                    ${detailsHTML ? `<div class="history-details">${detailsHTML}</div>` : ""}
-                </div>
-            </div>
-        `;
-		})
-		.join("");
+			var header = this._el("div", "history-header");
+			header.append(
+				this._el("strong", "", actionInfo.label),
+				" ",
+				this._el("span", "history-task-title", `"${entry.taskTitle}"`),
+			);
+
+			var time = this._el("span", "history-time", this.getTimeAgo(date));
+			time.title = formattedDate;
+			var meta = this._el("div", "history-meta");
+			meta.append(
+				this._el("span", "history-employee", entry.taskEmployee),
+				time,
+			);
+
+			var content = this._el("div", "history-content");
+			content.append(header, meta);
+
+			var detailLines = this.getHistoryDetailLines(entry);
+			if (detailLines.length > 0) {
+				var details = this._el("div", "history-details");
+				detailLines.forEach((line, index) => {
+					if (index > 0) details.appendChild(document.createElement("br"));
+					details.appendChild(document.createTextNode(line));
+				});
+				content.appendChild(details);
+			}
+
+			var item = this._el("div", "history-item");
+			item.append(icon, content);
+			return item;
+		}),
+	);
 };
 
 GartenPlaner.prototype.getActionInfo = (action) => {
@@ -671,18 +697,20 @@ GartenPlaner.prototype.getActionInfo = (action) => {
 	return actions[action] || { icon: "📝", label: action, color: "#7f8c8d" };
 };
 
-GartenPlaner.prototype.getHistoryDetailsHTML = (entry) => {
-	if (!entry.details) return "";
+GartenPlaner.prototype.getHistoryDetailLines = (entry) => {
+	if (!entry.details) return [];
 
 	if (entry.action === "created") {
-		return `Mitarbeiter: ${entry.details.employee}, Standort: ${entry.details.location}`;
+		return [
+			`Mitarbeiter: ${entry.details.employee}, Standort: ${entry.details.location}`,
+		];
 	}
 
-	if (entry.action === "edited" && entry.details.changes) {
-		return entry.details.changes.join("<br>");
+	if (entry.action === "edited" && Array.isArray(entry.details.changes)) {
+		return entry.details.changes.map(String);
 	}
 
-	return "";
+	return [];
 };
 
 GartenPlaner.prototype.getTimeAgo = (date) => {
@@ -705,14 +733,50 @@ GartenPlaner.prototype.getRecurrenceBadge = (recurrence) => {
 
 	var icons = {
 		daily:
-			'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+			'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 		weekly:
-			'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>',
+			'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>',
 		monthly:
-			'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+			'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 	};
 
 	return `<span class="recurrence-badge" title="Diese Aufgabe wiederholt sich ${labels[recurrence].toLowerCase()}">${icons[recurrence] || ""}${labels[recurrence] || recurrence}</span>`;
+};
+
+// Statische, vertrauenswürdige Icon-Konstante (kein User-Input)
+GartenPlaner.prototype._ICON_CLOSE_16 =
+	'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+GartenPlaner.prototype._buildSubtaskItem = function (
+	subtask,
+	checkboxClass,
+	deleteClass,
+	onToggle,
+	onDelete,
+) {
+	var item = this._el(
+		"div",
+		"subtask-item" + (subtask.completed ? " completed" : ""),
+	);
+
+	var checkbox = document.createElement("input");
+	checkbox.type = "checkbox";
+	checkbox.className = checkboxClass;
+	checkbox.checked = !!subtask.completed;
+	checkbox.dataset.subtaskId = subtask.id;
+	checkbox.setAttribute("aria-label", `Teilaufgabe erledigt: ${subtask.text}`);
+	checkbox.addEventListener("change", () => onToggle(subtask.id));
+
+	var button = this._el("button", deleteClass);
+	button.type = "button";
+	button.dataset.subtaskId = subtask.id;
+	button.title = "Teilaufgabe löschen";
+	button.setAttribute("aria-label", `Teilaufgabe löschen: ${subtask.text}`);
+	button.appendChild(this._decorativeIcon(this._ICON_CLOSE_16));
+	button.addEventListener("click", () => onDelete(subtask.id));
+
+	item.append(checkbox, this._el("span", "subtask-text", subtask.text), button);
+	return item;
 };
 
 GartenPlaner.prototype.renderSubtasksInModal = function (task) {
@@ -720,54 +784,24 @@ GartenPlaner.prototype.renderSubtasksInModal = function (task) {
 	if (!subtasksList) return;
 
 	if (!task.subtasks || task.subtasks.length === 0) {
-		subtasksList.innerHTML =
-			'<p class="no-subtasks">Keine Teilaufgaben vorhanden</p>';
+		subtasksList.replaceChildren(
+			this._el("p", "no-subtasks", "Keine Teilaufgaben vorhanden"),
+		);
 		return;
 	}
 
-	// XSS-sicher: Escape Subtask-Text
-	subtasksList.innerHTML = task.subtasks
-		.map((subtask) => {
-			var safeText = Security.escapeHtml(subtask.text);
-			return `
-        <div class="subtask-item ${subtask.completed ? "completed" : ""}">
-            <input
-                type="checkbox"
-                class="subtask-checkbox"
-                ${subtask.completed ? "checked" : ""}
-                data-subtask-id="${subtask.id}"
-            >
-            <span class="subtask-text">${safeText}</span>
-            <button
-                type="button"
-                class="btn-delete-subtask"
-                data-subtask-id="${subtask.id}"
-                title="Teilaufgabe löschen"
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
-        </div>
-    `;
-		})
-		.join("");
-
-	// Event Listeners für Subtask-Checkboxen und Delete-Buttons
-	subtasksList.querySelectorAll(".subtask-checkbox").forEach((checkbox) => {
-		checkbox.addEventListener("change", (e) => {
-			var subtaskId = parseInt(e.target.dataset.subtaskId);
-			this.toggleSubtask(task, subtaskId);
-		});
-	});
-
-	subtasksList.querySelectorAll(".btn-delete-subtask").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
-			var subtaskId = parseInt(e.currentTarget.dataset.subtaskId);
-			this.deleteSubtask(task, subtaskId);
-		});
-	});
+	// Subtask-Text ist untrusted und wird per textContent/aria-label gesetzt
+	subtasksList.replaceChildren(
+		...task.subtasks.map((subtask) =>
+			this._buildSubtaskItem(
+				subtask,
+				"subtask-checkbox",
+				"btn-delete-subtask",
+				(id) => this.toggleSubtask(task, parseInt(id)),
+				(id) => this.deleteSubtask(task, parseInt(id)),
+			),
+		),
+	);
 };
 
 GartenPlaner.prototype.renderCreateSubtasksList = function () {
@@ -775,56 +809,24 @@ GartenPlaner.prototype.renderCreateSubtasksList = function () {
 	if (!subtasksList) return;
 
 	if (this.tempSubtasks.length === 0) {
-		subtasksList.innerHTML =
-			'<p class="no-subtasks">Keine Teilaufgaben vorhanden</p>';
+		subtasksList.replaceChildren(
+			this._el("p", "no-subtasks", "Keine Teilaufgaben vorhanden"),
+		);
 		return;
 	}
 
-	// XSS-sicher: Escape Subtask-Text
-	subtasksList.innerHTML = this.tempSubtasks
-		.map((subtask) => {
-			var safeText = Security.escapeHtml(subtask.text);
-			return `
-        <div class="subtask-item ${subtask.completed ? "completed" : ""}">
-            <input
-                type="checkbox"
-                class="subtask-checkbox-create"
-                ${subtask.completed ? "checked" : ""}
-                data-subtask-id="${subtask.id}"
-            >
-            <span class="subtask-text">${safeText}</span>
-            <button
-                type="button"
-                class="btn-delete-subtask-create"
-                data-subtask-id="${subtask.id}"
-                title="Teilaufgabe löschen"
-            >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
-        </div>
-    `;
-		})
-		.join("");
-
-	// Event Listeners
-	subtasksList
-		.querySelectorAll(".subtask-checkbox-create")
-		.forEach((checkbox) => {
-			checkbox.addEventListener("change", (e) => {
-				var subtaskId = parseInt(e.target.dataset.subtaskId);
-				this.toggleCreateSubtask(subtaskId);
-			});
-		});
-
-	subtasksList.querySelectorAll(".btn-delete-subtask-create").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
-			var subtaskId = parseInt(e.currentTarget.dataset.subtaskId);
-			this.deleteCreateSubtask(subtaskId);
-		});
-	});
+	// Subtask-Text ist untrusted und wird per textContent/aria-label gesetzt
+	subtasksList.replaceChildren(
+		...this.tempSubtasks.map((subtask) =>
+			this._buildSubtaskItem(
+				subtask,
+				"subtask-checkbox-create",
+				"btn-delete-subtask-create",
+				(id) => this.toggleCreateSubtask(parseInt(id)),
+				(id) => this.deleteCreateSubtask(parseInt(id)),
+			),
+		),
+	);
 };
 
 GartenPlaner.prototype.getSubtaskProgress = (task) => {
@@ -850,7 +852,7 @@ GartenPlaner.prototype.renderSubtasksProgress = function (task) {
 	return `
         <div class="subtasks-progress">
             <div class="subtasks-progress-header">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false">
                     <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -955,11 +957,14 @@ GartenPlaner.prototype.showConfirm = function (options) {
 		// Setze Inhalte
 		title.textContent = options.title || "Bestätigung erforderlich";
 		icon.textContent = options.icon || "⚠️";
-		// Unterstütze Zeilenumbrüche in der Nachricht
-		message.innerHTML = (options.message || "Möchten Sie fortfahren?").replace(
-			/\n/g,
-			"<br>",
-		);
+		// Nachricht als Text rendern; \n wird zu <br> (kein HTML-Parsing)
+		message.replaceChildren();
+		(options.message || "Möchten Sie fortfahren?")
+			.split("\n")
+			.forEach((line, index) => {
+				if (index > 0) message.appendChild(document.createElement("br"));
+				message.appendChild(document.createTextNode(line));
+			});
 		okBtn.textContent = options.confirmText || "Bestätigen";
 		cancelBtn.textContent = options.cancelText || "Abbrechen";
 
@@ -1069,21 +1074,26 @@ GartenPlaner.prototype.setButtonLoading = function (
 ) {
 	if (!button) return;
 	if (loading) {
-		button.dataset.originalText = button.innerHTML;
+		// Ursprüngliche Knoten merken (statt HTML-String-Roundtrip über innerHTML)
+		if (!button._gpOriginalNodes) {
+			button._gpOriginalNodes = Array.from(button.childNodes);
+		}
 		button.disabled = true;
 		button.classList.add("btn-loading");
 		button.setAttribute("aria-busy", "true");
-		const spinnerHTML = '<span class="btn-spinner" aria-hidden="true"></span>';
-		button.innerHTML = originalText
-			? spinnerHTML + " " + originalText
-			: spinnerHTML;
+		var spinner = this._el("span", "btn-spinner");
+		spinner.setAttribute("aria-hidden", "true");
+		button.replaceChildren(spinner);
+		if (originalText) {
+			button.appendChild(document.createTextNode(" " + originalText));
+		}
 	} else {
 		button.disabled = false;
 		button.classList.remove("btn-loading");
 		button.removeAttribute("aria-busy");
-		if (button.dataset.originalText) {
-			button.innerHTML = button.dataset.originalText;
-			delete button.dataset.originalText;
+		if (button._gpOriginalNodes) {
+			button.replaceChildren(...button._gpOriginalNodes);
+			delete button._gpOriginalNodes;
 		}
 	}
 };
@@ -1102,11 +1112,14 @@ GartenPlaner.prototype._showUndoNotification = function (message) {
 	const notification = document.createElement("div");
 	notification.className = "undo-notification";
 	notification.setAttribute("role", "alert");
-	notification.innerHTML = `
-		<span class="undo-message">${Security.escapeHtml(message)}</span>
-		<button class="undo-btn" type="button" aria-label="Rückgängig machen">Rückgängig</button>
-		<button class="undo-close-btn" type="button" aria-label="Schließen">&times;</button>
-	`;
+	const messageEl = this._el("span", "undo-message", message);
+	const undoBtn = this._el("button", "undo-btn", "Rückgängig");
+	undoBtn.type = "button";
+	undoBtn.setAttribute("aria-label", "Rückgängig machen");
+	const closeBtn = this._el("button", "undo-close-btn", "\u00d7");
+	closeBtn.type = "button";
+	closeBtn.setAttribute("aria-label", "Schließen");
+	notification.append(messageEl, undoBtn, closeBtn);
 
 	document.body.appendChild(notification);
 

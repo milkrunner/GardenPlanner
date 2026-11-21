@@ -8,7 +8,7 @@
     "dev": "node --watch server.js",
     "test": "jest",
     "test:server": "jest tests/server",
-    "test:frontend": "jest tests/frontend.test.js",
+    "test:frontend": "jest tests/frontend",
     "test:smoke": "playwright test",
     "lint": "eslint . --max-warnings 12",
     "format:check": "node scripts/format-check.cjs",
@@ -25,9 +25,11 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.65.1",
+    "axe-core": "4.11.0",
     "eslint": "10.15.0",
     "globals": "17.14.0",
     "jest": "^30.3.0",
+    "jsdom": "26.1.0",
     "prettier": "3.10.1",
     "supertest": "^7.2.2"
   },

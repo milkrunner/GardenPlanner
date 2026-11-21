@@ -53,4 +53,11 @@ export default [
       globals: { ...globals.node, ...globals.jest },
     },
   },
+  {
+    // Playwright callbacks passed to page.evaluate() run inside the browser.
+    files: ['tests/smoke/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 ];
