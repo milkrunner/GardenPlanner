@@ -51,7 +51,9 @@ class GartenPlaner {
 
 	whenReady() {
 		if (this._ready) return Promise.resolve();
-		return new Promise((resolve) => { this._onReady = resolve; });
+		return new Promise((resolve) => {
+			this._onReady = resolve;
+		});
 	}
 
 	// ===== WEATHER API INTEGRATION =====
@@ -88,12 +90,12 @@ class GartenPlaner {
 			console.error("Fehler beim Laden des Wetters:", error);
 			if (window.errorBoundary) {
 				window.errorBoundary.handleError({
-					type: 'runtime',
-					message: 'Wetterdaten konnten nicht geladen werden: ' + error.message,
+					type: "runtime",
+					message: "Wetterdaten konnten nicht geladen werden: " + error.message,
 					error: error,
-					function: 'loadWeather',
+					function: "loadWeather",
 					context: {},
-					timestamp: new Date().toISOString()
+					timestamp: new Date().toISOString(),
 				});
 			}
 			this.showWeatherError("Fehler beim Laden der Wetterdaten");
@@ -175,12 +177,12 @@ class GartenPlaner {
 			console.error("Fehler beim Geocoding:", error);
 			if (window.errorBoundary) {
 				window.errorBoundary.handleError({
-					type: 'runtime',
-					message: 'Geocoding fehlgeschlagen: ' + error.message,
+					type: "runtime",
+					message: "Geocoding fehlgeschlagen: " + error.message,
 					error: error,
-					function: 'promptLocation',
+					function: "promptLocation",
 					context: {},
-					timestamp: new Date().toISOString()
+					timestamp: new Date().toISOString(),
 				});
 			}
 			alert("Fehler beim Suchen des Standorts.");
@@ -211,12 +213,12 @@ class GartenPlaner {
 			console.error("Fehler beim Abrufen der Wetterdaten:", error);
 			if (window.errorBoundary) {
 				window.errorBoundary.handleError({
-					type: 'runtime',
-					message: 'Wetterdaten-Abruf fehlgeschlagen: ' + error.message,
+					type: "runtime",
+					message: "Wetterdaten-Abruf fehlgeschlagen: " + error.message,
 					error: error,
-					function: 'fetchWeather',
+					function: "fetchWeather",
 					context: { location: location.name },
-					timestamp: new Date().toISOString()
+					timestamp: new Date().toISOString(),
 				});
 			}
 			this.showWeatherError("Fehler beim Laden der Wetterdaten");
@@ -246,7 +248,11 @@ class GartenPlaner {
 				const todayClass = index === 0 ? "today" : "";
 
 				const precipitation = weather.daily.precipitation_sum[index] || 0;
-				const gardenTip = this.getGardenTip(weatherCode, tempMax, precipitation);
+				const gardenTip = this.getGardenTip(
+					weatherCode,
+					tempMax,
+					precipitation,
+				);
 
 				return `
                 <div class="weather-day-card ${todayClass}">
@@ -340,39 +346,66 @@ class GartenPlaner {
 		const tomorrowPrecip = weather.daily.precipitation_sum[1] || 0;
 
 		// Rainy today — skip watering
-		if ((todayCode >= 51 && todayCode <= 65) || (todayCode >= 80 && todayCode <= 82)) {
-			reminders.push({ icon: "💧", text: "Heute regnet es — Bewässerung kann ausgesetzt werden." });
+		if (
+			(todayCode >= 51 && todayCode <= 65) ||
+			(todayCode >= 80 && todayCode <= 82)
+		) {
+			reminders.push({
+				icon: "💧",
+				text: "Heute regnet es — Bewässerung kann ausgesetzt werden.",
+			});
 		} else if (todayTemp > 25 && todayPrecip < 1) {
-			reminders.push({ icon: "🚿", text: "Heiß und trocken heute — Pflanzen gut gießen, am besten morgens oder abends." });
+			reminders.push({
+				icon: "🚿",
+				text: "Heiß und trocken heute — Pflanzen gut gießen, am besten morgens oder abends.",
+			});
 		}
 
 		// Frost warning
 		const minTemps = weather.daily.temperature_2m_min.slice(0, 3);
-		if (minTemps.some(t => t <= 2)) {
-			reminders.push({ icon: "❄️", text: "Frost möglich in den nächsten Tagen — empfindliche Pflanzen schützen!" });
+		if (minTemps.some((t) => t <= 2)) {
+			reminders.push({
+				icon: "❄️",
+				text: "Frost möglich in den nächsten Tagen — empfindliche Pflanzen schützen!",
+			});
 		}
 
 		// Storm warning
 		if (todayCode >= 95 || tomorrowCode >= 95) {
-			reminders.push({ icon: "⛈️", text: "Gewitter erwartet — Gartenmöbel und lose Gegenstände sichern." });
+			reminders.push({
+				icon: "⛈️",
+				text: "Gewitter erwartet — Gartenmöbel und lose Gegenstände sichern.",
+			});
 		}
 
 		// Good planting conditions
 		if (todayTemp > 15 && todayTemp < 25 && todayPrecip < 5 && todayCode <= 3) {
-			reminders.push({ icon: "🌱", text: "Ideale Bedingungen heute zum Pflanzen und Arbeiten im Garten." });
+			reminders.push({
+				icon: "🌱",
+				text: "Ideale Bedingungen heute zum Pflanzen und Arbeiten im Garten.",
+			});
 		}
 
 		// Rain tomorrow — plan outdoor work today
-		if ((tomorrowCode >= 51 && tomorrowCode <= 65) || (tomorrowCode >= 80 && tomorrowCode <= 82)) {
+		if (
+			(tomorrowCode >= 51 && tomorrowCode <= 65) ||
+			(tomorrowCode >= 80 && tomorrowCode <= 82)
+		) {
 			if (todayCode <= 3) {
-				reminders.push({ icon: "📋", text: "Morgen wird es nass — Außenarbeiten besser heute erledigen." });
+				reminders.push({
+					icon: "📋",
+					text: "Morgen wird es nass — Außenarbeiten besser heute erledigen.",
+				});
 			}
 		}
 
 		// Wind warning
 		const windMax = weather.daily.wind_speed_10m_max?.[0] || 0;
 		if (windMax > 50) {
-			reminders.push({ icon: "💨", text: `Starker Wind heute (${Math.round(windMax)} km/h) — Gewächshäuser prüfen.` });
+			reminders.push({
+				icon: "💨",
+				text: `Starker Wind heute (${Math.round(windMax)} km/h) — Gewächshäuser prüfen.`,
+			});
 		}
 
 		if (reminders.length === 0) return "";
@@ -380,7 +413,7 @@ class GartenPlaner {
 		return `<div class="weather-reminders">
 			<h3>🌿 Garten-Empfehlungen</h3>
 			<ul class="reminder-list">
-				${reminders.map(r => `<li><span class="reminder-icon">${r.icon}</span> ${r.text}</li>`).join("")}
+				${reminders.map((r) => `<li><span class="reminder-icon">${r.icon}</span> ${r.text}</li>`).join("")}
 			</ul>
 		</div>`;
 	}
