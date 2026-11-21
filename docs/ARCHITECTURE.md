@@ -29,6 +29,14 @@ DOMContentLoaded initialization. Page-specific dashboard/statistics initializati
 follows those scripts. Plants and log viewer have their own entry scripts.
 `window.GP` and explicit classic-script globals are shared interfaces, not imports.
 
+Diagnostics: the browser console stays quiet in production. `GP.debug()` (config.js)
+only prints with `window.GP_DEBUG = true` or `localStorage.gp_debug = 'true'` plus
+reload, which also lowers the Logger to DEBUG. Warnings/errors keep using
+`console.warn/error` and the Logger. Render untrusted task data with `textContent`
+or DOM builders (`_el`, `_renderBarChart`, ...); `innerHTML` is reserved for
+markup that passes `Security.escapeHtml` or static trusted constants. The CSP
+(`script-src 'self'`) blocks inline `on*=` handlers, so bind events in scripts.
+
 `api.js` handles HTTP access and the stored API key. `task-state.js` changes task
 state and persists through the API; renderer produces markup; events wires inputs;
 filters handles search; export handles PDF generation. LocalStorage also supports
@@ -40,6 +48,13 @@ dashboard task flow.
 
 - `tests/server.test.js`: validation, service/API and middleware behavior.
 - `tests/frontend.test.js`: real filtering script executed in an isolated VM.
+- `tests/frontend-dom.test.js`: jsdom runs the real classic scripts to check
+  escaping of untrusted task data, DOM builders, dialog keyboard handling and
+  static page markup (SVG/control names, labels, no inline handlers).
+- `tests/smoke/a11y.spec.js`: axe-core on every page (light/dark), keyboard flows
+  for dialogs, plant cards and the log viewer; `tests/smoke/harness.js` starts the
+  real app with disposable storage (one instance per test: the API rate limit is
+  100 requests per 15 minutes).
 - `tests/smoke/tasks.spec.js`: Chromium + real Express server + disposable storage.
 - `tests/setup.js`: per-suite Jest storage/log isolation and cleanup.
 - `.github/workflows/test.yml`: reproducible local-equivalent validation.
