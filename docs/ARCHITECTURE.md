@@ -8,9 +8,11 @@
 - `routes/`: HTTP mapping for tasks, archive, plants and auth status.
 - `services/`: task operations, plant queries and pagination.
 - `validation/task-validator.js`: validation and sanitization.
-- `storage/json-store.js`: JSON task/archive persistence, caching and in-process locks.
+- `storage/json-store.js`: JSON task/archive persistence, caching and
+  in-process locks.
   `DATA_DIR` is resolved before module imports; set it before loading the application.
-- `logger.js`: request/audit logging. Tests use no worker transports and isolate logs.
+- `logger.js`: request/audit logging. Tests use no worker transports and
+  isolate logs.
 
 Keep HTTP contracts in routes, domain behavior in services and file access in storage.
 JSON files and in-process locks are single-instance storage, not a shared database.
@@ -31,7 +33,8 @@ follows those scripts. Plants and log viewer have their own entry scripts.
 state and persists through the API; renderer produces markup; events wires inputs;
 filters handles search; export handles PDF generation. LocalStorage also supports
 fallback/browser state. Preserve escaping at HTML boundaries and inspect all pages
-when changing script order. The smoke test exercises the creation page and dashboard task flow.
+when changing script order. The smoke test exercises the creation page and
+dashboard task flow.
 
 ## Checks
 

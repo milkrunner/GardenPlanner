@@ -26,7 +26,7 @@ async function main() {
       throw error;
     }
     const hash = createHash('sha256').update(source).digest('hex');
-    if (baseline[file] === hash) continue;
+    if (baseline[hash]?.includes(file)) continue;
     if (
       !(await prettier.check(source, {
         ...(await prettier.resolveConfig(file)),

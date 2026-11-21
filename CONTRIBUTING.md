@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. The server reads environment variables; it does not
+Open <http://localhost:3000>. The server reads environment variables; it does not
 load `.env` automatically. For example, `API_KEY=... npm start` enables API-key
 authentication. Never paste real keys into issues, logs or tracked files.
 `DATA_DIR` overrides task/archive/plant storage (default: repository `data/`).
@@ -19,7 +19,8 @@ authentication. Never paste real keys into issues, logs or tracked files.
 are relative to the process working directory; prefer absolute paths for tooling.
 
 The lockfile uses the public npm registry. Commit lockfile changes with dependency
-changes; do not delete it in CI. Docker and CI use the same Node major and `npm ci`.
+changes; do not delete it in CI. Docker and CI use the same Node major and
+`npm ci`.
 
 ## Validation
 
@@ -40,7 +41,8 @@ It needs no external services, account or API secret. Run it for UI/API changes.
 
 ESLint covers browser, server, tooling and Jest with separate globals. Undefined
 names and correctness violations fail. Existing unused-variable warnings are
-visible debt, capped at the existing 12 warnings. New warnings fail the gate. Formatting uses Prettier: changed
+visible debt, capped at the existing 12 warnings. New warnings fail the gate.
+Formatting uses Prettier: changed
 and new files must pass, while byte-identical legacy files in
 `scripts/format-baseline.json` remain exempt. Format a touched file with
 `npx prettier --write path/to/file`. Never expand the baseline to bypass a failure.
@@ -72,7 +74,8 @@ failed checks before claiming completion. Do not weaken a gate to obtain green C
 
 Optional Claude review requires a same-repository PR labeled `ai-review` and the
 `CLAUDE_CODE_OAUTH_TOKEN` repository secret. Maintainers control the label; forks
-and unlabeled PRs run only deterministic checks. The workflow token has read access to source
+and unlabeled PRs run only deterministic checks. The workflow token has read
+access to source
 and write access to PR reviews; no source-write permission is granted. Missing
 credentials skip the optional step and do not block core validation. No agent-local
 permissions are committed. Required checks and human review policies remain in force.

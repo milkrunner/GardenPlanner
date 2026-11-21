@@ -43,7 +43,8 @@ npm start
 
 ## REST API
 
-Die API ermöglicht externe Integration, z.B. mit n8n, um Tasks automatisiert zu erstellen und zu verwalten.
+Die API ermöglicht externe Integration, z.B. mit n8n, um Tasks
+automatisiert zu erstellen und zu verwalten.
 
 ### Authentifizierung
 
@@ -78,13 +79,14 @@ Browser-Anfragen von der Anwendung selbst benötigen keinen API-Key.
 - `?employee=Max`
 - `?location=Gewächshaus`
 
-### Beispiel: Task erstellen (curl)
+### Beispiel: Task erstellen (cURL)
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $API_KEY" \
-  -d '{"title":"Rasen mähen","employee":"Max","location":"Garten","description":"Vorgarten und Hinterhof"}'
+  -d '{"title":"Rasen mähen","employee":"Max","location":"Garten",
+       "description":"Vorgarten und Hinterhof"}'
 ```
 
 ### Beispiel: n8n HTTP Request Node
@@ -93,6 +95,7 @@ curl -X POST http://localhost:8080/api/tasks \
 - **URL:** `http://gartenplaner:3000/api/tasks`
 - **Headers:** `X-API-Key: YOUR_API_KEY_HERE`
 - **Body (JSON):**
+
   ```json
   {
     "title": "Bewässerung prüfen",
