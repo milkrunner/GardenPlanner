@@ -60,10 +60,20 @@ and new files must pass, while byte-identical legacy files in
 Do not include unrelated mass formatting in feature PRs.
 
 CSS is checked by super-linter's stylelint with `.stylelintrc.json` (standard config).
-Purely stylistic rules that the legacy style sheet violates in bulk, and the cascade-
-sensitive `no-duplicate-selectors`, are switched off there instead of mass-rewriting
-`src/css`. Syntax and correctness rules stay active. Re-enable a rule only together
-with a reviewed cleanup of the affected CSS.
+All standard rules are active, with these documented exceptions:
+
+- `no-descending-specificity` is off. About 59 reports in `src/css/styles.css`
+  (mostly `[data-theme='dark']` and `.x .y` rules that precede a shorter selector for the
+  same element) would need large reorderings of a cascade-sensitive style sheet.
+  Fix them only together with a reviewed, pixel-checked reordering.
+- `property-no-vendor-prefix` ignores `-webkit-background-clip`: the gradient text
+  pattern (`-webkit-text-fill-color: transparent` plus `background-clip: text`) renders
+  invisible text in browsers that only know the prefixed property.
+- `selector-id-pattern` expects the camelCase IDs used in the HTML (`#confirmOkBtn`)
+  instead of kebab-case. Classes, custom properties and keyframes stay kebab-case.
+
+Do not mass-rewrite `src/css`; re-enable an exception only together with a reviewed
+cleanup of the affected CSS.
 
 CI runs check + smoke and uploads failure traces. `npm audit` is reported separately:
 advisories do not silently disappear or become a reason to disable tests. The
