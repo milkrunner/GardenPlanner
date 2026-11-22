@@ -174,7 +174,6 @@ GartenPlaner.prototype.importData = async function (event) {
 					danger: false,
 				});
 				if (confirmed) {
-					const backup = JSON.parse(JSON.stringify(this.tasks));
 					this.tasks = imported;
 					await this.saveTasks();
 					this.renderTasks();

@@ -342,7 +342,6 @@ GartenPlaner.prototype.handleDrop = function (e, targetTaskId) {
 
 			// Finde Indizes im Haupt-Array
 			const draggedIndex = this.tasks.findIndex((t) => t.id === draggedTaskId);
-			const targetIndex = this.tasks.findIndex((t) => t.id === targetTaskId);
 
 			// Entferne die gezogene Aufgabe
 			const [removed] = this.tasks.splice(draggedIndex, 1);

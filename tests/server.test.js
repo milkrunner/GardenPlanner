@@ -47,7 +47,8 @@ describe('validateTask', () => {
     });
 
     test('accepts missing employee', () => {
-        const { employee, ...noEmployee } = validTask;
+        const noEmployee = { ...validTask };
+        delete noEmployee.employee;
         const result = validateTask(noEmployee);
         expect(result.valid).toBe(true);
     });
@@ -575,7 +576,6 @@ describe('POST /api/tasks/search with pagination', () => {
 // --- UUID Validation Tests ---
 
 describe('UUID validation for :id parameters', () => {
-    const invalidIds = ['nonexistent', '123', 'not-a-uuid', '../etc/passwd'];
     const routes = [
         { method: 'get', path: '/api/tasks/' },
         { method: 'put', path: '/api/tasks/', body: { title: 'Test' } },
