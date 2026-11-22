@@ -4,7 +4,7 @@
 
 GartenPlaner.prototype.addTask = async function () {
 	const submitBtn = document.querySelector(
-		"#taskForm button[type=\"submit\"], #taskForm .btn-primary",
+		'#taskForm button[type="submit"], #taskForm .btn-primary',
 	);
 	this.setButtonLoading(submitBtn, true, "Speichert...");
 	try {
@@ -601,6 +601,35 @@ GartenPlaner.prototype.saveTasks = async function () {
 	}
 };
 
+// Nur echte Netzwerkausfälle nutzen die lokale Kopie, und das sichtbar (#324).
+GartenPlaner.prototype.announceOfflineFallback = () => {
+	window.GP?.Auth?.setStatus(
+		"offline",
+		"Server nicht erreichbar \u2013 angezeigt wird die lokale Kopie. \u00c4nderungen werden nicht synchronisiert.",
+	);
+};
+
+// HTTP-Fehler (401, 5xx) werden gemeldet statt mit veralteten lokalen Daten zu maskieren.
+GartenPlaner.prototype.handleLoadFailure = (error, what) => {
+	console.error(`${what} konnten nicht geladen werden:`, error.message);
+	if (error.status === 401) {
+		window.GP?.Auth?.setStatus(
+			"auth",
+			"API-Key fehlt oder wurde abgelehnt \u2013 Daten werden nicht vom Server geladen.",
+			{
+				label: "API-Key eingeben",
+				run: () => window.GP.Auth.enterKeyAndReload(),
+			},
+		);
+	} else {
+		window.GP?.Auth?.setStatus(
+			"error",
+			`${what} konnten nicht geladen werden: ${error.message}`,
+		);
+	}
+	return [];
+};
+
 GartenPlaner.prototype.loadTasks = async function () {
 	try {
 		if (this.useAPI) {
@@ -609,10 +638,12 @@ GartenPlaner.prototype.loadTasks = async function () {
 			return tasks;
 		}
 	} catch (error) {
+		if (!error.network) return this.handleLoadFailure(error, "Aufgaben");
 		console.warn(
-			"API nicht erreichbar, verwende localStorage-Fallback:",
+			"Server nicht erreichbar, verwende localStorage-Fallback:",
 			error.message,
 		);
+		this.announceOfflineFallback();
 	}
 	try {
 		const data = localStorage.getItem("gartenplaner_tasks");
@@ -636,10 +667,12 @@ GartenPlaner.prototype.loadArchivedTasks = async function () {
 			return tasks;
 		}
 	} catch (error) {
+		if (!error.network) return this.handleLoadFailure(error, "Archiv");
 		console.warn(
-			"API nicht erreichbar f\u00fcr Archiv, verwende localStorage-Fallback:",
+			"Server nicht erreichbar f\u00fcr Archiv, verwende localStorage-Fallback:",
 			error.message,
 		);
+		this.announceOfflineFallback();
 	}
 	try {
 		const data = localStorage.getItem("gartenplaner_archived_tasks");
@@ -779,7 +812,11 @@ GartenPlaner.prototype.bulkCompleteTasksAction = function () {
 	this.selectedTasks.forEach((taskId) => {
 		const task = this.tasks.find((t) => t.id === taskId);
 		if (task && task.status !== "completed") {
-			previousStates.push({ id: task.id, status: task.status, completedAt: task.completedAt || null });
+			previousStates.push({
+				id: task.id,
+				status: task.status,
+				completedAt: task.completedAt || null,
+			});
 			task.status = "completed";
 			task.completedAt = new Date().toISOString();
 		}
@@ -795,9 +832,14 @@ GartenPlaner.prototype.bulkCompleteTasksAction = function () {
 		undo: () => {
 			previousStates.forEach((s) => {
 				const task = this.tasks.find((t) => t.id === s.id);
-				if (task) { task.status = s.status; task.completedAt = s.completedAt; }
+				if (task) {
+					task.status = s.status;
+					task.completedAt = s.completedAt;
+				}
 			});
-			this.saveTasks(); this.renderTasks(); this.updateStatistics();
+			this.saveTasks();
+			this.renderTasks();
+			this.updateStatistics();
 		},
 	});
 };
@@ -811,7 +853,11 @@ GartenPlaner.prototype.bulkUncompleteTasksAction = function () {
 	this.selectedTasks.forEach((taskId) => {
 		const task = this.tasks.find((t) => t.id === taskId);
 		if (task && task.status === "completed") {
-			previousStates.push({ id: task.id, status: task.status, completedAt: task.completedAt });
+			previousStates.push({
+				id: task.id,
+				status: task.status,
+				completedAt: task.completedAt,
+			});
 			task.status = "pending";
 			task.completedAt = null;
 		}
@@ -827,9 +873,14 @@ GartenPlaner.prototype.bulkUncompleteTasksAction = function () {
 		undo: () => {
 			previousStates.forEach((s) => {
 				const task = this.tasks.find((t) => t.id === s.id);
-				if (task) { task.status = s.status; task.completedAt = s.completedAt; }
+				if (task) {
+					task.status = s.status;
+					task.completedAt = s.completedAt;
+				}
 			});
-			this.saveTasks(); this.renderTasks(); this.updateStatistics();
+			this.saveTasks();
+			this.renderTasks();
+			this.updateStatistics();
 		},
 	});
 };
@@ -849,7 +900,9 @@ GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
 		danger: true,
 	});
 	if (confirmed) {
-		const deletedTasks = this.tasks.filter((task) => this.selectedTasks.has(task.id)).map((t) => ({ ...t }));
+		const deletedTasks = this.tasks
+			.filter((task) => this.selectedTasks.has(task.id))
+			.map((t) => ({ ...t }));
 		this.tasks = this.tasks.filter((task) => !this.selectedTasks.has(task.id));
 		this.selectedTasks.clear();
 		this.saveTasks();
@@ -862,8 +915,11 @@ GartenPlaner.prototype.bulkDeleteTasksAction = async function () {
 			description: `${count} Aufgabe(n) gel\u00f6scht`,
 			undo: () => {
 				this.tasks.push(...deletedTasks);
-				this.saveTasks(); this.renderTasks(); this.updateStatistics();
-				this.updateEmployeeFilter(); this.updateLocationFilter();
+				this.saveTasks();
+				this.renderTasks();
+				this.updateStatistics();
+				this.updateEmployeeFilter();
+				this.updateLocationFilter();
 			},
 		});
 	}
@@ -883,8 +939,12 @@ GartenPlaner.prototype.bulkArchiveTasksAction = async function () {
 		cancelText: "Abbrechen",
 	});
 	if (confirmed) {
-		const archivedTasksCopy = this.tasks.filter((task) => this.selectedTasks.has(task.id)).map((t) => ({ ...t }));
-		const tasksToArchive = this.tasks.filter((task) => this.selectedTasks.has(task.id));
+		const archivedTasksCopy = this.tasks
+			.filter((task) => this.selectedTasks.has(task.id))
+			.map((t) => ({ ...t }));
+		const tasksToArchive = this.tasks.filter((task) =>
+			this.selectedTasks.has(task.id),
+		);
 		tasksToArchive.forEach((task) => {
 			task.archivedAt = new Date().toISOString();
 			this.archivedTasks.push(task);
@@ -904,8 +964,12 @@ GartenPlaner.prototype.bulkArchiveTasksAction = async function () {
 				const ids = new Set(archivedTasksCopy.map((t) => t.id));
 				this.archivedTasks = this.archivedTasks.filter((t) => !ids.has(t.id));
 				this.tasks.push(...archivedTasksCopy);
-				this.saveTasks(); this.saveArchivedTasks(); this.renderTasks();
-				this.updateStatistics(); this.updateEmployeeFilter(); this.updateLocationFilter();
+				this.saveTasks();
+				this.saveArchivedTasks();
+				this.renderTasks();
+				this.updateStatistics();
+				this.updateEmployeeFilter();
+				this.updateLocationFilter();
 			},
 		});
 	}

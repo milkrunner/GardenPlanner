@@ -380,10 +380,12 @@ describe('other scripts', () => {
       },
     ];
     window.fetch = async (url) => ({
+      ok: true,
+      status: 200,
       json: async () =>
         String(url).includes('categories') ? [HOSTILE] : plants,
     });
-    load(window, 'config.js', 'security.js', 'plants.js');
+    load(window, 'config.js', 'security.js', 'api.js', 'plants.js');
     window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
     await new Promise((resolve) => setTimeout(resolve, 20));
     const { document } = window;
@@ -463,4 +465,86 @@ describe('static page markup', () => {
       expect(document.querySelectorAll('main')).toHaveLength(1);
     },
   );
+});
+
+describe('script loading and integrity (#323)', () => {
+  test('jsPDF uses the official cdnjs SRI hash and is not blocked by a malformed one', () => {
+    const html = fs.readFileSync(
+      path.join(ROOT, 'public/dashboard.html'),
+      'utf8',
+    );
+    const tag = html.match(/<script[^>]*jspdf\.umd\.min\.js[^>]*>/s)[0];
+    const integrity = tag.match(/integrity="(sha512-[^"]+)"/)[1];
+    // sha512 digests are 64 bytes = 88 base64 characters ending in "==".
+    expect(integrity).toMatch(/^sha512-[A-Za-z0-9+/]{86}==$/);
+    // Official value from https://api.cdnjs.com/libraries/jspdf/2.5.1?fields=sri
+    expect(integrity).toBe(
+      'sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==',
+    );
+  });
+
+  test.each(['index', 'dashboard', 'statistics', 'plants', 'logs'])(
+    '%s loads auth-gate.js after api.js and before app.js',
+    (page) => {
+      const html = fs.readFileSync(
+        path.join(ROOT, 'public', `${page}.html`),
+        'utf8',
+      );
+      const order = ['api.js', 'auth-gate.js', 'app.js'].map((name) =>
+        html.indexOf(`../src/js/${name}"`),
+      );
+      expect(order.every((index) => index > -1)).toBe(true);
+      expect([...order].sort((a, b) => a - b)).toEqual(order);
+    },
+  );
+});
+
+describe('TaskAPI error typing (#324)', () => {
+  function api(fetchImpl) {
+    const window = createWindow();
+    window.fetch = fetchImpl;
+    load(window, 'config.js', 'api.js');
+    return window.TaskAPI;
+  }
+
+  test('network failures are flagged, HTTP errors carry their status', async () => {
+    await expect(
+      api(() => Promise.reject(new TypeError('fetch failed')))._fetch('/tasks'),
+    ).rejects.toMatchObject({ network: true });
+
+    const failing = api(() =>
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: 'Kaputt' }),
+      }),
+    );
+    await expect(failing._fetch('/tasks')).rejects.toMatchObject({
+      status: 500,
+      message: 'Kaputt',
+    });
+  });
+
+  test('a 401 asks the gate once and retries with the new key', async () => {
+    const calls = [];
+    const window = createWindow();
+    window.fetch = (url, options) => {
+      calls.push(options.headers['X-API-Key'] || '');
+      return Promise.resolve(
+        calls.length === 1
+          ? { ok: false, status: 401, json: () => Promise.resolve({}) }
+          : { ok: true, status: 200, json: () => Promise.resolve([]) },
+      );
+    };
+    load(window, 'config.js', 'api.js');
+    window.GP.Auth = {
+      handleUnauthorized: jest.fn(async () => {
+        window.TaskAPI.setApiKey('neu');
+        return true;
+      }),
+    };
+    await expect(window.TaskAPI._fetch('/tasks')).resolves.toEqual([]);
+    expect(calls).toEqual(['', 'neu']);
+    expect(window.GP.Auth.handleUnauthorized).toHaveBeenCalledTimes(1);
+  });
 });

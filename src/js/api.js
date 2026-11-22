@@ -28,22 +28,53 @@ const TaskAPI = {
 		return data.authRequired;
 	},
 
+	// Prüft einen Schlüssel ohne Seiteneffekte: "ok", "rejected" oder "unreachable".
+	async verifyApiKey(key) {
+		try {
+			const res = await fetch(`${this.baseUrl}/tasks?page=1&limit=1`, {
+				headers: { "X-API-Key": key },
+			});
+			if (res.ok) return "ok";
+			return res.status === 401 ? "rejected" : "unreachable";
+		} catch {
+			return "unreachable";
+		}
+	},
+
+	// Fehler tragen `network` (Server nicht erreichbar) bzw. `status` (HTTP-Antwort),
+	// damit Aufrufer echte Offline-Fälle von Auth- und Serverfehlern trennen können.
 	async _fetch(url, options = {}) {
-		const headers = { "Content-Type": "application/json", ...options.headers };
+		const { _retried, ...fetchOptions } = options;
+		const headers = {
+			"Content-Type": "application/json",
+			...fetchOptions.headers,
+		};
 		const apiKey = this.getApiKey();
 		if (apiKey) {
 			headers["X-API-Key"] = apiKey;
 		}
-		const res = await fetch(this.baseUrl + url, {
-			headers,
-			...options,
-		});
+		let res;
+		try {
+			res = await fetch(this.baseUrl + url, { ...fetchOptions, headers });
+		} catch {
+			const error = new Error("Server nicht erreichbar");
+			error.network = true;
+			throw error;
+		}
+		if (res.status === 401 && !_retried && window.GP?.Auth) {
+			// Schlüssel fehlt oder wurde abgelehnt: einmal nachfragen und wiederholen.
+			if (await window.GP.Auth.handleUnauthorized(Boolean(apiKey))) {
+				return this._fetch(url, { ...options, _retried: true });
+			}
+		}
 		if (!res.ok) {
 			const body = await res.json().catch(() => ({}));
 			const msg = body.errors
 				? body.errors.join(", ")
 				: body.error || `HTTP ${res.status}`;
-			throw new Error(msg);
+			const error = new Error(msg);
+			error.status = res.status;
+			throw error;
 		}
 		if (res.status === 204) return null;
 		return res.json();

@@ -12,13 +12,14 @@ function dropServerModules() {
   }
 }
 
-async function startApp(prefix = 'gardenplanner-smoke-') {
+async function startApp(prefix = 'gardenplanner-smoke-', { apiKey } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   process.env.NODE_ENV = 'test';
   process.env.DATA_DIR = path.join(root, 'data');
   process.env.LOG_DIR = path.join(root, 'logs');
   process.env.LOG_LEVEL = 'silent';
-  delete process.env.API_KEY;
+  if (apiKey) process.env.API_KEY = apiKey;
+  else delete process.env.API_KEY;
   dropServerModules();
   const { app } = require('../../src/server/app');
   const server = await new Promise((resolve) => {
