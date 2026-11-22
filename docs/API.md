@@ -79,7 +79,7 @@ oder `monthly`, legt der Server die Folgeaufgabe an (#327). Die Antwort bleibt d
 
 - **Inhalt der Folgeaufgabe:** `title`, `employee`, `location`, `description`, `notes`, `priority` und
   `recurrence` der Vorlage, `status` `pending`, Unterpunkte wieder offen, eigene `id`, `createdAt` und eine
-  neue `history` (`created`). Zusätzlich `recurrenceOf` (Id der Vorlage), `lastRecurrence` (Abschlusszeit)
+  neue `history` (`created`). Zusätzlich `recurrenceOf` (ID der Vorlage), `lastRecurrence` (Abschlusszeit)
   und `nextDue`. Die Vorlage erhält `followUpId`, und ihr `completed`-Historieneintrag nennt es in
   `details.followUpId`.
 - **Fälligkeit `nextDue`:** Abschlusszeit plus Intervall in UTC: `daily` +1 Tag, `weekly` +7 Tage, `monthly`
