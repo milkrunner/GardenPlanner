@@ -347,7 +347,6 @@ class GartenPlaner {
 		const todayTemp = Math.round(weather.daily.temperature_2m_max[0]);
 		const todayPrecip = weather.daily.precipitation_sum[0] || 0;
 		const tomorrowCode = weather.daily.weather_code[1];
-		const tomorrowPrecip = weather.daily.precipitation_sum[1] || 0;
 
 		// Rainy today — skip watering
 		if (

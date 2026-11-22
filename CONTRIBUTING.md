@@ -42,8 +42,8 @@ The smoke creates, edits and archives through the UI and checks server persisten
 It needs no external services, account or API secret. Run it for UI/API changes.
 
 ESLint covers browser, server, tooling and Jest with separate globals. Undefined
-names and correctness violations fail. Existing unused-variable warnings are
-visible debt, capped at the existing 12 warnings. New warnings fail the gate.
+names and correctness violations fail. The lint script runs with `--max-warnings 0`,
+so any new warning, for example an unused variable, fails the gate.
 Formatting uses Prettier: changed
 and new files must pass, while byte-identical legacy files in
 `scripts/format-baseline.json` remain exempt. Format a touched file with

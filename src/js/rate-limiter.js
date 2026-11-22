@@ -65,7 +65,6 @@ class RateLimiter {
 			}
 
 			const now = Date.now();
-			const key = `${limiterName}:${identifier}`;
 
 			// Prüfe ob blockiert
 			if (limiter.blocked && limiter.blockedUntil > now) {
@@ -289,7 +288,7 @@ class RateLimiter {
 	// Alle Limiter-Status abrufen
 	getAllStatus() {
 		const status = {};
-		for (const [name, limiter] of this.limiters.entries()) {
+		for (const name of this.limiters.keys()) {
 			status[name] = this.getStatus(name);
 		}
 		return status;
@@ -318,7 +317,7 @@ class RateLimiter {
 
 	// Reset aller Limiter
 	resetAll() {
-		for (const [name, limiter] of this.limiters.entries()) {
+		for (const limiter of this.limiters.values()) {
 			limiter.requests = [];
 			limiter.blocked = false;
 			limiter.blockedUntil = null;

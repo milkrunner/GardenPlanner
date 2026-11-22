@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { listPlants, getPlant, listCategories } = require('../services/plant-service');
+const { listPlants, getPlant } = require('../services/plant-service');
 
 // GET /api/plants - List all plants, optional ?category=&search=
 router.get('/', (req, res) => {

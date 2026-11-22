@@ -184,9 +184,6 @@ GartenPlaner.prototype.deleteTask = async function (id) {
 			taskElement.classList.add("task-removing");
 			await new Promise((resolve) => setTimeout(resolve, 400));
 		}
-		const deletedTask = this.tasks.find(
-			(task) => String(task.id) === String(id),
-		);
 		if (this.useAPI) {
 			await TaskAPI.deleteTask(id);
 		}
@@ -733,7 +730,6 @@ GartenPlaner.prototype.clearAllData = async function () {
 				danger: true,
 			});
 			if (confirmed2) {
-				const backup = JSON.parse(JSON.stringify(this.tasks));
 				this.tasks = [];
 				await this.saveTasks();
 				this.renderTasks();
