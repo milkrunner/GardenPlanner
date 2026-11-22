@@ -9,6 +9,7 @@
     "test": "jest",
     "test:server": "jest tests/server",
     "test:frontend": "jest tests/frontend",
+    "test:coverage": "jest --coverage",
     "test:smoke": "playwright test",
     "lint": "eslint . --max-warnings 12",
     "format:check": "node scripts/format-check.cjs",

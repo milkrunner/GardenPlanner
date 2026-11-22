@@ -34,6 +34,15 @@ npx playwright install chromium
 npm run test:smoke
 ```
 
+`npm run test:coverage` runs Jest with V8 coverage for `src/` (server and the classic
+browser scripts in `src/js/`, which the jsdom tests execute via `vm.Script` with a
+`filename`; no extra dependency). The minimum values in `jest.config.cjs`
+(`coverageThreshold`, just below the current state) fail the run when coverage drops.
+Raise them as tests are added, never lower them to get green. When a test loads a
+browser script, pass its `filename` so the coverage maps to the source file. The
+report is written to `coverage/` (ignored by Git). `server.js` is process startup
+and is covered by the smoke test, not by Jest coverage.
+
 Jest allocates a separate temporary data/log directory per suite before importing
 application code. Chromium smoke uses its own temporary directory and an ephemeral
 loopback port; both tear down their resources. No normal `data/` files are touched.
