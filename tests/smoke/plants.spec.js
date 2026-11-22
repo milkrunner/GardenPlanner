@@ -104,6 +104,9 @@ test('add a plant: validation, persistence, category filter and focus', async ({
   await dialog.getByLabel('Sonne').selectOption('partial');
   await dialog.getByLabel('Frühling').check();
   await dialog.getByLabel('Herbst').check();
+  // Aussaatmonate (#349): Checkboxen mit vollem Monatsnamen als zugänglichem Namen
+  await dialog.getByLabel('Mai', { exact: true }).check();
+  await dialog.getByLabel('März', { exact: true }).check();
   await dialog.getByRole('button', { name: 'Speichern' }).click();
   await expect(dialog).toBeHidden();
 
@@ -117,6 +120,7 @@ test('add a plant: validation, persistence, category filter and focus', async ({
     category: 'Gemüse',
     sun: 'partial',
     season: ['spring', 'autumn'],
+    sowMonths: [3, 5],
     spacing: '25 cm',
     companions: ['Salat', 'Spinat'],
     tips: 'Gleichmäßig feucht halten.',

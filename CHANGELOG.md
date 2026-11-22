@@ -31,6 +31,14 @@ Releases steht in [docs/RELEASING.md](docs/RELEASING.md).
   jeweiligen Tag (Wochenbeginn Montag, Kalenderwoche im Titel, vor/zurück/„Heute“), Aufgaben ohne Datum in
   einer eigenen Liste „Ohne Termin“. Ein Klick oder Enter öffnet den Bearbeiten-Dialog, in dem sich das Datum
   ändern lässt. Filter und Suche gelten auch in der Wochenansicht (#348).
+- Pflanzen: optionales Feld `sowMonths` (Aussaatmonate 1–12) in Bibliothek, API, Backup und Pflanzenformular;
+  die Standardpflanzen tragen Richtwerte. Ältere eigene Bibliotheken ohne das Feld bleiben gültig, dort gelten
+  die Monate der Saison (#349).
+- Oberfläche: „Empfohlene Aufgaben“ auf der Erstellseite. Aus Aussaatmonaten, Erntedauer (`harvest`, Muster
+  „60-85 Tage“) und dem heutigen Datum entstehen Vorschläge für Aussaat (jetzt möglich oder Beginn in den
+  nächsten 30 Tagen) und frühesten Erntetermin. „Übernehmen“ füllt nur das Formular (Titel, Pflanze,
+  Fälligkeit, Beschreibung) und legt nichts an; es sind allgemeine Richtwerte ohne Wetter und regionales
+  Klima. Nicht lesbare Angaben („mehrjährig“) ergeben keinen Erntetermin (#349).
 
 ## Frühere Entwicklung
 

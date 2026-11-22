@@ -143,6 +143,14 @@ function normalizePlant(raw, label, errors) {
         errors.push(`${label}: tips muss ein Text sein (max. 2000 Zeichen)`);
     }
     validateStringList(raw.season, 50, `${label}: season`, errors);
+    if (
+        raw.sowMonths !== undefined &&
+        (!Array.isArray(raw.sowMonths) ||
+            raw.sowMonths.length > 12 ||
+            raw.sowMonths.some((m) => !Number.isInteger(m) || m < 1 || m > 12))
+    ) {
+        errors.push(`${label}: sowMonths muss ein Array aus ganzen Zahlen von 1 bis 12 sein (max. 12 Einträge)`);
+    }
     validateStringList(raw.companions, 100, `${label}: companions`, errors);
     validateStringList(raw.avoid, 100, `${label}: avoid`, errors);
     if (errors.length > before) return null;
@@ -154,6 +162,8 @@ function normalizePlant(raw, label, errors) {
     for (const field of ['season', 'companions', 'avoid']) {
         plant[field] = raw[field] === undefined ? [] : [...raw[field]];
     }
+    // Aussaatmonate (#349) sind optional; alte Bündel ohne das Feld bleiben unverändert.
+    if (raw.sowMonths !== undefined) plant.sowMonths = [...new Set(raw.sowMonths)].sort((a, b) => a - b);
     // The plant library searches in tips, so it has to exist.
     plant.tips = raw.tips === undefined ? '' : raw.tips;
     return plant;

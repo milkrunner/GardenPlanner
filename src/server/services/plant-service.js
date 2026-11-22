@@ -123,6 +123,7 @@ function buildPlant(id, sanitized) {
         sun: sanitized.sun || 'full',
         water: sanitized.water || 'medium',
         season: sanitized.season || [],
+        sowMonths: sanitized.sowMonths || [],
         spacing: sanitized.spacing || '',
         germination: sanitized.germination || '',
         harvest: sanitized.harvest || '',

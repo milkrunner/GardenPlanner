@@ -33,6 +33,7 @@ const FIELDS = [
     'sun',
     'water',
     'season',
+    'sowMonths',
     'spacing',
     'germination',
     'harvest',
@@ -131,6 +132,18 @@ function validateSeason(data, errors) {
     }
 }
 
+// Aussaatmonate (#349): Zahlen 1-12 (Januar-Dezember), jeder Monat höchstens einmal. Ein leeres Array heißt
+// "keine Angabe"; Vorschläge fallen dann auf die Saison zurück.
+function validateSowMonths(data, errors) {
+    const value = data.sowMonths;
+    if (value === undefined) return;
+    if (!Array.isArray(value)) {
+        errors.push('Aussaatmonate müssen ein Array sein');
+    } else if (value.some((m) => !Number.isInteger(m) || m < 1 || m > 12)) {
+        errors.push('Ungültige Aussaatmonate (erlaubt: ganze Zahlen von 1 bis 12)');
+    }
+}
+
 function validateIcon(data, errors) {
     if (data.icon === undefined) return;
     if (typeof data.icon !== 'string') {
@@ -175,6 +188,7 @@ function validatePlant(data, { partial = false, allowId = false } = {}) {
     validateEnum(data, 'sun', 'Sonne', SUN_LEVELS, errors);
     validateEnum(data, 'water', 'Wasser', WATER_LEVELS, errors);
     validateSeason(data, errors);
+    validateSowMonths(data, errors);
     validateText(data, 'spacing', 'Abstand', { max: LIMITS.spacing }, errors);
     validateText(data, 'germination', 'Keimdauer', { max: LIMITS.germination }, errors);
     validateText(data, 'harvest', 'Erntezeit', { max: LIMITS.harvest }, errors);
@@ -196,6 +210,7 @@ function sanitizePlantData(data) {
         const value = data[field];
         if (value === undefined) continue;
         if (field === 'season') sanitized.season = SEASONS.filter((s) => value.includes(s));
+        else if (field === 'sowMonths') sanitized.sowMonths = [...new Set(value)].sort((a, b) => a - b);
         else if (field === 'companions' || field === 'avoid') sanitized[field] = cleanList(value);
         else if (['difficulty', 'sun', 'water'].includes(field)) sanitized[field] = value;
         else sanitized[field] = cleanText(value, { multiline: field === 'tips' });

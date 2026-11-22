@@ -1,7 +1,7 @@
 // Gartenplaner App - REST API mit LocalStorage-Fallback
 // Orchestrator: Defines class, constructor, init, and Weather integration.
 // Methods are added by module files via prototype extension:
-//   task-state.js, task-filters.js, task-renderer.js, task-week.js (nur Dashboard), task-events.js,
+//   task-state.js, task-filters.js, task-renderer.js, task-week.js (nur Dashboard), task-suggestions.js (nur Erstellseite), task-events.js,
 //   task-export.js
 class GartenPlaner {
 	constructor() {
@@ -37,6 +37,7 @@ class GartenPlaner {
 		this.archivedTasks = await this.loadArchivedTasks();
 		this.plants = await this.loadPlants();
 		this.populatePlantSelect("taskPlant", "");
+		this.renderSuggestions?.();
 
 		if (window.logger) {
 			window.logger.info("GartenPlaner initialisiert", "app", {

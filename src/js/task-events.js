@@ -90,6 +90,16 @@ GartenPlaner.prototype.setupEventListeners = function () {
 		document.getElementById(id)?.addEventListener("click", handler);
 	});
 
+	// Aussaat-/Ernte-Vorschläge übernehmen (#349, task-suggestions.js); Delegation, weil die Liste neu gezeichnet wird
+	const suggestionsList = document.getElementById("suggestionsList");
+	if (suggestionsList) {
+		suggestionsList.addEventListener("click", (e) => {
+			const button = e.target.closest("button[data-plant-id]");
+			if (button)
+				this.applySuggestion(button.dataset.plantId, button.dataset.kind);
+		});
+	}
+
 	// Datenverwaltung (nur wenn vorhanden)
 	const exportPdfBtn = document.getElementById("exportPdfBtn");
 	if (exportPdfBtn) {
