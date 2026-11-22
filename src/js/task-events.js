@@ -77,16 +77,17 @@ GartenPlaner.prototype.setupEventListeners = function () {
 		});
 	}
 
-	// View Toggle
+	// Ansicht Liste/Woche (#348, task-week.js)
 	document.querySelectorAll(".view-btn").forEach((btn) => {
-		btn.addEventListener("click", (e) => {
-			document
-				.querySelectorAll(".view-btn")
-				.forEach((b) => b.classList.remove("active"));
-			e.target.classList.add("active");
-			this.currentView = e.target.dataset.view;
-			this.switchView();
-		});
+		btn.addEventListener("click", () => this.setView(btn.dataset.view));
+	});
+	const weekNav = {
+		weekPrevBtn: () => this.shiftWeek(-1),
+		weekNextBtn: () => this.shiftWeek(1),
+		weekTodayBtn: () => this.goToCurrentWeek(),
+	};
+	Object.entries(weekNav).forEach(([id, handler]) => {
+		document.getElementById(id)?.addEventListener("click", handler);
 	});
 
 	// Datenverwaltung (nur wenn vorhanden)

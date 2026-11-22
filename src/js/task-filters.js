@@ -80,9 +80,11 @@ GartenPlaner.prototype.matchesDueFilter = function (task, filter, today) {
 	return status === filter; // overdue, today
 };
 
-GartenPlaner.prototype.getFilteredTasks = function () {
+// Ohne Argument die aktive Liste bzw. das Archiv; die Wochenansicht (#348) übergibt immer die aktiven Aufgaben.
+GartenPlaner.prototype.getFilteredTasks = function (source) {
 	const today = this.currentFilter.due ? this.todayString() : "";
-	const tasksToFilter = this.showArchive ? this.archivedTasks : this.tasks;
+	const tasksToFilter =
+		source || (this.showArchive ? this.archivedTasks : this.tasks);
 	return tasksToFilter.filter((task) => {
 		const employeeMatch =
 			!this.currentFilter.employee ||

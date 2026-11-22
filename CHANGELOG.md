@@ -27,6 +27,10 @@ Releases steht in [docs/RELEASING.md](docs/RELEASING.md).
 - Oberfläche: Pflanzenauswahl im Formular und im Bearbeiten-Dialog, Karten zeigen Icon und Name mit Link
   zur Pflanzenseite (`/plants?plant=<id>` öffnet die Details), eine gelöschte Pflanze erscheint als
   „Pflanze nicht mehr vorhanden“ (#347).
+- Oberfläche: Wochenansicht im Dashboard (Umschalter „Liste/Woche“). Aufgaben stehen nach Fälligkeit am
+  jeweiligen Tag (Wochenbeginn Montag, Kalenderwoche im Titel, vor/zurück/„Heute“), Aufgaben ohne Datum in
+  einer eigenen Liste „Ohne Termin“. Ein Klick oder Enter öffnet den Bearbeiten-Dialog, in dem sich das Datum
+  ändern lässt. Filter und Suche gelten auch in der Wochenansicht (#348).
 
 ## Frühere Entwicklung
 

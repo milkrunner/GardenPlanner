@@ -172,6 +172,30 @@
             </div>
           </div>
 
+          <!-- Ansicht: Liste oder Wochenkalender (#348) -->
+          <div
+            class="view-toggle"
+            role="group"
+            aria-label="Ansicht der Aufgaben"
+          >
+            <button
+              type="button"
+              class="view-btn active"
+              data-view="list"
+              aria-pressed="true"
+            >
+              Liste
+            </button>
+            <button
+              type="button"
+              class="view-btn"
+              data-view="week"
+              aria-pressed="false"
+            >
+              Woche
+            </button>
+          </div>
+
           <!-- Suchfunktion -->
           <div class="search-section">
             <div class="search-container">
@@ -288,6 +312,32 @@
 
           <div id="tasksList" class="tasks-list">
             <!-- Aufgaben werden hier dynamisch eingefügt -->
+          </div>
+
+          <!-- Wochenansicht nach Fälligkeit (#348); Inhalt kommt aus task-week.js -->
+          <div id="tasksWeek" class="tasks-week" hidden>
+            <div class="week-toolbar" role="group" aria-label="Woche wechseln">
+              <button type="button" class="btn btn-secondary" id="weekPrevBtn">
+                <span aria-hidden="true">←</span> Vorherige Woche
+              </button>
+              <button type="button" class="btn btn-secondary" id="weekTodayBtn">
+                Heute
+              </button>
+              <button type="button" class="btn btn-secondary" id="weekNextBtn">
+                Nächste Woche <span aria-hidden="true">→</span>
+              </button>
+            </div>
+            <h3
+              id="weekTitle"
+              class="week-title"
+              tabindex="-1"
+              aria-live="polite"
+            ></h3>
+            <div id="weekGrid" class="week-grid"></div>
+            <section class="week-undated" aria-labelledby="weekUndatedTitle">
+              <h4 id="weekUndatedTitle">Ohne Termin</h4>
+              <div id="weekUndated"></div>
+            </section>
           </div>
         </section>
 
@@ -521,6 +571,7 @@
     <script src="../src/js/task-state.js"></script>
     <script src="../src/js/task-filters.js"></script>
     <script src="../src/js/task-renderer.js"></script>
+    <script src="../src/js/task-week.js"></script>
     <script src="../src/js/task-events.js"></script>
     <script src="../src/js/task-export.js"></script>
     <script src="../src/js/dashboard-init.js"></script>
