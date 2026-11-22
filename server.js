@@ -23,7 +23,10 @@ if (require.main === module) {
   }
 
   const server = app.listen(PORT, () => {
-    logger.info({ port: PORT, auth: !!API_KEY }, 'Gartenplaner API started');
+    logger.info(
+      { port: PORT, auth: !!API_KEY, trustProxy: app.get('trust proxy') },
+      'Gartenplaner API started',
+    );
     audit('server_started', { port: PORT, authEnabled: !!API_KEY });
     if (config.warning) {
       logger.warn(config.warning);

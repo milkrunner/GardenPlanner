@@ -136,11 +136,20 @@ Umgebungsvariablen (siehe `.env.example`):
 | `API_KEY`               | API-Key für externen Zugriff (Header `X-API-Key`)                                          | _(leer = kein Auth)_ |
 | `ALLOW_UNAUTHENTICATED` | `true` erlaubt den Produktionsstart ohne `API_KEY` (bewusster Opt-out, nur hinter Gateway) | _(nicht gesetzt)_    |
 | `PORT`                  | Server-Port                                                                                | `3000`               |
+| `TRUST_PROXY`           | Reverse-Proxy-Vertrauen für `X-Forwarded-For` (`false`, `true`, Hop-Anzahl, Subnetzliste)  | _(aus)_              |
 
 **Produktionsstart:** Mit `NODE_ENV=production` (Docker-Image-Standard) verweigert der Server den Start, wenn
 `API_KEY` fehlt oder leer ist, und beendet sich mit Exit-Code 1 und einer Fehlermeldung. Ohne `NODE_ENV=production`
 (lokale Entwicklung, `npm run dev`) bleibt die API ohne `API_KEY` offen und loggt nur eine Warnung. Wer
 produktiv bewusst ohne Auth laufen will, setzt zusätzlich `ALLOW_UNAUTHENTICATED=true`.
+
+**Reverse Proxy:** Hinter einem Reverse Proxy sieht der Server sonst nur die Proxy-Adresse: alle Clients teilen
+sich ein Rate-Limit-Fenster und Logs zeigen die Proxy-IP. Mit `TRUST_PROXY` wird `X-Forwarded-For` ausgewertet.
+Erlaubt sind `false` (Standard, auch leer oder `0`), eine Hop-Anzahl wie `1` (empfohlen: Anzahl der vorgeschalteten
+Proxys), eine kommagetrennte Liste aus `loopback`, `linklocal`, `uniquelocal`, IP-Adressen oder CIDR-Subnetzen
+(z. B. `10.0.0.0/8`) sowie `true`. **`true` nur verwenden, wenn der Server ausschließlich über den Proxy erreichbar
+ist**, der den Header überschreibt: sonst kann jeder Client seine Adresse fälschen und das Rate-Limit umgehen.
+Ein ungültiger Wert beendet den Start mit Exit-Code 1. Siehe [Sicherheit](docs/SECURITY.md#backend-reverse-proxy-trust_proxy).
 
 **Betriebsgrenze:** Gartenplaner ist für genau **eine** Server-Instanz ausgelegt (JSON-Dateien, In-Process-Locks,
 In-Memory-Rate-Limit). Siehe [Architektur](docs/ARCHITECTURE.md#betriebsgrenzen).

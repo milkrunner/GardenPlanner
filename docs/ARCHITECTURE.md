@@ -36,8 +36,8 @@ requests per 15 minutes, configured in `app.js`) uses its default in-memory stor
 instance on the same data would lose updates (no cross-process locking), so a shared rate
 limit store such as Redis alone would not make multi-instance operation safe and is
 deliberately not used. Consequences of the single-instance design: rate-limit counters reset
-on restart, and behind a reverse proxy `trust proxy` is not configured, so all clients share
-the proxy's address bucket. Scaling out requires a shared database first; that is a separate
+on restart, and behind a reverse proxy `TRUST_PROXY` must be set (default off, so all clients
+share the proxy's address bucket; see `docs/SECURITY.md`). Scaling out requires a shared database first; that is a separate
 architecture change, not a configuration option.
 
 ## Frontend
