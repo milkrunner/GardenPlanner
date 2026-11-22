@@ -63,7 +63,9 @@ app.use(limiter);
 // --- Static file serving (replaces nginx) ---
 
 app.use('/public', express.static(path.join(PROJECT_ROOT, 'public')));
-app.use('/src', express.static(path.join(PROJECT_ROOT, 'src')));
+// Only the browser assets are public; src/server (server code) must never be served.
+app.use('/src/js', express.static(path.join(PROJECT_ROOT, 'src', 'js')));
+app.use('/src/css', express.static(path.join(PROJECT_ROOT, 'src', 'css')));
 
 // #7/#338: tests/ and docs/ are not served (neither in production nor in development):
 // the manual test pages are gone, the documentation is read in the repository.

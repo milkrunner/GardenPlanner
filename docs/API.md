@@ -203,6 +203,6 @@ curl -X POST "http://localhost:8080/api/import?mode=merge" \
   Der Server vermittelt das nicht.
 - **Historie und Logs:** Die Historie einer Aufgabe steckt im Feld `history`. Die Logs-Seite zeigt das
   Browser-Log; es gibt keinen Log-Endpunkt.
-- **Seiten und Dateien:** `/`, `/dashboard`, `/statistics`, `/plants`, `/logs`, `/public/*` und `/src/*`
-  sind statische Auslieferung. `/docs/*` und `/tests/*` werden nie ausgeliefert (Dokumentation und
-  `openapi.json` liest man im Repository).
+- **Seiten und Dateien:** `/`, `/dashboard`, `/statistics`, `/plants`, `/logs`, `/public/*`, `/src/js/*`
+  und `/src/css/*` sind statische Auslieferung. `/docs/*`, `/tests/*` und der Server-Quelltext
+  `/src/server/*` werden nie ausgeliefert (Dokumentation und `openapi.json` liest man im Repository).
