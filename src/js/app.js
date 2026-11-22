@@ -25,6 +25,8 @@ class GartenPlaner {
 	}
 
 	async init() {
+		// Bei aktivem API_KEY zuerst den Zugang klären (Dialog), sonst laden alle Aufrufe mit 401.
+		if (this.useAPI && window.GP?.Auth) await window.GP.Auth.ensureAccess();
 		this.tasks = await this.loadTasks();
 		this.archivedTasks = await this.loadArchivedTasks();
 

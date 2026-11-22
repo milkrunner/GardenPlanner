@@ -5178,3 +5178,33 @@ footer {
     width: 100%;
   }
 }
+
+/* Verbindungs-/Zugangsstatus (auth-gate.js) und API-Key-Dialog */
+.gp-status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--warning-light);
+  border-bottom: 2px solid var(--warning);
+}
+
+.gp-status-bar--error,
+.gp-status-bar--auth {
+  background: var(--error-light);
+  border-bottom-color: var(--error);
+}
+
+.gp-status-bar .btn {
+  margin: 0;
+}
+
+.api-key-error {
+  min-height: 1.25rem;
+  color: var(--error);
+  font-weight: 600;
+}

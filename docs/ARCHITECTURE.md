@@ -44,7 +44,7 @@ architecture change, not a configuration option.
 
 `public/` contains page markup, `src/css/` styles, `src/js/` classic browser scripts.
 Task pages load config/security/encryption/rate-limiter/logger/error-handler, then
-`api.js`, `app.js`, and `task-{state,filters,renderer,events,export}.js` in order.
+`api.js`, `auth-gate.js`, `app.js`, and `task-{state,filters,renderer,events,export}.js` in order.
 `app.js` defines `GartenPlaner`; later scripts extend its prototype before the
 DOMContentLoaded initialization. Page-specific dashboard/statistics initialization
 follows those scripts. Plants and log viewer have their own entry scripts.
@@ -58,7 +58,11 @@ or DOM builders (`_el`, `_renderBarChart`, ...); `innerHTML` is reserved for
 markup that passes `Security.escapeHtml` or static trusted constants. The CSP
 (`script-src 'self'`) blocks inline `on*=` handlers, so bind events in scripts.
 
-`api.js` handles HTTP access and the stored API key. `task-state.js` changes task
+`api.js` handles HTTP access and the stored API key; its errors carry `network` (server
+unreachable) or `status` (HTTP response). `auth-gate.js` (`window.GP.Auth`) asks for the key
+in a dialog when the server requires one, retries after a 401 and shows the status bar for
+offline/error states. Only network failures may fall back to the `localStorage` copy, and
+that fallback is always announced; HTTP errors are reported, never masked. `task-state.js` changes task
 state and persists through the API; renderer produces markup; events wires inputs;
 filters handles search; export handles PDF generation. LocalStorage also supports
 fallback/browser state. Preserve escaping at HTML boundaries and inspect all pages

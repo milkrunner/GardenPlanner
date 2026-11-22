@@ -55,7 +55,11 @@ X-API-Key: YOUR_API_KEY_HERE
 ```
 
 Den API-Key konfiguriert man über die Umgebungsvariable `API_KEY` (siehe `.env.example`).
-Browser-Anfragen von der Anwendung selbst benötigen keinen API-Key.
+Ist `API_KEY` gesetzt, fragt auch die Weboberfläche beim ersten Öffnen nach dem Schlüssel
+(Dialog „API-Key erforderlich") und speichert ihn im Browser (`localStorage`). Ein
+abgelehnter Schlüssel wird erneut abgefragt. Bricht die Verbindung ab, zeigt die Oberfläche
+die lokale Kopie mit deutlichem Hinweis; bei Auth- oder Serverfehlern erscheint eine Fehlerleiste
+statt veralteter Daten. Ohne `API_KEY` auf dem Server ist keine Eingabe nötig.
 
 ### Endpoints
 

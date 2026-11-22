@@ -1,6 +1,5 @@
 // Plant Library Module
 (function () {
-	const API_BASE = "/api";
 	let allPlants = [];
 	let currentCategory = "";
 	let lastOpener = null;
@@ -22,8 +21,7 @@
 
 	async function loadCategories() {
 		try {
-			const res = await fetch(`${API_BASE}/plant-categories`);
-			const categories = await res.json();
+			const categories = await window.TaskAPI._fetch("/plant-categories");
 			const container = document.getElementById("categoryFilters");
 			if (!container) return;
 
@@ -50,8 +48,7 @@
 			if (search) params.set("search", search);
 			const qs = params.toString();
 
-			const res = await fetch(`${API_BASE}/plants${qs ? "?" + qs : ""}`);
-			allPlants = await res.json();
+			allPlants = await window.TaskAPI._fetch(`/plants${qs ? "?" + qs : ""}`);
 			renderPlants(allPlants);
 		} catch (err) {
 			console.error("Fehler beim Laden der Pflanzen:", err);
