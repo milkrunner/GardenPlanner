@@ -1,10 +1,4 @@
 {
-  "2fcd5f5c48cd444a56375fc23ba16ac80ce1007c9fb5cedac89153d8bcc974c0": [
-    ".github/workflows/docker-image.yml"
-  ],
-  "95f7cb79abd437e4759a8abe11605aacf0e3b99f27df9bc69a1376d2c331eeee": [
-    ".github/workflows/super-linter.yml"
-  ],
   "e86b8e2b28b5a87fc8aaf09aebd212bbb76e627cbe922c732718821afe15f8e9": [
     ".htmlhintrc"
   ],

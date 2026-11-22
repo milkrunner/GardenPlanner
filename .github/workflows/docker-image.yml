@@ -2,30 +2,28 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ['main']
   pull_request:
-    branches: [ "main" ]
+    branches: ['main']
 
 permissions:
   contents: read
   security-events: write
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag gardenplanner:latest
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag gardenplanner:latest
 
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: gardenplanner:latest
-        format: 'table'
-        exit-code: '1'
-        severity: 'CRITICAL'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: gardenplanner:latest
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
