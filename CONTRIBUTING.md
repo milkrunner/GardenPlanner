@@ -50,6 +50,12 @@ and new files must pass, while byte-identical legacy files in
 `npx prettier --write path/to/file`. Never expand the baseline to bypass a failure.
 Do not include unrelated mass formatting in feature PRs.
 
+CSS is checked by super-linter's stylelint with `.stylelintrc.json` (standard config).
+Purely stylistic rules that the legacy style sheet violates in bulk, and the cascade-
+sensitive `no-duplicate-selectors`, are switched off there instead of mass-rewriting
+`src/css`. Syntax and correctness rules stay active. Re-enable a rule only together
+with a reviewed cleanup of the affected CSS.
+
 CI runs check + smoke and uploads failure traces. `npm audit` is reported separately:
 advisories do not silently disappear or become a reason to disable tests. The
 current audit state, the `overrides` in `package.json` and how to remove them are
