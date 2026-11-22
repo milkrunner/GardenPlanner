@@ -5,7 +5,14 @@ const { validateIdParam } = require('../validation/task-validator');
 const { listTasks, searchTasks, getTask, createTask, updateTask, deleteTask } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
+// employee/location are deliberately not accepted here: query strings end up in request logs, so
+// filters on personal names go through POST /api/tasks/search. Reject instead of silently ignoring.
 router.get('/', (req, res) => {
+    if (req.query.employee !== undefined || req.query.location !== undefined) {
+        return res.status(400).json({
+            error: 'Filters employee and location are not supported on GET /api/tasks. Use POST /api/tasks/search.',
+        });
+    }
     res.json(listTasks(req.query));
 });
 

@@ -72,6 +72,9 @@ dashboard task flow.
 ## Checks
 
 - `tests/server.test.js`: validation, service/API and middleware behavior.
+- `tests/openapi.test.js`: `docs/openapi.json` must list exactly the registered `/api` routes
+  and match real responses (schemas, documented status codes). Update `docs/openapi.json` and
+  `docs/API.md` whenever a route or response shape changes.
 - `tests/frontend.test.js`: real filtering script executed in an isolated VM.
 - `tests/frontend-dom.test.js`: jsdom runs the real classic scripts to check
   escaping of untrusted task data, DOM builders, dialog keyboard handling and
