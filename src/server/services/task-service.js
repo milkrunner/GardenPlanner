@@ -10,6 +10,7 @@ const {
     writeTasks,
     writeArchivedTasks,
 } = require('../storage/json-store');
+const { calculateNextDue, isRecurring } = require('./recurrence');
 
 // --- Pagination helper ---
 
@@ -122,6 +123,50 @@ async function createTask(body) {
     return { error: false, task };
 }
 
+// Folgeaufgabe einer wiederholenden Aufgabe (#327). Reine Funktion: verändert weder `task` noch den Speicher,
+// damit sie vor dem Schreibvorgang gefahrlos aufgerufen werden kann. Fälligkeit (`nextDue`) = Abschlusszeit + Intervall
+// (31. Jan + 1 Monat = Monatsende). Unterpunkte starten wieder offen, `history` beginnt neu.
+function buildFollowUpTask(task, completedAt) {
+    const now = new Date().toISOString();
+    return {
+        id: uuidv4(),
+        title: task.title,
+        employee: task.employee || '',
+        location: task.location,
+        description: task.description || '',
+        notes: task.notes || '',
+        status: 'pending',
+        priority: task.priority || 'medium',
+        recurrence: task.recurrence,
+        createdAt: now,
+        recurrenceOf: task.id,
+        lastRecurrence: completedAt,
+        nextDue: calculateNextDue(task.recurrence, completedAt),
+        history: [
+            {
+                timestamp: now,
+                action: 'created',
+                details: {
+                    title: task.title,
+                    employee: task.employee,
+                    location: task.location,
+                    recurrenceOf: task.id,
+                },
+            },
+        ],
+        subtasks: Array.isArray(task.subtasks)
+            ? task.subtasks.map((st) => ({ id: Date.now() + Math.random(), text: st.text || '', completed: false }))
+            : [],
+        sortOrder: Date.now(),
+    };
+}
+
+// Wechselt eine Aufgabe auf `completed` und hat sie eine Wiederholung, entsteht die Folgeaufgabe im selben
+// Sperr- und Schreibvorgang wie die Statusänderung: tasks.json wird genau einmal (temp-Datei + rename)
+// geschrieben, es gibt keinen Zwischenzustand mit nur einer der beiden Änderungen. Schlägt das Schreiben fehl,
+// bleibt alles beim Alten (HTTP 500, Cache wird verworfen). Nur der Übergang zu `completed` zählt;
+// `completed` -> `completed` und ein erneutes PUT erzeugen nichts. Wird eine Aufgabe wieder geöffnet und
+// nochmals abgeschlossen, bleibt es bei der einen Folgeaufgabe (Marker `followUpId`).
 async function updateTask(id, body) {
     const validation = validateTask(body, true);
     if (!validation.valid) {
@@ -135,6 +180,9 @@ async function updateTask(id, body) {
 
         const task = tasks[index];
         const changes = [];
+        let followUp = null;
+        let completing = false;
+        let statusEntry = null;
 
         if (sanitized.title !== undefined && sanitized.title !== task.title) {
             changes.push(`Titel: "${task.title}" \u2192 "${sanitized.title}"`);
@@ -165,11 +213,13 @@ async function updateTask(id, body) {
                 task.completedAt = null;
             }
             if (!task.history) task.history = [];
-            task.history.push({
+            statusEntry = {
                 timestamp: new Date().toISOString(),
                 action: sanitized.status === 'completed' ? 'completed' : 'reopened',
                 details: { from: oldStatus, to: sanitized.status },
-            });
+            };
+            task.history.push(statusEntry);
+            completing = sanitized.status === 'completed';
         }
         if (sanitized.priority !== undefined) task.priority = sanitized.priority;
         if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
@@ -192,14 +242,30 @@ async function updateTask(id, body) {
             });
         }
 
+        // Nach allen Feldänderungen, damit ein im selben PUT gesetztes `recurrence`/`subtasks` gilt.
+        if (completing && isRecurring(task.recurrence) && !task.followUpId) {
+            followUp = buildFollowUpTask(task, task.completedAt);
+            task.followUpId = followUp.id;
+            statusEntry.details.followUpId = followUp.id;
+            tasks.push(followUp);
+        }
+
         tasks[index] = task;
-        return { tasks, task, changes };
+        return { tasks, task, changes, followUp };
     });
 
     if (result.notFound) return { error: true, status: 404, message: 'Task not found' };
 
     audit('task_updated', { taskId: result.task.id, changes: result.changes });
-    return { error: false, task: result.task };
+    if (result.followUp) {
+        audit('task_recurred', {
+            taskId: result.task.id,
+            followUpId: result.followUp.id,
+            recurrence: result.task.recurrence,
+            nextDue: result.followUp.nextDue,
+        });
+    }
+    return { error: false, task: result.task, followUp: result.followUp };
 }
 
 async function deleteTask(id) {

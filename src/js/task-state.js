@@ -485,8 +485,11 @@ GartenPlaner.prototype.toggleTaskStatus = async function (id) {
 			}
 		}
 		const newStatus = task.status === "pending" ? "completed" : "pending";
+		// Folgeaufgaben wiederholender Aufgaben erzeugt der Server (#327) und liefert sie in der Antwort mit.
+		let followUp = null;
 		if (this.useAPI) {
-			await TaskAPI.updateTask(id, { status: newStatus });
+			const updated = await TaskAPI.updateTask(id, { status: newStatus });
+			followUp = updated?.followUp || null;
 		}
 		task.status = newStatus;
 		task.completedAt =
@@ -496,12 +499,16 @@ GartenPlaner.prototype.toggleTaskStatus = async function (id) {
 			task.status === "completed" ? "completed" : "reopened",
 			{ from: oldStatus, to: task.status },
 		);
+		if (followUp) {
+			task.followUpId = followUp.id;
+			this.tasks.push(followUp);
+		}
 		await this.saveTasks();
 		this.renderTasks();
 		this.updateStatistics();
 		this.showNotification(
 			task.status === "completed"
-				? "\u2705 Aufgabe erledigt!"
+				? `\u2705 Aufgabe erledigt!${followUp ? " Folgeaufgabe wurde angelegt." : ""}`
 				: "\ud83d\udd04 Aufgabe reaktiviert",
 		);
 	} catch (error) {
@@ -519,61 +526,6 @@ GartenPlaner.prototype.toggleTaskStatus = async function (id) {
 		this.showNotification(
 			"\u274c Fehler beim \u00c4ndern des Aufgabenstatus. Bitte versuchen Sie es erneut.",
 			"error",
-		);
-	}
-};
-
-GartenPlaner.prototype.calculateNextDue = (
-	recurrence,
-	fromDate = new Date(),
-) => {
-	const nextDate = new Date(fromDate);
-	switch (recurrence) {
-		case "daily":
-			nextDate.setDate(nextDate.getDate() + 1);
-			break;
-		case "weekly":
-			nextDate.setDate(nextDate.getDate() + 7);
-			break;
-		case "monthly":
-			nextDate.setMonth(nextDate.getMonth() + 1);
-			break;
-		default:
-			return null;
-	}
-	return nextDate.toISOString();
-};
-
-GartenPlaner.prototype.checkRecurringTasks = function () {
-	const now = new Date();
-	let tasksCreated = false;
-	this.tasks.forEach((task) => {
-		if (task.recurrence && task.recurrence !== "none" && task.nextDue) {
-			const nextDueDate = new Date(task.nextDue);
-			if (now >= nextDueDate) {
-				const newTask = {
-					id: Date.now() + Math.random(),
-					title: task.title,
-					employee: task.employee,
-					location: task.location,
-					description: task.description,
-					status: "pending",
-					createdAt: new Date().toISOString(),
-					recurrence: task.recurrence,
-					lastRecurrence: new Date().toISOString(),
-					nextDue: this.calculateNextDue(task.recurrence),
-				};
-				this.tasks.push(newTask);
-				tasksCreated = true;
-				task.lastRecurrence = new Date().toISOString();
-				task.nextDue = this.calculateNextDue(task.recurrence);
-			}
-		}
-	});
-	if (tasksCreated) {
-		this.saveTasks();
-		this.showNotification(
-			"\ud83d\udd04 Wiederholende Aufgaben wurden erstellt",
 		);
 	}
 };

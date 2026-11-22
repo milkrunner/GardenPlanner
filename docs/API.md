@@ -62,14 +62,39 @@ Pflichtfelder beim Erstellen sind `title` (1–200 Zeichen) und `location` (1–
 (max. 100), `description` (max. 2000), `notes` (max. 5000), `status` (`pending`, `in-progress`, `completed`),
 `priority` (`low`, `medium`, `high`), `recurrence` (`none`, `daily`, `weekly`, `monthly`) und `subtasks`
 (max. 50; Strings oder `{"text": "…", "completed": false}`). Der Server vergibt `id`, `createdAt`,
-`sortOrder` und eine `history`. Bei `completed` setzt er `completedAt`. `recurrence` wird nur gespeichert,
-der Server erzeugt keine Folgeaufgaben.
+`sortOrder` und eine `history`. Bei `completed` setzt er `completedAt`. Zu `recurrence` siehe
+[Wiederholende Aufgaben](#wiederholende-aufgaben).
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" \
   -d '{"title":"Tomaten gießen","employee":"Lisa","location":"Gewächshaus","priority":"high"}'
 ```
+
+### Wiederholende Aufgaben
+
+Wechselt eine Aufgabe per `PUT /api/tasks/{id}` auf `completed` und hat sie `recurrence` `daily`, `weekly`
+oder `monthly`, legt der Server die Folgeaufgabe an (#327). Die Antwort bleibt die geänderte Aufgabe
+(`200`); die Folgeaufgabe steht zusätzlich im Feld `followUp` (nur dann vorhanden).
+
+- **Inhalt der Folgeaufgabe:** `title`, `employee`, `location`, `description`, `notes`, `priority` und
+  `recurrence` der Vorlage, `status` `pending`, Unterpunkte wieder offen, eigene `id`, `createdAt` und eine
+  neue `history` (`created`). Zusätzlich `recurrenceOf` (Id der Vorlage), `lastRecurrence` (Abschlusszeit)
+  und `nextDue`. Die Vorlage erhält `followUpId`, und ihr `completed`-Historieneintrag nennt es in
+  `details.followUpId`.
+- **Fälligkeit `nextDue`:** Abschlusszeit plus Intervall in UTC: `daily` +1 Tag, `weekly` +7 Tage, `monthly`
+  +1 Kalendermonat. Am Monatsende gilt der letzte Tag des Zielmonats: 31. Jan. + 1 Monat = 28. Feb.
+  (29. Feb. im Schaltjahr), 31. Mär. + 1 Monat = 30. Apr.
+- **Alles oder nichts:** Statusänderung und Folgeaufgabe entstehen im selben Sperr- und Schreibvorgang auf
+  `tasks.json` (eine Datei, temporäre Datei plus Umbenennen). Schlägt das Schreiben fehl, antwortet der
+  Server mit `500` und beides fehlt; ein erneutes PUT ist gefahrlos.
+- **Idempotenz:** Nur der Übergang zu `completed` zählt. Ein weiteres PUT auf eine abgeschlossene Aufgabe
+  (auch `completed` → `completed` mit weiteren Änderungen oder parallele Aufrufe) erzeugt keine zweite
+  Folgeaufgabe und liefert kein `followUp`. Wird eine Aufgabe wieder geöffnet und erneut abgeschlossen,
+  bleibt es bei der ersten Folgeaufgabe (`followUpId`). Auch eine im selben PUT gesetzte `recurrence`
+  gilt; `none` erzeugt nichts. Beim Anlegen einer bereits `completed` erstellten Aufgabe entsteht keine
+  Folgeaufgabe.
+- Ältere Clients, die `followUp` ignorieren, sehen die Folgeaufgabe beim nächsten Laden der Liste.
 
 ### Auflisten und Pagination
 

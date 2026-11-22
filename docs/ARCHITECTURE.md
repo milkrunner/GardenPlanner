@@ -9,6 +9,8 @@
   `POST /api/import`; the import route has its own 5 MB body parser, see `app.js`).
 - `services/`: task operations, plant library (queries and CRUD), pagination and export/import
   (`backup-service.js`, under the tasks/archive locks plus a plants lock; see [BACKUP.md](BACKUP.md)).
+  `recurrence.js` computes follow-up due dates (UTC, month end clamped); `task-service.js` creates the
+  follow-up of a recurring task in the same locked write as the status change to `completed` (#327).
 - `validation/task-validator.js`, `validation/plant-validator.js`: validation and sanitization.
   `backup-validator.js` checks import bundles with the same task rules.
 - `storage/json-store.js`: JSON task/archive persistence, caching and

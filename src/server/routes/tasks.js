@@ -53,7 +53,8 @@ router.put(
             if (result.status === 400) return res.status(400).json({ errors: result.errors });
             return res.status(result.status).json({ error: result.message });
         }
-        res.json(result.task);
+        // Zusatzfeld `followUp` nur, wenn dieser Abschluss eine Folgeaufgabe erzeugt hat (#327).
+        res.json(result.followUp ? { ...result.task, followUp: result.followUp } : result.task);
     }),
 );
 

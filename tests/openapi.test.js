@@ -226,6 +226,14 @@ describe('OpenAPI spec (#326)', () => {
           .put(`/api/tasks/${id}`)
           .send({ status: 'completed' }),
       );
+      const recurring = await request(app)
+        .post('/api/tasks')
+        .send({ ...validTask, recurrence: 'weekly' });
+      const recurred = await request(app)
+        .put(`/api/tasks/${recurring.body.id}`)
+        .send({ status: 'completed' });
+      expect(recurred.body.followUp).toBeDefined();
+      await expectMatches('PUT', '/api/tasks/{id}', recurred);
       await expectMatches(
         'PUT',
         '/api/tasks/{id}',

@@ -38,7 +38,6 @@ class GartenPlaner {
 			});
 		}
 
-		this.checkRecurringTasks();
 		this.setupEventListeners();
 		this.setupCreateSubtaskListeners();
 		this.updateEmployeeFilter();
