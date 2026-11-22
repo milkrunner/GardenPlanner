@@ -27,7 +27,7 @@
   padding: 8px 16px;
   text-decoration: none;
   z-index: 9999;
-  border-radius: 0 0 4px 0;
+  border-radius: 0 0 4px;
   font-weight: 600;
 }
 
@@ -104,7 +104,6 @@ textarea:focus-visible {
   --error-light: #fecaca;
   --info: #2563eb;
   --info-light: #bfdbfe;
-
   --primary: #1b5e3f;
   --primary-light: #2d6a4f;
   --primary-dark: #0f3725;
@@ -151,7 +150,7 @@ textarea:focus-visible {
 
 body {
   font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue',
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, 'Helvetica Neue',
     Arial, sans-serif;
   background: var(--bg);
   min-height: 100vh;
@@ -161,8 +160,10 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+
   /* Smooth scrolling auf mobilen Geräten */
   -webkit-overflow-scrolling: touch;
+
   /* Verhindert ungewollte Zoom-Gesten */
   touch-action: manipulation;
 }
@@ -174,6 +175,7 @@ body {
   background: var(--bg-secondary);
   min-height: 100vh;
   transition: background-color 0.3s ease;
+
   /* Smooth scrolling */
   scroll-behavior: smooth;
 }
@@ -327,6 +329,7 @@ header h1 {
     flex-direction: column;
     align-items: stretch;
   }
+
   .nav-action-btn {
     text-align: center;
     justify-content: center;
@@ -339,6 +342,7 @@ header h1 {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -729,12 +733,14 @@ textarea {
   cursor: pointer;
   transition: all 0.2s;
   margin-top: 1rem;
+
   /* Mindestgröße für Touch-Targets (44x44px WCAG) */
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+
   /* Touch-optimiert */
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -749,6 +755,7 @@ textarea {
 
 [data-theme='dark'] .btn-primary {
   background: var(--primary);
+
   /* Heller Hintergrund: dunkler Text erreicht WCAG-AA-Kontrast, weißer nur 1,7:1 */
   color: #052e16;
   box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
@@ -1085,7 +1092,7 @@ textarea {
 .weather-description {
   font-size: 0.625rem;
   color: var(--text-light);
-  margin: 0.125rem 0 0 0;
+  margin: 0.125rem 0 0;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1131,9 +1138,11 @@ textarea {
   20% {
     content: '.';
   }
+
   40% {
     content: '..';
   }
+
   60%,
   100% {
     content: '...';
@@ -1263,7 +1272,7 @@ textarea {
 
 .weather-reminders h3 {
   font-size: var(--text-base);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.5rem;
   color: var(--text);
 }
 
@@ -1425,7 +1434,7 @@ textarea {
 
 .search-input {
   width: 100%;
-  padding: 14px 48px 14px 48px;
+  padding: 14px 48px;
   border: 2px solid var(--border);
   border-radius: var(--radius-lg);
   font-size: var(--text-base);
@@ -1523,10 +1532,9 @@ textarea {
 /* Filters */
 .filters {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   gap: var(--space-lg);
   margin-bottom: 0;
-  flex-wrap: wrap;
 }
 
 .filter-group {
@@ -1826,15 +1834,19 @@ textarea {
 .chart-bar-item:nth-child(1) {
   animation-delay: 0.1s;
 }
+
 .chart-bar-item:nth-child(2) {
   animation-delay: 0.2s;
 }
+
 .chart-bar-item:nth-child(3) {
   animation-delay: 0.3s;
 }
+
 .chart-bar-item:nth-child(4) {
   animation-delay: 0.4s;
 }
+
 .chart-bar-item:nth-child(5) {
   animation-delay: 0.5s;
 }
@@ -1844,6 +1856,7 @@ textarea {
     opacity: 0;
     transform: translateX(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -2595,6 +2608,7 @@ main > section > h2::after {
     opacity: 0;
     transform: translateX(50px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -2606,6 +2620,7 @@ main > section > h2::after {
     opacity: 1;
     transform: scale(1);
   }
+
   to {
     opacity: 0;
     transform: scale(0.9);
@@ -2617,6 +2632,7 @@ main > section > h2::after {
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.02);
   }
@@ -2895,6 +2911,7 @@ main > section > h2::after {
   display: flex;
   align-items: center;
   gap: 4px;
+
   /* Touch-optimiert: 44x44px WCAG 2.5.8 */
   min-height: 44px;
   min-width: 44px;
@@ -3037,7 +3054,7 @@ main > section > h2::after {
   text-align: center;
   padding: 80px 40px;
   color: #7f8c8d;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
   border-radius: var(--radius-xl);
   margin: 20px 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -3053,8 +3070,9 @@ main > section > h2::after {
 @keyframes float {
   0%,
   100% {
-    transform: translateY(0px);
+    transform: translateY(0);
   }
+
   50% {
     transform: translateY(-20px);
   }
@@ -3181,6 +3199,7 @@ footer {
     opacity: 0;
     transform: translateY(-50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -3732,8 +3751,7 @@ footer {
   }
 
   .filters {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-flow: row wrap;
   }
 
   .filter-group {
@@ -3939,7 +3957,7 @@ footer {
   display: inline-block;
   width: 16px;
   height: 16px;
-  border: 2px solid currentColor;
+  border: 2px solid currentcolor;
   border-right-color: transparent;
   border-radius: 50%;
   animation: btn-spin 0.6s linear infinite;
@@ -3982,33 +4000,40 @@ footer {
   min-width: 44px;
   min-height: 44px;
 }
+
 .btn-delete-subtask {
   min-width: 44px;
   min-height: 44px;
 }
+
 .btn-change-location {
   min-width: 44px;
   min-height: 44px;
 }
+
 .subtask-checkbox {
   width: 22px;
   height: 22px;
   min-width: 22px;
 }
+
 .task-select-checkbox {
   width: 22px;
   height: 22px;
   min-width: 22px;
 }
+
 .nav-link {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
 }
+
 .filter-group select,
 .filter-group input {
   min-height: 44px;
 }
+
 .clear-search-btn {
   min-width: 44px;
   min-height: 44px;
@@ -4049,6 +4074,7 @@ footer {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -4064,6 +4090,7 @@ footer {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
@@ -4131,6 +4158,7 @@ footer {
    * Statistik, leere Zustände) ohne !important verglichen: nur nachweislich
    * wirkungslose wurden entfernt, die übrigen ändern das Druckbild.
    */
+
   /* Allgemeine Print-Optimierungen */
   * {
     -webkit-print-color-adjust: exact;
@@ -4147,10 +4175,11 @@ footer {
   /* Seiten-Layout */
   @page {
     margin: 1.5cm;
-    size: A4 portrait;
+    size: a4 portrait;
   }
 
   /* Verstecke nicht-druckbare Elemente */
+
   /* !important: spezifischere Komponentenregeln setzen display selbst (hell und dunkel gemessen) */
   .theme-toggle,
   .theme-toggle-btn,
@@ -4175,11 +4204,12 @@ footer {
   }
 
   /* Header anpassen */
+
   /* !important: Dark-Theme-Header ist spezifischer */
   header {
     background: white !important;
     border-bottom: 2px solid #1b5e3f !important;
-    padding: 1cm 0 0.5cm 0;
+    padding: 1cm 0 0.5cm;
     margin-bottom: 0.5cm;
   }
 
@@ -4193,7 +4223,7 @@ footer {
   header p {
     color: #333 !important;
     font-size: 10pt;
-    margin: 0.2cm 0 0 0;
+    margin: 0.2cm 0 0;
   }
 
   /* Statistik-Karten */
@@ -4216,7 +4246,7 @@ footer {
   .stat-card h3 {
     color: #333 !important;
     font-size: 9pt;
-    margin: 0 0 0.2cm 0;
+    margin: 0 0 0.2cm;
   }
 
   .stat-number {
@@ -4231,7 +4261,7 @@ footer {
     background: white;
     border-bottom: 2px solid #1b5e3f;
     padding: 0.3cm 0;
-    margin: 0.5cm 0 0.3cm 0;
+    margin: 0.5cm 0 0.3cm;
     page-break-after: avoid;
   }
 
@@ -4242,6 +4272,7 @@ footer {
   }
 
   /* Task-Karten */
+
   /* !important: Dark-Theme-Karte und Zustandsklassen (.selected) sind spezifischer */
   .task-card {
     background: white !important;
@@ -4337,7 +4368,7 @@ footer {
   .chart-card h3 {
     color: #1b5e3f;
     font-size: 11pt;
-    margin: 0 0 0.3cm 0;
+    margin: 0 0 0.3cm;
   }
 
   .chart-bar {
@@ -4368,6 +4399,7 @@ footer {
   }
 
   /* Fortschrittsbalken */
+
   /* !important: Dark-Theme-/Statistik-Fortschrittsbalken sind spezifischer */
   .progress-bar {
     background: #e0e0e0 !important;
@@ -4491,22 +4523,22 @@ footer {
 
 .collaboration-toast.toast-success {
   border-left-color: #22c55e;
-  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
 }
 
 .collaboration-toast.toast-info {
   border-left-color: #3b82f6;
-  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  background: linear-gradient(135deg, #fff 0%, #eff6ff 100%);
 }
 
 .collaboration-toast.toast-warning {
   border-left-color: #f59e0b;
-  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  background: linear-gradient(135deg, #fff 0%, #fffbeb 100%);
 }
 
 .collaboration-toast.toast-error {
   border-left-color: #ef4444;
-  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  background: linear-gradient(135deg, #fff 0%, #fef2f2 100%);
 }
 
 [data-theme='dark'] .collaboration-toast {
@@ -4561,7 +4593,7 @@ footer {
   bottom: 2rem;
   right: 2rem;
   max-width: 400px;
-  background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+  background: linear-gradient(135deg, #fff 0%, #fff5f5 100%);
   border: 2px solid #ef4444;
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
@@ -4629,6 +4661,7 @@ footer {
     transform: translateX(120%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -4640,6 +4673,7 @@ footer {
     transform: translateX(0);
     opacity: 1;
   }
+
   to {
     transform: translateX(120%);
     opacity: 0;
@@ -4651,6 +4685,7 @@ footer {
   100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -4837,6 +4872,7 @@ footer {
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -4898,6 +4934,7 @@ footer {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.15);
     opacity: 0.8;
@@ -4960,6 +4997,7 @@ footer {
     transform: translateY(100px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
