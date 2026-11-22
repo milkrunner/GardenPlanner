@@ -40,6 +40,9 @@ on restart, and behind a reverse proxy `TRUST_PROXY` must be set (default off, s
 share the proxy's address bucket; see `docs/SECURITY.md`). Scaling out requires a shared database first; that is a separate
 architecture change, not a configuration option.
 
+Whether users, roles or tenants are needed beyond the single shared `API_KEY` is an open
+decision: see [ADR 0001: Mehrbenutzerbetrieb](decisions/0001-mehrbenutzerbetrieb.md) (#328).
+
 ## Frontend
 
 `public/` contains page markup, `src/css/` styles, `src/js/` classic browser scripts.
