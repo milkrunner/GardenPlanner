@@ -5420,7 +5420,7 @@ footer {
 }
 
 /* Dashboard mit vier Kennzahlen: auf Tablets zwei statt drei Spalten */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (width >= 769px) and (width <= 1024px) {
   body:has(#statOverdue) .stats-section {
     grid-template-columns: repeat(2, 1fr);
   }
