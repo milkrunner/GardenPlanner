@@ -97,12 +97,16 @@ die amd64-Variante.
 - **Release war fehlerhaft:** Veröffentlichte Versionen nicht überschreiben. Das GitHub-Release
   in der Weboberfläche oder mit `gh release delete vX.Y.Z` entfernen (oder als Vorabversion
   markieren), den Tag löschen und die Docker-Tags `X.Y.Z` (sowie bei Bedarf `X.Y`)
-  in der Docker-Hub-Oberfläche löschen. Wenn `latest` auf die fehlerhafte Version zeigt,
-  die vorige stabile Version erneut veröffentlichen (Tag setzen, Workflow neu starten) oder
-  `latest` per `docker buildx imagetools create -t milkrunner/gardenplanner:latest
-milkrunner/gardenplanner:<vorherige-Version>` zurücksetzen. Danach mit einer höheren
-  Patch-Version korrigiert neu veröffentlichen; eine gelöschte Versionsnummer nicht
-  wiederverwenden.
+  in der Docker-Hub-Oberfläche löschen. Zeigt `latest` auf die fehlerhafte Version, wird es
+  auf die vorherige stabile Version zurückgesetzt:
+
+  ```sh
+  docker buildx imagetools create -t milkrunner/gardenplanner:latest \
+    milkrunner/gardenplanner:<vorherige-Version>
+  ```
+
+  Danach mit einer höheren Patch-Version korrigiert neu veröffentlichen; eine gelöschte
+  Versionsnummer nicht wiederverwenden.
 
 Sicherheitsrelevante Funde in einer veröffentlichten Version gehören zusätzlich in den
 Changelog (Abschnitt „Sicherheit“) und, falls nötig, in eine Sicherheitsmeldung nach
