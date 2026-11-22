@@ -16,7 +16,7 @@
   Tasks may reference a plant with an optional `plantId` (slug, #347): `validateTask` only checks the format,
   `createTask`/`updateTask` check that a _new or changed_ reference exists in the library (`getPlant`, before any
   mutation), so a task whose plant was deleted later stays valid (orphaned reference; reads, imports and PUTs that
-  resend the unchanged id never fail). The follow-up of a recurring task copies it. `GET /api/tasks?plantId=`
+  resend the unchanged ID never fail). The follow-up of a recurring task copies it. `GET /api/tasks?plantId=`
   filters by slug; deleting a plant is never blocked by tasks.
 - `validation/task-validator.js`, `validation/plant-validator.js`: validation and sanitization.
   `backup-validator.js` checks import bundles with the same task rules.
