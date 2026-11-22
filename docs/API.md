@@ -20,11 +20,12 @@ Alle Beispiele nutzen `http://localhost:8080` (Docker Compose). Ohne Docker läu
 
 | Status | Wann                                                      | Body                                                     |
 | ------ | --------------------------------------------------------- | -------------------------------------------------------- |
-| `400`  | Validierung von `POST`/`PUT /api/tasks` fehlgeschlagen    | `{"errors": ["Titel muss zwischen 1 und 200 …", …]}`     |
+| `400`  | Validierung von `POST`/`PUT` auf Aufgaben oder Pflanzen   | `{"errors": ["Titel muss zwischen 1 und 200 …", …]}`     |
 | `400`  | Ungültige ID, ungültiges JSON, nicht unterstützter Filter | `{"error": "…"}`                                         |
 | `401`  | `X-API-Key` fehlt oder ist falsch                         | `{"error": "Unauthorized. Provide a valid X-API-Key …"}` |
 | `404`  | Aufgabe, archivierte Aufgabe oder Pflanze unbekannt       | `{"error": "Task not found"}`                            |
 | `409`  | `POST /api/import` in eine nicht leere Instanz            | `{"errors": ["Die Zielinstanz ist nicht leer. …"]}`      |
+| `409`  | `POST /api/plants` mit einer bereits vergebenen ID        | `{"error": "Plant with ID \"tomato\" already exists"}`   |
 | `413`  | Body größer als 100 kB (Import: 5 MB)                     | `{"error": "request entity too large"}`                  |
 | `429`  | Rate-Limit überschritten                                  | Text: `Too many requests, please try again later.`       |
 | `500`  | Unerwarteter Serverfehler                                 | `{"error": "Internal server error"}`                     |
@@ -47,7 +48,10 @@ Unbekannte Pfade unter `/api` liefern Expresss Standard-`404` als HTML, nicht al
 | `GET`    | `/api/archived-tasks`       | Archiv auflisten                               |
 | `DELETE` | `/api/archived-tasks/{id}`  | Archivierte Aufgabe endgültig löschen (`204`)  |
 | `GET`    | `/api/plants`               | Pflanzenbibliothek (`category`, `search`)      |
+| `POST`   | `/api/plants`               | Pflanze anlegen                                |
 | `GET`    | `/api/plants/{id}`          | Einzelne Pflanze                               |
+| `PUT`    | `/api/plants/{id}`          | Pflanze teilweise ändern                       |
+| `DELETE` | `/api/plants/{id}`          | Pflanze löschen (`204`)                        |
 | `GET`    | `/api/plant-categories`     | Kategorien der Pflanzenbibliothek              |
 | `GET`    | `/api/export`               | Gesamten Datenbestand als JSON-Bündel sichern  |
 | `POST`   | `/api/import`               | Bündel importieren (`mode`, `confirm`)         |
@@ -99,7 +103,44 @@ rückgängig. `GET /api/archived-tasks` liefert immer ein Array ohne Pagination.
 `GET /api/plants` liefert ein Array. `category` vergleicht exakt, `search` sucht ohne Beachtung der
 Groß-/Kleinschreibung in Name, Kategorie und Tipps. Eine Pflanze hat `id` (Slug, z. B. `tomato`), `name`,
 `category`, `icon`, `difficulty`, `sun`, `water`, `season`, `spacing`, `germination`, `harvest`,
-`companions`, `avoid` und `tips`. Die Standarddaten liegen in `src/server/defaults/default-plants.json`.
+`companions`, `avoid` und `tips`.
+
+**Speicherung:** Die 20 Standardpflanzen liegen in `src/server/defaults/default-plants.json` und bleiben im
+Repository unverändert. Existiert `DATA_DIR/plants.json`, ersetzt diese Datei die Standards vollständig. Der
+erste Schreibzugriff (`POST`, `PUT` oder `DELETE`) übernimmt die Standardpflanzen in diese Datei und ändert
+sie dort. Geschrieben wird atomar (temporäre Datei, dann Umbenennen) und unter einer Sperre. Jede Änderung
+steht im Audit-Log (`plant_created`, `plant_updated`, `plant_deleted`, beim ersten Schreiben zusätzlich
+`plant_library_initialized`). Auch Standardpflanzen lassen sich ändern und löschen, und die Bibliothek darf
+leer werden: ein leeres `plants.json` (`[]`) bedeutet eine leere Bibliothek, nicht „Standards“.
+
+**Zurücksetzen auf die Standards:** Die Datei `DATA_DIR/plants.json` löschen. Ein Neustart ist nicht nötig,
+die Bibliothek wird bei jedem Lesen frisch aus der Datei geladen. Alle eigenen Pflanzen und Änderungen gehen
+dabei verloren; sichern Sie die Datei vorher, wenn Sie sie behalten wollen. Es gibt dafür bewusst keinen
+API-Endpunkt.
+
+**Beschädigtes `plants.json`:** Ist die Datei kein gültiges JSON oder kein Array, liefern die Lese-Endpunkte
+weiterhin die Standardpflanzen und der Server schreibt eine Warnung ins Log (einmal je Schadensfall, nicht bei
+jeder Anfrage). Schreibende Aufrufe antworten mit `500` und lassen die Datei unangetastet. Reparieren oder
+löschen Sie sie, dann geht es weiter.
+
+**Anlegen (`POST /api/plants`):** Pflicht sind `name` (1–60 Zeichen) und `category` (1–40). Optional sind
+`id` (Slug aus `a-z`, `0-9` und `-`, max. 40; ohne Angabe leitet der Server ihn aus dem Namen ab, Umlaute
+werden transkribiert, z. B. „Süße Möhre“ → `susse-mohre`), `icon` (1–8 Zeichen, Standard 🌱), `difficulty`
+(`easy`, `medium`, `hard`; Standard `medium`), `sun` (`full`, `partial`, `shade`; Standard `full`), `water`
+(`low`, `medium`, `high`; Standard `medium`), `season` (Liste aus `spring`, `summer`, `autumn`, `winter`),
+`spacing` (max. 30), `germination` (max. 40), `harvest` (max. 60), `companions` und `avoid` (je max. 30
+Einträge mit 1–60 Zeichen) sowie `tips` (max. 1000). Text wird getrimmt und von Steuerzeichen befreit, doppelte
+Listeneinträge entfallen, unbekannte Felder werden ignoriert. Die Zeichen `<` und `>` sind in allen Textfeldern
+unzulässig (`400`). Eine vergebene ID ergibt `409`, auch wenn sie nur durch den Namen entsteht.
+
+**Ändern (`PUT /api/plants/{id}`):** Wie bei Aufgaben ändern sich nur die gesendeten Felder. Eine abweichende
+`id` im Body ergibt `400`, eine unbekannte Pflanze `404`.
+
+```bash
+curl -X POST http://localhost:8080/api/plants \
+  -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" \
+  -d '{"name":"Kohlrabi","category":"Gemüse","sun":"partial","season":["spring","autumn"]}'
+```
 
 ### Export und Import
 

@@ -83,7 +83,10 @@ Die vollständige Referenz mit Fehlerformaten, Pagination und Beispielen steht i
 | `GET`    | `/api/archived-tasks`      | Archivierte Tasks auflisten                   |
 | `DELETE` | `/api/archived-tasks/:id`  | Archivierten Task löschen                     |
 | `GET`    | `/api/plants`              | Pflanzenbibliothek (`category`, `search`)     |
+| `POST`   | `/api/plants`              | Pflanze anlegen                               |
 | `GET`    | `/api/plants/:id`          | Einzelne Pflanze                              |
+| `PUT`    | `/api/plants/:id`          | Pflanze teilweise ändern                      |
+| `DELETE` | `/api/plants/:id`          | Pflanze löschen                               |
 | `GET`    | `/api/plant-categories`    | Kategorien der Pflanzenbibliothek             |
 | `GET`    | `/api/export`              | Alle Daten als JSON-Bündel exportieren        |
 | `POST`   | `/api/import`              | Bündel importieren (`mode=merge`/`replace`)   |

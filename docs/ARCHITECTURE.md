@@ -7,10 +7,10 @@
 - `middleware/`: API-key authentication, security headers and final error handling.
 - `routes/`: HTTP mapping for tasks, archive, plants, auth status and backup (`GET /api/export`,
   `POST /api/import`; the import route has its own 5 MB body parser, see `app.js`).
-- `services/`: task operations, plant queries, pagination and export/import (`backup-service.js`, under the
-  tasks/archive locks plus a plants lock; see [BACKUP.md](BACKUP.md)).
-- `validation/task-validator.js`: validation and sanitization. `backup-validator.js` checks import bundles with
-  the same task rules.
+- `services/`: task operations, plant library (queries and CRUD), pagination and export/import
+  (`backup-service.js`, under the tasks/archive locks plus a plants lock; see [BACKUP.md](BACKUP.md)).
+- `validation/task-validator.js`, `validation/plant-validator.js`: validation and sanitization.
+  `backup-validator.js` checks import bundles with the same task rules.
 - `storage/json-store.js`: JSON task/archive persistence, caching and
   in-process locks.
   `DATA_DIR` is resolved before module imports; set it before loading the application.
@@ -91,6 +91,7 @@ dashboard task flow.
 - `tests/archive-duplicates.test.js`: injected write failure during archive/unarchive and the
   duplicate repair (#339).
 - `tests/server.test.js`: validation, service/API and middleware behavior.
+- `tests/server-plants*.test.js`: plant library reads, damaged `plants.json`, CRUD and validator.
 - `tests/openapi.test.js`: `docs/openapi.json` must list exactly the registered `/api` routes
   and match real responses (schemas, documented status codes). Update `docs/openapi.json` and
   `docs/API.md` whenever a route or response shape changes.
