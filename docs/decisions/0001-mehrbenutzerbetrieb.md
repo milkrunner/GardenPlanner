@@ -47,7 +47,7 @@ sich vertraut, plus Automatisierung (n8n) mit demselben Schlüssel.
 - **Locking:** unverändert.
 - **Sicherheit:** Keine neue Angriffsfläche. Schwäche bleibt: Ein geleakter Schlüssel ist nicht von
   legitimer Nutzung zu unterscheiden, und es gibt keine Nachvollziehbarkeit.
-- **Aufwand:** keiner. Mögliche Ergänzung ohne Code: die Betriebsgrenzen in der README deutlicher als
+- **Aufwand:** keiner. Mögliche Ergänzung ohne Code: die Betriebsgrenzen in der `README.md` deutlicher als
   Nicht-Ziel („kein Mehrbenutzerbetrieb“) benennen.
 
 ### Option B: Benannte API-Keys mit Akteur in der Historie (kleiner Schritt)
@@ -134,7 +134,7 @@ Falls B gewählt wird, wären diese Teil-Issues nötig. Sie sind hier nur beschr
 1. Konfiguration benannter Schlüssel (Umgebungsvariable, Validierung beim Start, Alias für `API_KEY`,
    Mindestlänge, keine Schlüssel in Logs), Middleware setzt `req.actor`.
 2. Akteur in `history` und Audit-Log, Anzeige in der Historie der Oberfläche, OpenAPI und `docs/API.md`.
-3. Doku: Schlüssel anlegen, rotieren und entziehen (README, `.env.example`).
+3. Doku: Schlüssel anlegen, rotieren und entziehen (`README.md`, `.env.example`).
 
 Jeder Schritt ist ein eigener, kleiner Pull Request mit Servertests (gültiger, ungültiger, fehlender
 Schlüssel, Akteur in Historie und Audit, alter `API_KEY` unverändert).
