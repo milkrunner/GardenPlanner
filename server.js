@@ -7,6 +7,9 @@ const {
   resetCaches,
 } = require('./src/server/app');
 const { logger, audit } = require('./src/server/logger');
+const {
+  repairArchiveDuplicates,
+} = require('./src/server/services/task-service');
 const { checkStartupConfig } = require('./src/server/config');
 
 const PORT = process.env.PORT || 3000;
@@ -22,19 +25,29 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const server = app.listen(PORT, () => {
-    logger.info(
-      { port: PORT, auth: !!API_KEY, trustProxy: app.get('trust proxy') },
-      'Gartenplaner API started',
-    );
-    audit('server_started', { port: PORT, authEnabled: !!API_KEY });
-    if (config.warning) {
-      logger.warn(config.warning);
-    }
-  });
+  let server;
+  // #339: a crash or failed write during archive/unarchive can leave one task in both files.
+  // Repair before accepting requests; a storage error here must not block start (it surfaces per request).
+  repairArchiveDuplicates()
+    .catch((err) => {
+      logger.error({ err: err.message }, 'archive duplicate repair failed');
+    })
+    .then(() => {
+      server = app.listen(PORT, () => {
+        logger.info(
+          { port: PORT, auth: !!API_KEY, trustProxy: app.get('trust proxy') },
+          'Gartenplaner API started',
+        );
+        audit('server_started', { port: PORT, authEnabled: !!API_KEY });
+        if (config.warning) {
+          logger.warn(config.warning);
+        }
+      });
+    });
 
   function shutdown(signal) {
     logger.info({ signal }, 'shutting down gracefully');
+    if (!server) process.exit(0);
     server.close(() => {
       logger.info('all connections closed');
       process.exit(0);
