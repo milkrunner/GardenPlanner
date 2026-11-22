@@ -106,6 +106,11 @@ dashboard task flow.
   fallback and error typing (`handleLoadFailure`), filter, sort, export/import.
 - `npm run test:coverage`: V8 coverage over `src/` including the browser scripts, with
   minimum values in `jest.config.cjs`.
+- `tests/frontend-{security,rate-limiter,error-handler,encryption}.test.js`: jsdom runs the
+  real `security.js`, `rate-limiter.js`, `error-handler.js` and `encryption.js` (Web Crypto
+  from Node, key store faked). They replace the former manual `tests/*-test.html` pages;
+  `tests/helpers/browser-scripts.js` loads `src/js` scripts into jsdom.
+- `tests/static-routes.test.js`: `/tests` and `/docs` are never served.
 - `tests/smoke/a11y.spec.js`: axe-core on every page (light/dark), keyboard flows
   for dialogs, plant cards and the log viewer; `tests/smoke/harness.js` starts the
   real app with disposable storage (one instance per test: the API rate limit is

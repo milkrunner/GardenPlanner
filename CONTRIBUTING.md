@@ -89,15 +89,15 @@ Rücknahme stehen in [docs/RELEASING.md](docs/RELEASING.md), Änderungen im
 [CHANGELOG.md](CHANGELOG.md). Neue Einträge kommen unter `Unreleased`. Dependabot-Pull-Requests
 werden wie jede andere Änderung geprüft und nie automatisch gemergt.
 
-## Existing browser test pages
+## Browser tests
 
-`tests/{form,security,storage,encryption,rate-limit,error}-test.html` are manual
-legacy harnesses, not Jest suites. Access them via a development server under
-`/tests/` using disposable data and a fresh browser profile. Automated frontend
-logic tests, the jsdom DOM tests (`tests/frontend-dom.test.js`), the axe-core/keyboard
-smoke (`tests/smoke/a11y.spec.js`) and the Chromium task smoke are the repeatable
-baseline. Failure-injection coverage remains separate (#284). To see debug output
-in the browser set `localStorage.gp_debug = 'true'` and reload.
+There are no manual browser test pages any more (#338); the server does not serve
+`tests/` or `docs/`. The repeatable baseline is Jest with jsdom for the classic browser
+scripts (`tests/frontend*.test.js`: filtering, DOM, state, security, rate limiter, error
+handler, encryption), the axe-core/keyboard smoke (`tests/smoke/a11y.spec.js`) and the
+Chromium task smoke. `tests/helpers/browser-scripts.js` loads scripts from `src/js/`
+into a jsdom window. Failure-injection coverage remains separate (#284). To see debug
+output in the browser set `localStorage.gp_debug = 'true'` and reload.
 
 ## Issues and PRs
 
