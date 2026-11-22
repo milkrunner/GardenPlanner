@@ -3,7 +3,7 @@
   "info": {
     "title": "Gartenplaner API",
     "version": "1.0.0",
-    "description": "REST-API des Gartenplaners (Aufgaben, Archiv, Pflanzenbibliothek). Ist auf dem Server `API_KEY` gesetzt, braucht jeder Aufruf unter `/api` (außer `/api/auth/status`) den Header `X-API-Key`. Pro IP gelten 100 Anfragen je 15 Minuten (`429`). Der Server ist für genau eine Instanz ausgelegt."
+    "description": "REST-API des Gartenplaners (Aufgaben, Archiv, Pflanzenbibliothek, Export/Import). Ist auf dem Server `API_KEY` gesetzt, braucht jeder Aufruf unter `/api` (außer `/api/auth/status`) den Header `X-API-Key`. Pro IP gelten 100 Anfragen je 15 Minuten (`429`). Der Server ist für genau eine Instanz ausgelegt."
   },
   "servers": [
     {
@@ -27,6 +27,9 @@
     },
     {
       "name": "Plants"
+    },
+    {
+      "name": "Backup"
     }
   ],
   "paths": {
@@ -640,6 +643,139 @@
           }
         }
       }
+    },
+    "/api/export": {
+      "get": {
+        "tags": ["Backup"],
+        "summary": "Gesamten Datenbestand exportieren",
+        "description": "Liefert Aufgaben, Archiv und eine eigene Pflanzenliste als ein JSON-Bündel (Header `Content-Disposition: attachment`, `Cache-Control: no-store`). Enthält Aufgabendaten, aber nie den API-Key. Der Schnappschuss ist konsistent, auch während archiviert wird.",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export-Bündel",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportBundle"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/import": {
+      "post": {
+        "tags": ["Backup"],
+        "summary": "Export-Bündel importieren",
+        "description": "Überschreibt nie unbemerkt. Ohne `mode` wird nur in eine leere Instanz importiert (sonst `409`). `mode=merge` ergänzt unbekannte IDs und meldet vorhandene unter `skipped`. `mode=replace` ersetzt alles, braucht `confirm=replace` und legt vorher eine Sicherung unter `backups/` im Datenverzeichnis an. Das Bündel wird vollständig validiert, bevor geschrieben wird; bei jedem Fehler bleibt der Bestand unverändert. Body-Limit für diese Route: 5 MB (alle anderen Routen: 100 kB).",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["merge", "replace"]
+            }
+          },
+          {
+            "name": "confirm",
+            "in": "query",
+            "description": "Muss bei `mode=replace` den Wert `replace` haben.",
+            "schema": {
+              "type": "string",
+              "enum": ["replace"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportBundle"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Import-Ergebnis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungültiges Bündel (`errors`, deutsche Meldungen, höchstens 20), ungültiger `mode` oder fehlende Bestätigung (`error`), ungültiges JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Errors"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Zielinstanz ist nicht leer (nur ohne `mode`) oder die vorhandene `plants.json` ist bei `mode=merge` nicht lesbar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Errors"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Body größer als 5 MB (`error`) oder mehr als 10000 Aufgaben bzw. 1000 Pflanzen im Bündel (`errors`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Errors"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1045,6 +1181,140 @@
           },
           "tips": {
             "type": "string"
+          }
+        }
+      },
+      "ExportBundle": {
+        "type": "object",
+        "description": "Gesamter Datenbestand als ein JSON-Dokument (Format-Version 1).",
+        "required": [
+          "formatVersion",
+          "app",
+          "exportedAt",
+          "tasks",
+          "archivedTasks",
+          "plants"
+        ],
+        "properties": {
+          "formatVersion": {
+            "type": "integer",
+            "enum": [1]
+          },
+          "app": {
+            "type": "string",
+            "enum": ["gartenplaner"]
+          },
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "archivedTasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            }
+          },
+          "plants": {
+            "type": "array",
+            "nullable": true,
+            "description": "Nur gesetzt, wenn die Instanz eine eigene `plants.json` hat, sonst `null` (Standardbibliothek).",
+            "items": {
+              "$ref": "#/components/schemas/Plant"
+            }
+          }
+        }
+      },
+      "ImportBundle": {
+        "type": "object",
+        "description": "Ein Export-Bündel. `formatVersion`, `tasks` und `archivedTasks` sind Pflicht; `exportedAt` und `app` werden ignoriert. Jede Aufgabe wird wie bei `POST /api/tasks` validiert, zusätzlich müssen `id` (UUID v4) und `createdAt` stimmen; unbekannte Felder werden verworfen.",
+        "required": ["formatVersion", "tasks", "archivedTasks"],
+        "properties": {
+          "formatVersion": {
+            "type": "integer",
+            "enum": [1]
+          },
+          "tasks": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object"
+            }
+          },
+          "archivedTasks": {
+            "type": "array",
+            "maxItems": 10000,
+            "items": {
+              "type": "object"
+            }
+          },
+          "plants": {
+            "type": "array",
+            "nullable": true,
+            "maxItems": 1000,
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "ImportResult": {
+        "type": "object",
+        "required": ["mode", "imported", "skipped", "backup"],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["create", "merge", "replace"]
+          },
+          "imported": {
+            "type": "object",
+            "required": ["tasks", "archivedTasks", "plants"],
+            "properties": {
+              "tasks": {
+                "type": "integer"
+              },
+              "archivedTasks": {
+                "type": "integer"
+              },
+              "plants": {
+                "type": "integer"
+              }
+            }
+          },
+          "skipped": {
+            "type": "object",
+            "description": "Nur bei `mode=merge`: vorhandene IDs, die nicht überschrieben wurden.",
+            "required": ["tasks", "archivedTasks", "plants"],
+            "properties": {
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "archivedTasks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "plants": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "backup": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nur bei `mode=replace`: Verzeichnis der automatischen Sicherung relativ zum Datenverzeichnis, z. B. `backups/import-2026-11-22T10-00-00-000Z-ab12cd`."
           }
         }
       }

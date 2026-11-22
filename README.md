@@ -85,6 +85,8 @@ Die vollständige Referenz mit Fehlerformaten, Pagination und Beispielen steht i
 | `GET`    | `/api/plants`              | Pflanzenbibliothek (`category`, `search`)     |
 | `GET`    | `/api/plants/:id`          | Einzelne Pflanze                              |
 | `GET`    | `/api/plant-categories`    | Kategorien der Pflanzenbibliothek             |
+| `GET`    | `/api/export`              | Alle Daten als JSON-Bündel exportieren        |
+| `POST`   | `/api/import`              | Bündel importieren (`mode=merge`/`replace`)   |
 
 ### Filter
 
@@ -126,6 +128,12 @@ curl -X POST http://localhost:8080/api/tasks \
     "description": "Tropfbewässerung kontrollieren"
   }
   ```
+
+## Backup und Restore
+
+Aufgaben, Archiv und eigene Pflanzen liegen als JSON im Datenverzeichnis (Docker: Volume `gartenplaner-data`).
+Die Anleitung zu Volume-Sicherung, Dateikopie, Export/Import über die API und Wiederherstellung steht in
+[docs/BACKUP.md](docs/BACKUP.md). Kurzform: `curl -H "X-API-Key: $API_KEY" http://localhost:8080/api/export -o export.json`.
 
 ## Konfiguration
 

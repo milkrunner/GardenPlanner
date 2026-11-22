@@ -8,7 +8,7 @@ Alle Beispiele nutzen `http://localhost:8080` (Docker Compose). Ohne Docker läu
 
 ## Grundlagen
 
-- **Format:** JSON (`Content-Type: application/json`), UTF-8, Body-Limit 100 kB.
+- **Format:** JSON (`Content-Type: application/json`), UTF-8, Body-Limit 100 kB (einzige Ausnahme: `POST /api/import` mit 5 MB).
 - **Authentifizierung:** Ist `API_KEY` gesetzt (in Produktion der Standard), braucht jeder Aufruf unter
   `/api` den Header `X-API-Key`. Ausgenommen ist nur `GET /api/auth/status`.
 - **Rate-Limit:** 100 Anfragen je 15 Minuten und IP. Danach antwortet der Server mit `429` (Text, kein JSON)
@@ -24,7 +24,8 @@ Alle Beispiele nutzen `http://localhost:8080` (Docker Compose). Ohne Docker läu
 | `400`  | Ungültige ID, ungültiges JSON, nicht unterstützter Filter | `{"error": "…"}`                                         |
 | `401`  | `X-API-Key` fehlt oder ist falsch                         | `{"error": "Unauthorized. Provide a valid X-API-Key …"}` |
 | `404`  | Aufgabe, archivierte Aufgabe oder Pflanze unbekannt       | `{"error": "Task not found"}`                            |
-| `413`  | Body größer als 100 kB                                    | `{"error": "request entity too large"}`                  |
+| `409`  | `POST /api/import` in eine nicht leere Instanz            | `{"errors": ["Die Zielinstanz ist nicht leer. …"]}`      |
+| `413`  | Body größer als 100 kB (Import: 5 MB)                     | `{"error": "request entity too large"}`                  |
 | `429`  | Rate-Limit überschritten                                  | Text: `Too many requests, please try again later.`       |
 | `500`  | Unerwarteter Serverfehler                                 | `{"error": "Internal server error"}`                     |
 
@@ -48,6 +49,8 @@ Unbekannte Pfade unter `/api` liefern Expresss Standard-`404` als HTML, nicht al
 | `GET`    | `/api/plants`               | Pflanzenbibliothek (`category`, `search`)      |
 | `GET`    | `/api/plants/{id}`          | Einzelne Pflanze                               |
 | `GET`    | `/api/plant-categories`     | Kategorien der Pflanzenbibliothek              |
+| `GET`    | `/api/export`               | Gesamten Datenbestand als JSON-Bündel sichern  |
+| `POST`   | `/api/import`               | Bündel importieren (`mode`, `confirm`)         |
 
 ### Aufgabe
 
@@ -97,6 +100,36 @@ rückgängig. `GET /api/archived-tasks` liefert immer ein Array ohne Pagination.
 Groß-/Kleinschreibung in Name, Kategorie und Tipps. Eine Pflanze hat `id` (Slug, z. B. `tomato`), `name`,
 `category`, `icon`, `difficulty`, `sun`, `water`, `season`, `spacing`, `germination`, `harvest`,
 `companions`, `avoid` und `tips`. Die Standarddaten liegen in `src/server/defaults/default-plants.json`.
+
+### Export und Import
+
+Details zu Sicherung und Wiederherstellung (auch Docker-Volume) stehen in [Backup](BACKUP.md).
+
+`GET /api/export` liefert `{"formatVersion": 1, "app": "gartenplaner", "exportedAt": "…", "tasks": […],
+"archivedTasks": […], "plants": null}` mit `Content-Disposition: attachment`. `plants` ist nur gesetzt, wenn die
+Instanz eine eigene `plants.json` hat. Der Export enthält Aufgabendaten, aber nie den API-Key.
+
+`POST /api/import` nimmt ein solches Bündel entgegen und überschreibt nie unbemerkt:
+
+- Ohne `mode`: nur in eine leere Instanz, sonst `409` und keine Änderung. Eine vorhandene `plants.json` zählt nur,
+  wenn das Bündel `plants` enthält.
+- `?mode=merge`: ergänzt unbekannte IDs. Vorhandene IDs (Aufgaben und Archiv) bleiben unverändert und stehen in
+  `skipped`.
+- `?mode=replace&confirm=replace`: ersetzt Aufgaben und Archiv (und `plants.json`, wenn `plants` im Bündel steht).
+  Vorher kopiert der Server die alten Dateien nach `backups/import-<Zeitstempel>-<Zufall>/` im Datenverzeichnis;
+  der relative Pfad steht in `backup`. Ohne `confirm=replace` antwortet der Server mit `400`.
+
+Das Bündel wird komplett geprüft, bevor geschrieben wird (`formatVersion` 1, UUID v4 als `id`, `createdAt` als
+Datum, alle Aufgaben-Regeln von oben, keine doppelten IDs, unbekannte Felder werden verworfen). Fehler ergeben
+`400` mit `{"errors": ["tasks[1]: …"]}` (höchstens 20 Meldungen) und lassen den Bestand unverändert. Der Body darf
+5 MB groß sein, ein Bündel höchstens 10000 Aufgaben und 1000 Pflanzen, sonst `413`.
+Erfolg: `{"mode": "merge", "imported": {"tasks": 1, "archivedTasks": 0, "plants": 0}, "skipped": {"tasks": [], …}, "backup": null}`.
+
+```bash
+curl -H "X-API-Key: $API_KEY" http://localhost:8080/api/export -o export.json
+curl -X POST "http://localhost:8080/api/import?mode=merge" \
+  -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" --data-binary @export.json
+```
 
 ## Nicht Teil der API
 

@@ -157,3 +157,12 @@ Proxy-Subnetze verwenden; bei einer Hop-Anzahl zählt die Adresse von rechts, vo
 gefälschte Einträge werden ignoriert. Ein ungültiger Wert verhindert den Start (Exit-Code 1), damit
 ein Tippfehler das Rate-Limit nicht unbemerkt verschlechtert; wird `app.js` ohne diese Prüfung
 importiert, gilt „aus“. Tests: `tests/trust-proxy.test.js`.
+
+## Backend: Export und Import
+
+`GET /api/export` und `POST /api/import` liegen hinter derselben API-Key-Prüfung wie alle Routen unter `/api`.
+Der Export enthält Aufgabendaten (Mitarbeiternamen, Standorte, Notizen), aber nie den API-Key. Das erhöhte
+Body-Limit (5 MB statt 100 kB) gilt nur für den Import und wird erst nach Authentifizierung und Rate-Limit
+angewendet; die globale Grenze bleibt unverändert. Ein Import wird vollständig validiert, bevor er schreibt,
+überschreibt ohne ausdrückliche Bestätigung (`mode=replace&confirm=replace`) nichts und sichert dann vorher die
+alten Dateien. Siehe [BACKUP.md](BACKUP.md).

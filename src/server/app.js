@@ -17,6 +17,7 @@ const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
 const plantsRouter = require('./routes/plants');
 const authRouter = require('./routes/auth');
+const backupRouter = require('./routes/backup');
 
 const app = express();
 
@@ -31,7 +32,12 @@ const PROJECT_ROOT = path.join(__dirname, '..', '..');
 // --- Middleware (order preserved exactly) ---
 
 app.use(compression());
-app.use(express.json({ limit: '100kb' }));
+// POST /api/import brings its own larger, route-local body parser (routes/backup.js), which only runs
+// after authentication and rate limiting. Every other route keeps the 100 kB limit.
+const jsonParser = express.json({ limit: '100kb' });
+app.use((req, res, next) =>
+    req.method === 'POST' && /^\/api\/import\/?$/i.test(req.path) ? next() : jsonParser(req, res, next),
+);
 
 // Security headers
 app.use(securityHeaders);
@@ -85,6 +91,7 @@ app.get('/', limiter, (req, res) => {
 
 app.use('/api/tasks', tasksRouter);
 app.use('/api', archiveRouter);
+app.use('/api', backupRouter);
 app.use('/api/plants', plantsRouter);
 
 // GET /api/plant-categories - List unique categories
