@@ -515,7 +515,7 @@
       "get": {
         "tags": ["Plants"],
         "summary": "Pflanzenbibliothek auflisten",
-        "description": "Immer ein Array. `category` vergleicht exakt, `search` ist eine Teilstring-Suche (ohne Groß-/Kleinschreibung) über Name, Kategorie und Tipps.",
+        "description": "Immer ein Array. `category` vergleicht exakt, `search` ist eine Teilstring-Suche (ohne Groß-/Kleinschreibung) über Name, Kategorie und Tipps. Ohne `plants.json` im Datenverzeichnis liefert der Server die 20 Standardpflanzen.",
         "security": [
           {
             "ApiKey": []
@@ -554,6 +554,60 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Plants"],
+        "summary": "Pflanze anlegen",
+        "description": "Beim ersten Schreibzugriff werden die Standardpflanzen nach `DATA_DIR/plants.json` übernommen; die Standarddaten im Repository bleiben unverändert. Ist `plants.json` beschädigt, antwortet der Server mit `500` und überschreibt die Datei nicht.",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Angelegte Pflanze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "description": "Es gibt bereits eine Pflanze mit dieser ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -604,6 +658,113 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Plants"],
+        "summary": "Pflanze ändern (partiell)",
+        "description": "Nur gesendete Felder ändern sich. Die ID lässt sich nicht ändern. Auch Standardpflanzen sind änderbar (siehe `POST /api/plants`).",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Pflanzen-ID (Slug, z. B. `tomato`)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlantUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aktualisierte Pflanze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationErrors"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Unbekannte Pflanze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Plants"],
+        "summary": "Pflanze löschen",
+        "description": "Auch Standardpflanzen sind löschbar. Die Bibliothek darf leer werden. Zurücksetzen auf die Standardpflanzen: `plants.json` im Datenverzeichnis löschen.",
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Pflanzen-ID (Slug, z. B. `tomato`)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Gelöscht"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "description": "Unbekannte Pflanze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
@@ -1132,55 +1293,83 @@
         "required": ["id", "name", "category"],
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Slug aus Kleinbuchstaben, Ziffern und Bindestrichen",
+            "example": "tomato"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "Kohlrabi"
           },
           "category": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "example": "Gemüse"
           },
           "icon": {
-            "type": "string"
+            "type": "string",
+            "description": "1–8 Unicode-Zeichen (Emoji), Standard 🌱",
+            "example": "🥬"
           },
           "difficulty": {
-            "type": "string"
+            "type": "string",
+            "enum": ["easy", "medium", "hard"]
           },
           "sun": {
-            "type": "string"
+            "type": "string",
+            "enum": ["full", "partial", "shade"]
           },
           "water": {
-            "type": "string"
+            "type": "string",
+            "enum": ["low", "medium", "high"]
           },
           "season": {
             "type": "array",
+            "uniqueItems": true,
             "items": {
-              "type": "string"
+              "type": "string",
+              "enum": ["spring", "summer", "autumn", "winter"]
             }
           },
           "spacing": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 30,
+            "example": "25cm"
           },
           "germination": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 40,
+            "example": "5-10 Tage"
           },
           "harvest": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 60,
+            "example": "50-70 Tage"
           },
           "companions": {
             "type": "array",
+            "maxItems": 30,
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
             }
           },
           "avoid": {
             "type": "array",
+            "maxItems": 30,
             "items": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
             }
           },
           "tips": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000
           }
         }
       },
@@ -1317,6 +1506,123 @@
             "description": "Nur bei `mode=replace`: Verzeichnis der automatischen Sicherung relativ zum Datenverzeichnis, z. B. `backups/import-2026-11-22T10-00-00-000Z-ab12cd`."
           }
         }
+      },
+      "PlantFields": {
+        "type": "object",
+        "description": "Beschreibbare Felder einer Pflanze. Text wird getrimmt und von Steuerzeichen befreit; `<` und `>` sind nicht erlaubt. Unbekannte Felder werden ignoriert.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "Kohlrabi"
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "example": "Gemüse"
+          },
+          "icon": {
+            "type": "string",
+            "description": "1–8 Unicode-Zeichen (Emoji), Standard 🌱",
+            "example": "🥬"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": ["easy", "medium", "hard"]
+          },
+          "sun": {
+            "type": "string",
+            "enum": ["full", "partial", "shade"]
+          },
+          "water": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "season": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": ["spring", "summer", "autumn", "winter"]
+            }
+          },
+          "spacing": {
+            "type": "string",
+            "maxLength": 30,
+            "example": "25cm"
+          },
+          "germination": {
+            "type": "string",
+            "maxLength": 40,
+            "example": "5-10 Tage"
+          },
+          "harvest": {
+            "type": "string",
+            "maxLength": 60,
+            "example": "50-70 Tage"
+          },
+          "companions": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            }
+          },
+          "avoid": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            }
+          },
+          "tips": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      },
+      "PlantInput": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PlantFields"
+          },
+          {
+            "type": "object",
+            "required": ["name", "category"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40,
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "Optional; ohne Angabe leitet der Server den Slug aus `name` ab (Umlaute werden transkribiert)",
+                "example": "kohlrabi"
+              }
+            }
+          }
+        ]
+      },
+      "PlantUpdate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/PlantFields"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Optional; muss der ID im Pfad entsprechen"
+              }
+            }
+          }
+        ]
       }
     }
   }

@@ -394,6 +394,61 @@ describe('OpenAPI spec (#326)', () => {
       );
     });
 
+    test('plant write endpoints', async () => {
+      const plant = {
+        name: 'Kohlrabi',
+        category: 'Gemüse',
+        season: ['spring'],
+      };
+      await expectMatches(
+        'POST',
+        '/api/plants',
+        await request(app).post('/api/plants').send(plant),
+      );
+      await expectMatches(
+        'POST',
+        '/api/plants',
+        await request(app).post('/api/plants').send(plant),
+      ); // 409
+      await expectMatches(
+        'POST',
+        '/api/plants',
+        await request(app).post('/api/plants').send({ name: '' }),
+      ); // 400
+      await expectMatches(
+        'PUT',
+        '/api/plants/{id}',
+        await request(app).put('/api/plants/kohlrabi').send({ water: 'high' }),
+      );
+      await expectMatches(
+        'PUT',
+        '/api/plants/{id}',
+        await request(app).put('/api/plants/kohlrabi').send({ sun: 'moon' }),
+      );
+      await expectMatches(
+        'PUT',
+        '/api/plants/{id}',
+        await request(app).put('/api/plants/nope').send({ water: 'high' }),
+      );
+      await expectMatches(
+        'DELETE',
+        '/api/plants/{id}',
+        await request(app).delete('/api/plants/kohlrabi'),
+      );
+      await expectMatches(
+        'DELETE',
+        '/api/plants/{id}',
+        await request(app).delete('/api/plants/kohlrabi'),
+      );
+      await expectMatches(
+        'POST',
+        '/api/plants',
+        await request(app)
+          .post('/api/plants')
+          .send({ ...plant, tips: 'x'.repeat(200000) }),
+      ); // 413
+    });
+
     test('oversized body is documented as 413', async () => {
       const res = await request(app)
         .post('/api/tasks')
