@@ -81,10 +81,19 @@ const TaskAPI = {
 	},
 
 	async getTasks(filters = {}) {
+		// Mitarbeiter und Standort nie in der URL (Request-Logs): Suche per POST-Body.
+		if (filters.employee || filters.location) {
+			const body = {};
+			if (filters.status) body.status = filters.status;
+			if (filters.employee) body.employee = filters.employee;
+			if (filters.location) body.location = filters.location;
+			return this._fetch("/tasks/search", {
+				method: "POST",
+				body: JSON.stringify(body),
+			});
+		}
 		const params = new URLSearchParams();
 		if (filters.status) params.set("status", filters.status);
-		if (filters.employee) params.set("employee", filters.employee);
-		if (filters.location) params.set("location", filters.location);
 		const qs = params.toString();
 		return this._fetch(`/tasks${qs ? `?${qs}` : ""}`);
 	},

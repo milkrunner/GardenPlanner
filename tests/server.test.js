@@ -279,6 +279,16 @@ describe('API Endpoints', () => {
             const res = await request(app).get('/api/tasks?status=completed');
             expect(res.body).toHaveLength(0);
         });
+
+        test.each(['employee=Max', 'location=Garten'])(
+            'rejects the unsupported query filter %s instead of ignoring it (#325)',
+            async (query) => {
+                await request(app).post('/api/tasks').send(validTask);
+                const res = await request(app).get(`/api/tasks?${query}`);
+                expect(res.status).toBe(400);
+                expect(res.body.error).toMatch(/POST \/api\/tasks\/search/);
+            },
+        );
     });
 
     describe('GET /api/tasks/:id', () => {
@@ -429,6 +439,24 @@ describe('API Endpoints', () => {
 
             expect(res.body).toHaveLength(1);
             expect(res.body[0].employee).toBe('Max');
+        });
+
+        test('combines status, employee and location filters (#325)', async () => {
+            await request(app).post('/api/tasks').send(validTask);
+            await request(app)
+                .post('/api/tasks')
+                .send({ ...validTask, location: 'Gewächshaus' });
+            await request(app)
+                .post('/api/tasks')
+                .send({ ...validTask, employee: 'Lisa', status: 'completed' });
+
+            const both = await request(app)
+                .post('/api/tasks/search')
+                .send({ employee: 'Max', location: 'Garten', status: 'pending' });
+            expect(both.body).toHaveLength(1);
+
+            const none = await request(app).post('/api/tasks/search').send({ employee: 'Lisa', status: 'pending' });
+            expect(none.body).toHaveLength(0);
         });
     });
 });

@@ -5,7 +5,17 @@ const { validateIdParam } = require('../validation/task-validator');
 const { listTasks, searchTasks, getTask, createTask, updateTask, deleteTask } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
+// Filters on personal names are deliberately not accepted on GET: query strings end up in request logs,
+// so they go through POST /api/tasks/search. The names are only checked, never read, and rejected
+// instead of silently ignored.
+const BODY_ONLY_FILTERS = ['employee', 'location'];
+
 router.get('/', (req, res) => {
+    if (Object.keys(req.query).some((name) => BODY_ONLY_FILTERS.includes(name))) {
+        return res.status(400).json({
+            error: 'Filters employee and location are not supported on GET /api/tasks. Use POST /api/tasks/search.',
+        });
+    }
     res.json(listTasks(req.query));
 });
 

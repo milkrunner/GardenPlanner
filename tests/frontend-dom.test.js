@@ -499,6 +499,47 @@ describe('script loading and integrity (#323)', () => {
   );
 });
 
+describe('TaskAPI task filters (#325)', () => {
+  function recorded() {
+    const window = createWindow();
+    const calls = [];
+    window.fetch = (url, options = {}) => {
+      calls.push({ url, options });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([]),
+      });
+    };
+    load(window, 'config.js', 'api.js');
+    return { api: window.TaskAPI, calls };
+  }
+
+  test('status stays a query parameter', async () => {
+    const { api, calls } = recorded();
+    await api.getTasks({ status: 'pending' });
+    expect(calls[0].url).toMatch(/\/tasks\?status=pending$/);
+    expect(calls[0].options.method).toBeUndefined();
+  });
+
+  test('employee and location never appear in the URL, they go to POST /tasks/search', async () => {
+    const { api, calls } = recorded();
+    await api.getTasks({
+      status: 'pending',
+      employee: 'Max',
+      location: 'Garten',
+    });
+    expect(calls[0].url).toMatch(/\/tasks\/search$/);
+    expect(calls[0].url).not.toMatch(/Max|Garten/);
+    expect(calls[0].options.method).toBe('POST');
+    expect(JSON.parse(calls[0].options.body)).toEqual({
+      status: 'pending',
+      employee: 'Max',
+      location: 'Garten',
+    });
+  });
+});
+
 describe('TaskAPI error typing (#324)', () => {
   function api(fetchImpl) {
     const window = createWindow();

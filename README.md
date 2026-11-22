@@ -11,7 +11,10 @@ Moderne Webanwendung zur Verwaltung von Gartenaufgaben mit REST API und n8n-Inte
 - 🔄 **Echtzeit-Sync** - Automatische Tab-Synchronisation
 - 📄 **PDF-Export** - Aufgabenlisten exportieren
 - 🎨 **Dark Mode** - Helles & dunkles Theme
-- 🌐 **REST API** - Externe Integration via API (z.B. n8n)
+- 🌱 **Pflanzenbibliothek** - Pflanzen mit Pflege-, Aussaat- und Nachbarschaftsinfos, per API abrufbar
+- 🌤️ **Wetter** - 7-Tage-Vorhersage je Standort (Open-Meteo, direkt im Browser)
+- 🕑 **Historie** - Änderungsverlauf je Aufgabe
+- 🌐 **REST API** - Externe Integration via API (z.B. n8n), siehe [API-Referenz](docs/API.md)
 - 🔑 **API-Key Auth** - Authentifizierung für externen Zugriff
 - 💾 **Persistente Speicherung** - Serverseitiges JSON-Storage mit localStorage-Fallback
 - 🔒 **XSS-Schutz** - Input-Validierung und HTML-Escaping
@@ -63,25 +66,40 @@ statt veralteter Daten. Ohne `API_KEY` auf dem Server ist keine Eingabe nötig.
 
 ### Endpoints
 
-| Methode  | Endpoint                   | Beschreibung                |
-| -------- | -------------------------- | --------------------------- |
-| `GET`    | `/api/tasks`               | Alle Tasks auflisten        |
-| `GET`    | `/api/tasks/:id`           | Einzelnen Task abrufen      |
-| `POST`   | `/api/tasks`               | Neuen Task erstellen        |
-| `PUT`    | `/api/tasks/:id`           | Task aktualisieren          |
-| `DELETE` | `/api/tasks/:id`           | Task löschen                |
-| `POST`   | `/api/tasks/:id/archive`   | Task archivieren            |
-| `POST`   | `/api/tasks/:id/unarchive` | Task wiederherstellen       |
-| `GET`    | `/api/archived-tasks`      | Archivierte Tasks auflisten |
-| `DELETE` | `/api/archived-tasks/:id`  | Archivierten Task löschen   |
+Die vollständige Referenz mit Fehlerformaten, Pagination und Beispielen steht in der
+[API-Referenz](docs/API.md), maschinenlesbar in [`docs/openapi.json`](docs/openapi.json).
+
+| Methode  | Endpoint                   | Beschreibung                                  |
+| -------- | -------------------------- | --------------------------------------------- |
+| `GET`    | `/api/auth/status`         | Ist ein API-Key nötig? (ohne Key erreichbar)  |
+| `GET`    | `/api/tasks`               | Tasks auflisten (`status`, `page`, `limit`)   |
+| `POST`   | `/api/tasks`               | Neuen Task erstellen                          |
+| `POST`   | `/api/tasks/search`        | Tasks nach Mitarbeiter/Standort/Status suchen |
+| `GET`    | `/api/tasks/:id`           | Einzelnen Task abrufen                        |
+| `PUT`    | `/api/tasks/:id`           | Task aktualisieren                            |
+| `DELETE` | `/api/tasks/:id`           | Task löschen                                  |
+| `POST`   | `/api/tasks/:id/archive`   | Task archivieren                              |
+| `POST`   | `/api/tasks/:id/unarchive` | Task wiederherstellen                         |
+| `GET`    | `/api/archived-tasks`      | Archivierte Tasks auflisten                   |
+| `DELETE` | `/api/archived-tasks/:id`  | Archivierten Task löschen                     |
+| `GET`    | `/api/plants`              | Pflanzenbibliothek (`category`, `search`)     |
+| `GET`    | `/api/plants/:id`          | Einzelne Pflanze                              |
+| `GET`    | `/api/plant-categories`    | Kategorien der Pflanzenbibliothek             |
 
 ### Filter
 
-`GET /api/tasks` unterstützt Query-Parameter:
+`GET /api/tasks` unterstützt `?status=pending` / `in-progress` / `completed` sowie die Pagination
+`?page=1&limit=50`. Filter nach Mitarbeiter oder Standort laufen bewusst nicht über die URL, weil
+Query-Strings in Request-Logs landen. Dafür gibt es `POST /api/tasks/search` mit dem Filter im Body.
+`GET /api/tasks?employee=…` oder `?location=…` wird mit `400` abgelehnt, damit n8n-Flows nicht
+unbemerkt ungefilterte Listen bekommen:
 
-- `?status=pending` / `in-progress` / `completed`
-- `?employee=Max`
-- `?location=Gewächshaus`
+```bash
+curl -X POST http://localhost:8080/api/tasks/search \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_KEY" \
+  -d '{"employee":"Max","location":"Garten","status":"pending"}'
+```
 
 ### Beispiel: Task erstellen (cURL)
 
