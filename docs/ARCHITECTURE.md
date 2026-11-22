@@ -101,6 +101,11 @@ dashboard task flow.
 - `tests/frontend-dom.test.js`: jsdom runs the real classic scripts to check
   escaping of untrusted task data, DOM builders, dialog keyboard handling and
   static page markup (SVG/control names, labels, no inline handlers).
+- `tests/frontend-state.test.js`: jsdom runs `task-state.js`, `task-filters.js`, `task-export.js`
+  and the sorting in `task-renderer.js` against mocked `TaskAPI`: archive/restore, offline
+  fallback and error typing (`handleLoadFailure`), filter, sort, export/import.
+- `npm run test:coverage`: V8 coverage over `src/` including the browser scripts, with
+  minimum values in `jest.config.cjs`.
 - `tests/smoke/a11y.spec.js`: axe-core on every page (light/dark), keyboard flows
   for dialogs, plant cards and the log viewer; `tests/smoke/harness.js` starts the
   real app with disposable storage (one instance per test: the API rate limit is

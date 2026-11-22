@@ -5,10 +5,9 @@ const path = require('node:path');
 // Exercise the real classic browser script without starting timers or a DOM.
 function filtered(overrides = {}) {
   const context = vm.createContext({ GartenPlaner: function () {} });
-  vm.runInContext(
-    fs.readFileSync(path.join(__dirname, '../src/js/task-filters.js'), 'utf8'),
-    context,
-  );
+  // Mit filename, damit die V8-Coverage das Skript dem Quelltext zuordnen kann.
+  const filename = path.join(__dirname, '../src/js/task-filters.js');
+  vm.runInContext(fs.readFileSync(filename, 'utf8'), context, { filename });
   const state = {
     tasks: [
       {
