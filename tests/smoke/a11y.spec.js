@@ -215,6 +215,45 @@ test('confirm dialog: focus lands on cancel, Tab is trapped, Escape keeps the ta
   await expect(card).toBeVisible();
 });
 
+// #387: Header, Schließen-Symbol und Buttons der Dialoge nutzten undefinierte Variablen
+// (transparent, im hellen Theme weißer Text auf weißem Grund).
+for (const theme of ['light', 'dark']) {
+  test(`edit and confirm dialogs have visible headers and no axe violations (${theme})`, async ({
+    page,
+  }) => {
+    await openPage(page, 'dashboard', theme);
+    const completed = page.locator('.task-card').filter({ hasText: 'Fertig' });
+    await expect(completed.locator('.uncomplete-btn')).not.toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)',
+    );
+    expect(await axeViolations(page)).toEqual([]);
+
+    await page
+      .locator('.task-card')
+      .filter({ hasText: 'Tomaten2' })
+      .getByRole('button', { name: 'Aufgabe bearbeiten', exact: true })
+      .click();
+    await expect(page.locator('#editModal .modal-header')).not.toHaveCSS(
+      'background-image',
+      'none',
+    );
+    await expect(
+      page.locator('#editModal .btn-secondary').first(),
+    ).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    expect(await axeViolations(page)).toEqual([]);
+    await page.keyboard.press('Escape');
+
+    await completed
+      .getByRole('button', { name: 'Aufgabe löschen', exact: true })
+      .click();
+    await expect(
+      page.locator('#confirmModal .confirm-modal-header'),
+    ).not.toHaveCSS('background-image', 'none');
+    expect(await axeViolations(page)).toEqual([]);
+  });
+}
+
 test('task cards and their actions are reachable by keyboard', async ({
   page,
 }) => {

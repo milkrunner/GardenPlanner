@@ -72,6 +72,9 @@ All standard rules are active, with these documented exceptions:
 - `selector-id-pattern` expects the camelCase IDs used in the HTML (`#confirmOkBtn`)
   instead of kebab-case. Classes, custom properties and keyframes stay kebab-case.
 
+Every `var(--…)` in `src/css`, `public/` and `src/js` must be declared in `:root`
+(`tests/css-custom-properties.test.js`); the dark theme only overrides existing tokens.
+
 Do not mass-rewrite `src/css`; re-enable an exception only together with a reviewed
 cleanup of the affected CSS.
 

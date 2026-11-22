@@ -107,14 +107,24 @@ textarea:focus-visible {
   --primary: #1b5e3f;
   --primary-light: #2d6a4f;
   --primary-dark: #0f3725;
+
+  /* Text auf Flächen in --primary und --primary-light */
+  --on-primary: #fff;
+
+  /* Gefüllte Statusflächen mit weißem Text (≥ 4,5:1), in beiden Themes gleich */
+  --warning-solid: #b45309;
+  --info-solid: #1d4ed8;
   --accent: #2d6a4f;
   --danger: #b91c1c;
   --text: #0a0a0a;
   --text-light: #525252;
   --bg: #f5f5f5;
   --bg-secondary: #fff;
+  --bg-tertiary: #f0f0f0;
   --border: #d4d4d4;
+  --border-light: #e5e5e5;
   --shadow: rgb(0 0 0 / 12%);
+  --shadow-heavy: rgb(0 0 0 / 25%);
   --focus-ring: rgb(27 94 63 / 50%);
 }
 
@@ -134,6 +144,7 @@ textarea:focus-visible {
   --primary: #4ade80;
   --primary-light: #6ee7a0;
   --primary-dark: #22c55e;
+  --on-primary: #0a0a0a;
   --accent: #4ade80;
   --danger: #f87171;
   --text: #f5f5f5;
@@ -776,8 +787,8 @@ textarea {
 }
 
 .btn-secondary {
-  background-color: var(--light);
-  color: var(--dark);
+  background-color: var(--bg);
+  color: var(--text);
   border: 2px solid var(--border);
   margin-right: 10px;
 }
@@ -2450,7 +2461,7 @@ main > section > h2::after {
 }
 
 .history-task-title {
-  color: var(--text-primary);
+  color: var(--text);
   font-weight: 600;
 }
 
@@ -2497,7 +2508,7 @@ main > section > h2::after {
 
 /* Dark Mode - History */
 [data-theme='dark'] .history-item {
-  background: var(--card-bg);
+  background: var(--bg-secondary);
 }
 
 [data-theme='dark'] .history-item:hover {
@@ -2525,9 +2536,9 @@ main > section > h2::after {
 
 .view-btn {
   padding: 8px 20px;
-  border: 2px solid var(--primary-color);
-  background: white;
-  color: var(--primary-color);
+  border: 2px solid var(--primary);
+  background: var(--bg-secondary);
+  color: var(--primary);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.3s;
@@ -2535,13 +2546,13 @@ main > section > h2::after {
 }
 
 .view-btn.active {
-  background: var(--primary-color);
-  color: white;
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 .view-btn:hover {
-  background: var(--primary-color);
-  color: white;
+  background: var(--primary);
+  color: var(--on-primary);
 }
 
 /* Tasks Header */
@@ -2565,7 +2576,7 @@ main > section > h2::after {
 
 /* Bulk Actions Toolbar */
 .bulk-toolbar {
-  background: var(--light);
+  background: var(--bg-secondary);
   padding: 15px 20px;
   border-radius: var(--radius-lg);
   margin-bottom: 20px;
@@ -2573,17 +2584,17 @@ main > section > h2::after {
   justify-content: space-between;
   align-items: center;
   gap: 15px;
-  border: 2px solid var(--primary-color);
+  border: 2px solid var(--primary);
 }
 
 .bulk-info {
   font-weight: 600;
   font-size: 1.1em;
-  color: var(--dark);
+  color: var(--text);
 }
 
 .bulk-info span {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.3em;
 }
 
@@ -2770,7 +2781,7 @@ main > section > h2::after {
   height: 22px;
   min-width: 22px;
   cursor: pointer;
-  accent-color: var(--primary-color);
+  accent-color: var(--primary);
 }
 
 /* Drag & Drop States */
@@ -2781,7 +2792,7 @@ main > section > h2::after {
   cursor: grabbing;
   z-index: 1000;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid var(--primary-color);
+  border: 2px solid var(--primary);
 }
 
 [data-theme='dark'] .task-card.dragging {
@@ -2789,7 +2800,7 @@ main > section > h2::after {
 }
 
 .task-card.drag-over {
-  border-top: 3px dashed var(--primary-color);
+  border-top: 3px dashed var(--primary);
   margin-top: 15px;
   background: linear-gradient(135deg, rgb(27 94 63 / 5%), rgb(46 204 113 / 5%));
   transform: translateY(5px);
@@ -2843,7 +2854,7 @@ main > section > h2::after {
 }
 
 .drag-handle:hover {
-  color: var(--primary-color);
+  color: var(--primary);
   background: rgb(0 0 0 / 5%);
   transform: scale(1.1);
 }
@@ -2883,7 +2894,7 @@ main > section > h2::after {
 }
 
 .task-description {
-  color: var(--primary-color);
+  color: var(--text);
   line-height: 1.6;
   font-weight: 500;
 }
@@ -2979,7 +2990,7 @@ main > section > h2::after {
 }
 
 .uncomplete-btn {
-  background: var(--warning-color);
+  background: var(--warning-solid);
   color: white;
 }
 
@@ -2997,7 +3008,7 @@ main > section > h2::after {
 }
 
 .unarchive-btn {
-  background: var(--info-color);
+  background: var(--info-solid);
   color: white;
 }
 
@@ -3028,12 +3039,12 @@ main > section > h2::after {
 .calendar-day-header {
   font-weight: bold;
   margin-bottom: 8px;
-  color: var(--dark);
+  color: var(--text);
 }
 
 .calendar-task {
-  background: var(--primary-color);
-  color: white;
+  background: var(--primary);
+  color: var(--on-primary);
   padding: 5px;
   margin-bottom: 5px;
   border-radius: var(--radius-sm);
@@ -3072,7 +3083,7 @@ main > section > h2::after {
 .empty-state h3 {
   font-size: 1.8em;
   margin-bottom: 15px;
-  color: var(--dark);
+  color: var(--text);
 }
 
 .empty-state p {
@@ -3099,7 +3110,7 @@ main > section > h2::after {
 
 /* Dashboard CTA Section */
 .dashboard-link-section {
-  background: linear-gradient(135deg, var(--info-color), #2980b9);
+  background: linear-gradient(135deg, var(--info-solid), #2980b9);
   padding: 40px;
   border-radius: var(--radius-lg);
   text-align: center;
@@ -3122,13 +3133,13 @@ main > section > h2::after {
 
 .dashboard-cta .btn {
   background: white;
-  color: var(--info-color);
+  color: var(--info-solid);
   font-size: 1.1em;
   padding: 15px 40px;
 }
 
 .dashboard-cta .btn:hover {
-  background: var(--light);
+  background: var(--bg);
   transform: scale(1.05);
 }
 
@@ -3198,12 +3209,8 @@ footer {
 }
 
 .modal-header {
-  background: linear-gradient(
-    135deg,
-    var(--primary-color),
-    var(--secondary-color)
-  );
-  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: var(--on-primary);
   padding: 25px 30px;
   display: flex;
   justify-content: space-between;
@@ -3219,7 +3226,7 @@ footer {
 .modal-close {
   font-size: 2em;
   font-weight: bold;
-  color: white;
+  color: var(--on-primary);
   cursor: pointer;
   transition: transform 0.2s;
   line-height: 1;
@@ -3406,7 +3413,7 @@ footer {
 .subtask-text {
   flex: 1;
   font-size: 0.95em;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 [data-theme='dark'] .subtask-text {
@@ -3510,7 +3517,8 @@ footer {
 }
 
 .confirm-modal-header {
-  background: linear-gradient(135deg, var(--warning-color), #e67e22);
+  background: linear-gradient(135deg, var(--warning-solid), #c2410c);
+  color: white;
 }
 
 .confirm-modal-body {
@@ -3533,7 +3541,7 @@ footer {
 .confirm-modal-body p {
   font-size: 1.1em;
   line-height: 1.6;
-  color: var(--dark);
+  color: var(--text);
   margin: 0;
 }
 
