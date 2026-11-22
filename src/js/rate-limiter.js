@@ -238,11 +238,10 @@ class RateLimiter {
 		};
 
 		// Zeige Notification wenn ErrorBoundary verfügbar
-		if (window.errorBoundary && window.errorBoundary.showErrorNotification) {
-			window.errorBoundary.showErrorNotification(
+		if (window.errorBoundary && window.errorBoundary.showToast) {
+			window.errorBoundary.showToast(
 				config.title,
 				config.text,
-				"warning",
 				Math.min(resetMs, 8000), // Max 8 Sekunden Anzeige
 			);
 		} else {

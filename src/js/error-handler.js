@@ -104,20 +104,22 @@ class ErrorBoundary {
     }
 
     showErrorNotification(errorInfo) {
-        const message = this.getUserFriendlyMessage(errorInfo);
+        this.showToast('Ein Fehler ist aufgetreten', this.getUserFriendlyMessage(errorInfo));
+    }
 
-        // Toast-Benachrichtigung erstellen
+    // Allgemeine Toast-Meldung. duration 0 = bleibt sichtbar, bis der Benutzer sie schließt.
+    // Titel und Text können Fehlertexte aus Task-Daten enthalten: nur als Text rendern.
+    showToast(title, message, duration) {
         const toast = document.createElement('div');
         toast.className = 'error-toast';
         toast.setAttribute('role', 'alert');
 
-        // Meldung kann Fehlertexte aus Task-Daten enthalten: nur als Text rendern
         const icon = document.createElement('div');
         icon.className = 'error-toast-icon';
         icon.setAttribute('aria-hidden', 'true');
         icon.textContent = '⚠️';
         const heading = document.createElement('strong');
-        heading.textContent = 'Ein Fehler ist aufgetreten';
+        heading.textContent = title;
         const detail = document.createElement('p');
         detail.textContent = message;
         const text = document.createElement('div');
@@ -137,11 +139,16 @@ class ErrorBoundary {
         document.body.appendChild(toast);
 
         // Auto-remove nach konfigurierbarer Dauer (mehr Lesezeit für Fehlermeldungen)
-        const duration = (window.APP_CONFIG && window.APP_CONFIG.ui.errorNotificationDuration) || 15000;
-        setTimeout(() => {
-            toast.classList.add('error-toast-fade');
-            setTimeout(() => toast.remove(), 300);
-        }, duration);
+        const hold =
+            duration === undefined
+                ? (window.APP_CONFIG && window.APP_CONFIG.ui.errorNotificationDuration) || 15000
+                : duration;
+        if (hold > 0) {
+            setTimeout(() => {
+                toast.classList.add('error-toast-fade');
+                setTimeout(() => toast.remove(), 300);
+            }, hold);
+        }
     }
 
     getUserFriendlyMessage(errorInfo) {
@@ -290,7 +297,7 @@ class ErrorBoundary {
         };
 
         const config = messages[level];
-        this.showErrorNotification(config.title, config.text, level, config.duration);
+        this.showToast(config.title, config.text, config.duration);
 
         // Log für Debugging
         console.warn(`📊 Storage ${level}:`, usage);
