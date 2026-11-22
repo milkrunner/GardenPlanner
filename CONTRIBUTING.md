@@ -69,7 +69,7 @@ All standard rules are active, with these documented exceptions:
 - `property-no-vendor-prefix` ignores `-webkit-background-clip`: the gradient text
   pattern (`-webkit-text-fill-color: transparent` plus `background-clip: text`) renders
   invisible text in browsers that only know the prefixed property.
-- `selector-id-pattern` expects the camelCase ids used in the HTML (`#confirmOkBtn`)
+- `selector-id-pattern` expects the camelCase IDs used in the HTML (`#confirmOkBtn`)
   instead of kebab-case. Classes, custom properties and keyframes stay kebab-case.
 
 Do not mass-rewrite `src/css`; re-enable an exception only together with a reviewed
