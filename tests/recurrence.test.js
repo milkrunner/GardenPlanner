@@ -364,3 +364,51 @@ describe('atomicity (#327)', () => {
     expect(readTasks()).toEqual(before);
   });
 });
+
+describe('export and import keep the recurrence links (#327)', () => {
+  test('a restored completed task does not create a second follow-up', async () => {
+    const original = await create({ recurrence: 'daily' });
+    const done = await complete(original.id);
+    const exported = (await request(app).get('/api/export').expect(200)).body;
+    const restored = exported.tasks.find((t) => t.id === original.id);
+    const followUp = exported.tasks.find((t) => t.id === done.body.followUp.id);
+    expect(restored.followUpId).toBe(followUp.id);
+    expect(followUp).toMatchObject({
+      recurrenceOf: original.id,
+      nextDue: done.body.followUp.nextDue,
+      lastRecurrence: done.body.completedAt,
+    });
+
+    fs.writeFileSync(store.TASKS_FILE, '[]');
+    resetCaches();
+    await request(app).post('/api/import').send(exported).expect(200);
+    expect(readTasks().find((t) => t.id === original.id).followUpId).toBe(
+      followUp.id,
+    );
+    await request(app)
+      .put(`/api/tasks/${original.id}`)
+      .send({ status: 'pending' })
+      .expect(200);
+    const again = await complete(original.id);
+    expect(again.body).not.toHaveProperty('followUp');
+    expect(readTasks()).toHaveLength(2);
+  });
+
+  test('malformed link fields make the bundle invalid', async () => {
+    const original = await create({ recurrence: 'daily' });
+    const done = await complete(original.id);
+    const exported = (await request(app).get('/api/export').expect(200)).body;
+    exported.tasks = exported.tasks.map((t) => ({
+      ...t,
+      followUpId: t.followUpId && 'nicht-uuid',
+      nextDue: t.nextDue && 'kein Datum',
+    }));
+    const res = await request(app)
+      .post('/api/import?mode=replace&confirm=replace')
+      .send(exported)
+      .expect(400);
+    expect(res.body.errors.join('\n')).toMatch(/followUpId muss eine UUID/);
+    expect(res.body.errors.join('\n')).toMatch(/nextDue muss ein Datum/);
+    expect(done.body.followUp).toBeDefined();
+  });
+});
