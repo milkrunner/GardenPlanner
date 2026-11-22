@@ -82,23 +82,5 @@
   ],
   "7c8f930f949a6caba349829c080a595ea221486f017f728e1b17ac54b1f793e8": [
     "src/server/validation/task-validator.js"
-  ],
-  "b183deb55c45d44429484edec028a716483364e799c35c255bd103bdc8f93a71": [
-    "tests/encryption-test.html"
-  ],
-  "7dedfbd6559d4042cb61ebe265eec3551c10bfedc83de91ab8865aac27f31f0b": [
-    "tests/error-test.html"
-  ],
-  "e89c436c7c0cc2c6951b813bc5011b70496f47084359743a00bd1a9652dc1344": [
-    "tests/form-test.html"
-  ],
-  "2763c3ffd0cc413d78f5728240a50a668d8b9b1a93b6fc5e2987aeb5c578faba": [
-    "tests/rate-limit-test.html"
-  ],
-  "259dd6fa76a19287683f7ed53ccb3494ec9ccf218a5303875138fce166400292": [
-    "tests/security-test.html"
-  ],
-  "7bc66956a3f718a4bf2852679e7d47aca3c31765dca31e0c85f4ee7b7dd4f978": [
-    "tests/storage-test.html"
   ]
 }

@@ -65,11 +65,8 @@ app.use(limiter);
 app.use('/public', express.static(path.join(PROJECT_ROOT, 'public')));
 app.use('/src', express.static(path.join(PROJECT_ROOT, 'src')));
 
-// #7: /tests/ and /docs/ only in development
-if (process.env.NODE_ENV !== 'production') {
-    app.use('/tests', express.static(path.join(PROJECT_ROOT, 'tests')));
-    app.use('/docs', express.static(path.join(PROJECT_ROOT, 'docs')));
-}
+// #7/#338: tests/ and docs/ are not served (neither in production nor in development):
+// the manual test pages are gone, the documentation is read in the repository.
 
 // HTML page routes (with and without .html extension)
 const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];

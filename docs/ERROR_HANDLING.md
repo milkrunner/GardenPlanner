@@ -23,12 +23,12 @@ Fehlertolerante LocalStorage-Operationen:
 
 ```javascript
 // Lesen mit Fallback
-const tasks = SafeStorage.getItem("tasks", []);
+const tasks = SafeStorage.getItem('tasks', []);
 
 // Schreiben mit Error Handling
-const success = SafeStorage.setItem("tasks", tasksArray);
+const success = SafeStorage.setItem('tasks', tasksArray);
 if (!success) {
-  console.log("Speichern fehlgeschlagen");
+  console.log('Speichern fehlgeschlagen');
 }
 ```
 
@@ -38,10 +38,10 @@ Fehlertolerante DOM-Operationen:
 
 ```javascript
 // QuerySelector mit null-Rückgabe statt Error
-const element = SafeDOM.querySelector("#myElement");
+const element = SafeDOM.querySelector('#myElement');
 
 // Event Listener mit automatischem Error Handling
-SafeDOM.addEventListener(button, "click", handleClick);
+SafeDOM.addEventListener(button, 'click', handleClick);
 ```
 
 #### safeExecute / safeAsync
@@ -107,8 +107,8 @@ Alle Fehler werden geloggt:
 Registriere Custom Callbacks für Fehlertypen:
 
 ```javascript
-errorBoundary.onError("storage", (error) => {
-  console.log("Storage Fehler:", error);
+errorBoundary.onError('storage', (error) => {
+  console.log('Storage Fehler:', error);
   // Custom Handling
 });
 ```
@@ -121,10 +121,10 @@ Die Anwendung verwendet automatisch SafeStorage:
 
 ```javascript
 // Alte Version (unsicher):
-localStorage.setItem("tasks", JSON.stringify(tasks));
+localStorage.setItem('tasks', JSON.stringify(tasks));
 
 // Neue Version (sicher):
-SafeStorage.setItem("tasks", tasks);
+SafeStorage.setItem('tasks', tasks);
 ```
 
 ### Eigene Funktionen schützen
@@ -148,9 +148,9 @@ const myAsyncFn = safeAsync(async () => {
 ```javascript
 // Fehler-Statistiken
 const stats = errorBoundary.getErrorStats();
-console.log("Gesamt:", stats.total);
-console.log("Nach Typ:", stats.byType);
-console.log("Letzte 5:", stats.recent);
+console.log('Gesamt:', stats.total);
+console.log('Nach Typ:', stats.byType);
+console.log('Letzte 5:', stats.recent);
 
 // Alle Fehler
 const errors = errorBoundary.getErrors();
@@ -171,19 +171,14 @@ errorBoundary.clearErrors();
 
 ## Testing
 
-Teste das Error Handling mit `error-test.html`:
+Das Error Handling wird mit Jest/jsdom getestet (`npm run test:frontend`,
+`tests/frontend-error-handler.test.js`). Die Tests decken ab:
 
-<http://localhost:8000/error-test.html>
-
-Features:
-
-- Runtime Error Tests
-- Storage Error Tests
-- Async Error Tests
-- DOM Error Tests
-- Recovery Tests
-- Callback Tests
-- Error Statistics
+- Fehlerprotokoll, Statistik und Callbacks
+- Storage-Überwachung und Quota-Prüfung
+- `safeExecute`/`safeAsync` (Async-Fehler)
+- `SafeStorage` und `SafeDOM`
+- Recovery nach Speicher- und Datenfehlern
 
 ## Best Practices
 
@@ -217,20 +212,20 @@ const loadData = safeAsync(async () => {
 
 ```javascript
 // ❌ Nicht:
-const element = document.querySelector("#myId");
-element.addEventListener("click", handler);
+const element = document.querySelector('#myId');
+element.addEventListener('click', handler);
 
 // ✅ Sondern:
-const element = SafeDOM.querySelector("#myId");
+const element = SafeDOM.querySelector('#myId');
 if (element) {
-  SafeDOM.addEventListener(element, "click", handler);
+  SafeDOM.addEventListener(element, 'click', handler);
 }
 ```
 
 ### 4. Callbacks für Custom Handling
 
 ```javascript
-errorBoundary.onError("storage", (error) => {
+errorBoundary.onError('storage', (error) => {
   // Zeige UI-Hinweis
   showStorageWarning();
 });
@@ -277,7 +272,7 @@ errorBoundary.isProduction = true;
 Für Production-Umgebungen kann das Logging erweitert werden:
 
 ```javascript
-errorBoundary.onError("runtime", (error) => {
+errorBoundary.onError('runtime', (error) => {
   // Sende an Monitoring-Service
   sendToSentry(error);
   sendToLogRocket(error);
@@ -309,7 +304,7 @@ errorBoundary.onError("runtime", (error) => {
 ## Dateien
 
 - `error-handler.js` - Error Boundary Implementation
-- `error-test.html` - Test Suite
+- `tests/frontend-error-handler.test.js` - Jest-Tests
 - `styles.css` - Error Toast Styles (`.error-toast`)
 - `app.js` - Integration mit SafeStorage
 

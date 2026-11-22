@@ -51,10 +51,10 @@ Die Verschlüsselung erfolgt **automatisch** beim Verwenden von `SafeStorage`:
 
 ```javascript
 // Daten speichern - wird automatisch verschlüsselt
-await SafeStorage.setItem("gartenplaner_tasks", tasks);
+await SafeStorage.setItem('gartenplaner_tasks', tasks);
 
 // Daten laden - wird automatisch entschlüsselt
-const tasks = await SafeStorage.getItem("gartenplaner_tasks", []);
+const tasks = await SafeStorage.getItem('gartenplaner_tasks', []);
 ```
 
 **Wichtig**: `SafeStorage.setItem()` und `getItem()` sind jetzt **async** und geben Promises zurück!
@@ -66,8 +66,8 @@ Für spezielle Anwendungsfälle kann die Verschlüsselung auch direkt verwendet 
 ```javascript
 // Daten verschlüsseln
 const encrypted = await window.dataEncryption.encrypt({
-  name: "Vertraulich",
-  data: "Geheime Information",
+  name: 'Vertraulich',
+  data: 'Geheime Information',
 });
 
 // Daten entschlüsseln
@@ -121,7 +121,7 @@ const keyData = await window.dataEncryption.exportKey();
 
 // Verschlüsselter Export mit Passwort (empfohlen)
 const keyData = await window.dataEncryption.exportKey(
-  "MeinSicheresPasswort123!"
+  'MeinSicheresPasswort123!',
 );
 ```
 
@@ -136,7 +136,7 @@ await window.dataEncryption.importKeyFromBackup(keyData);
 // Import aus verschlüsseltem Backup
 await window.dataEncryption.importKeyFromBackup(
   keyData,
-  "MeinSicheresPasswort123!"
+  'MeinSicheresPasswort123!',
 );
 ```
 
@@ -185,10 +185,10 @@ Alte unverschlüsselte Daten werden beim ersten Zugriff automatisch verschlüsse
 
 ```javascript
 // Alte Daten laden
-const oldTasks = localStorage.getItem("gartenplaner_tasks");
+const oldTasks = localStorage.getItem('gartenplaner_tasks');
 
 // Mit SafeStorage neu speichern - wird verschlüsselt
-await SafeStorage.setItem("gartenplaner_tasks", JSON.parse(oldTasks));
+await SafeStorage.setItem('gartenplaner_tasks', JSON.parse(oldTasks));
 ```
 
 ## Security Best Practices
@@ -199,7 +199,7 @@ await SafeStorage.setItem("gartenplaner_tasks", JSON.parse(oldTasks));
 2. **Exportiere Keys regelmäßig** für Backups
 3. **Verschlüssele Key-Backups** mit starkem Passwort
 4. **Rotiere Keys periodisch** (6-12 Monate)
-5. **Teste Verschlüsselung** mit encryption-test.html
+5. **Teste Verschlüsselung** mit `npm run test:frontend` (`tests/frontend-encryption.test.js`)
 6. **Überprüfe Browser-Support** vor kritischen Operationen
 
 ### ❌ Don'ts
@@ -214,10 +214,11 @@ await SafeStorage.setItem("gartenplaner_tasks", JSON.parse(oldTasks));
 
 ### Automatische Tests
 
-Öffne `encryption-test.html` im Browser:
+`tests/frontend-encryption.test.js` läuft mit Jest (`npm run test:frontend`) gegen das echte
+`encryption.js` in jsdom (Web Crypto aus Node, Schlüsselspeicher als Attrappe):
 
-```bash
-# Tests umfassen:
+```text
+Tests umfassen:
 - Text verschlüsseln/entschlüsseln
 - JSON-Objekte verschlüsseln
 - Arrays verschlüsseln
@@ -232,12 +233,12 @@ await SafeStorage.setItem("gartenplaner_tasks", JSON.parse(oldTasks));
 ```javascript
 // Test in Browser Console
 const test = async () => {
-  const original = { test: "data", value: 123 };
+  const original = { test: 'data', value: 123 };
   const encrypted = await window.dataEncryption.encrypt(original);
   const decrypted = await window.dataEncryption.decrypt(encrypted);
   console.log(
-    "Erfolg:",
-    JSON.stringify(original) === JSON.stringify(decrypted)
+    'Erfolg:',
+    JSON.stringify(original) === JSON.stringify(decrypted),
   );
 };
 test();
@@ -281,7 +282,7 @@ test();
 
 **Lösung**:
 
-1. Storage-Monitoring prüfen (storage-test.html)
+1. Storage-Monitoring prüfen (`tests/frontend-error-handler.test.js`, `getStorageUsage()` in der Konsole)
 2. Alte Daten archivieren oder löschen
 3. Key-Rotation durchführen (kompaktere Keys)
 
@@ -355,8 +356,8 @@ window.dataEncryption.debug = true;
 console.log(window.dataEncryption.getStatus());
 
 // Prüfe verschlüsselte Daten
-const raw = localStorage.getItem("gartenplaner_tasks");
-console.log("Verschlüsselt:", JSON.parse(raw));
+const raw = localStorage.getItem('gartenplaner_tasks');
+console.log('Verschlüsselt:', JSON.parse(raw));
 ```
 
 ## Zukünftige Erweiterungen
@@ -379,7 +380,7 @@ console.log("Verschlüsselt:", JSON.parse(raw));
 Bei Fragen oder Problemen:
 
 1. Prüfe diese Dokumentation
-2. Teste mit encryption-test.html
+2. Teste mit `npm run test:frontend`
 3. Überprüfe Browser-Console auf Fehler
 4. Öffne ein Issue im Repository
 
