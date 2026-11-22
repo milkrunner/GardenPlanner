@@ -2,6 +2,23 @@
 // Extends GartenPlaner.prototype - must be loaded AFTER app.js defines the class.
 // Do NOT add defer or async to script tags.
 
+// Fehlermeldung unter einem Formularfeld (Element `<id>Error` mit role="alert"); leere Meldung räumt auf.
+GartenPlaner.prototype._setFieldError = (inputId, message) => {
+	var input = document.getElementById(inputId);
+	var error = document.getElementById(inputId + "Error");
+	if (!input || !error) return;
+	error.textContent = message || "";
+	error.classList.toggle("visible", Boolean(message));
+	input.classList.toggle("invalid", Boolean(message));
+	if (message) {
+		input.setAttribute("aria-invalid", "true");
+		input.setAttribute("aria-describedby", error.id);
+	} else {
+		input.removeAttribute("aria-invalid");
+		input.removeAttribute("aria-describedby");
+	}
+};
+
 GartenPlaner.prototype.addTask = async function () {
 	const submitBtn = document.querySelector(
 		'#taskForm button[type="submit"], #taskForm .btn-primary',
@@ -28,6 +45,8 @@ GartenPlaner.prototype.addTask = async function () {
 			}
 		}
 
+		this._setFieldError("taskDueDate", "");
+		const dueDateInput = document.getElementById("taskDueDate");
 		const taskData = {
 			title: Security.sanitizeText(document.getElementById("taskTitle").value),
 			employee: Security.sanitizeText(
@@ -39,11 +58,22 @@ GartenPlaner.prototype.addTask = async function () {
 			description: Security.sanitizeText(
 				document.getElementById("taskDescription").value,
 			),
+			dueDate: dueDateInput && dueDateInput.value ? dueDateInput.value : null,
 			status: "pending",
 		};
 
 		const validation = Security.validateTask(taskData);
 		if (!validation.valid) {
+			if (
+				taskData.dueDate &&
+				!Security.validateInput.dueDate(taskData.dueDate)
+			) {
+				this._setFieldError(
+					"taskDueDate",
+					"Bitte ein gültiges Datum zwischen 2000 und 2100 wählen.",
+				);
+				if (dueDateInput) dueDateInput.focus();
+			}
 			this.showNotification("\u274c " + validation.errors.join(", "), "error");
 			Security.logSecurityEvent(
 				"warning",
@@ -241,6 +271,8 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		const oldEmployee = task.employee;
 		const oldLocation = task.location;
 		const oldDescription = task.description;
+		const oldDueDate = task.dueDate || null;
+		const editDueDate = document.getElementById("editTaskDueDate");
 		const taskData = {
 			title: Security.sanitizeText(
 				document.getElementById("editTaskTitle").value,
@@ -254,6 +286,7 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 			description: Security.sanitizeText(
 				document.getElementById("editTaskDescription").value,
 			),
+			dueDate: editDueDate && editDueDate.value ? editDueDate.value : null,
 			status: task.status,
 		};
 		const validation = Security.validateTask(taskData);
@@ -273,6 +306,7 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		task.employee = taskData.employee;
 		task.location = taskData.location;
 		task.description = taskData.description;
+		task.dueDate = taskData.dueDate;
 		const changes = [];
 		if (oldTitle !== task.title)
 			changes.push(`Titel: "${oldTitle}" \u2192 "${task.title}"`);
@@ -282,6 +316,12 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 			changes.push(`Standort: "${oldLocation}" \u2192 "${task.location}"`);
 		if (oldDescription !== task.description)
 			changes.push("Beschreibung ge\u00e4ndert");
+		if (oldDueDate !== task.dueDate) {
+			const dueLabel = (value) => (value ? `"${value}"` : "kein Termin");
+			changes.push(
+				`F\u00e4lligkeit: ${dueLabel(oldDueDate)} \u2192 ${dueLabel(task.dueDate)}`,
+			);
+		}
 		if (this.useAPI) {
 			await TaskAPI.updateTask(id, taskData);
 		} else if (changes.length > 0) {

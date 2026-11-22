@@ -67,6 +67,24 @@ const Security = {
 			return date instanceof Date && !isNaN(date);
 		},
 
+		// Fälligkeitsdatum: reines Datum YYYY-MM-DD wie auf dem Server (#344),
+		// echtes Kalenderdatum zwischen 2000-01-01 und 2100-12-31.
+		dueDate(value) {
+			const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+			if (!match) return false;
+			const year = Number(match[1]);
+			const month = Number(match[2]);
+			const day = Number(match[3]);
+			const date = new Date(Date.UTC(year, month - 1, day));
+			return (
+				date.getUTCFullYear() === year &&
+				date.getUTCMonth() === month - 1 &&
+				date.getUTCDate() === day &&
+				year >= 2000 &&
+				year <= 2100
+			);
+		},
+
 		// Select-Option validieren
 		option(value, allowedValues) {
 			return allowedValues.includes(value);
@@ -118,8 +136,10 @@ const Security = {
 		}
 
 		// Datum
-		if (taskData.dueDate && !this.validateInput.date(taskData.dueDate)) {
-			errors.push("Ungültiges Fälligkeitsdatum");
+		if (taskData.dueDate && !this.validateInput.dueDate(taskData.dueDate)) {
+			errors.push(
+				"Ungültiges Fälligkeitsdatum (JJJJ-MM-TT, zwischen 2000 und 2100)",
+			);
 		}
 
 		// Status

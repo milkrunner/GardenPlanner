@@ -51,6 +51,10 @@
             <h3>Aktive Mitarbeiter</h3>
             <p class="stat-number" id="statEmployees">0</p>
           </div>
+          <div class="stat-card">
+            <h3>Überfällige Aufgaben</h3>
+            <p class="stat-number" id="statOverdue">0</p>
+          </div>
         </section>
 
         <!-- Wettervorhersage -->
@@ -132,6 +136,23 @@
                 <option value="">Alle Status</option>
                 <option value="pending">Ausstehend</option>
                 <option value="completed">Erledigt</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filterDue">Nach Fälligkeit:</label>
+              <select id="filterDue">
+                <option value="">Alle Termine</option>
+                <option value="overdue">Überfällig</option>
+                <option value="today">Heute fällig</option>
+                <option value="week">Nächste 7 Tage</option>
+                <option value="none">Ohne Termin</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="sortTasks">Sortierung:</label>
+              <select id="sortTasks">
+                <option value="manual">Manuell</option>
+                <option value="dueDate">Nach Fälligkeit</option>
               </select>
             </div>
           </div>
@@ -336,6 +357,15 @@
           <div class="form-group">
             <label for="editTaskLocation">Standort *</label>
             <input type="text" id="editTaskLocation" required />
+          </div>
+          <div class="form-group">
+            <label for="editTaskDueDate">Fällig am (optional)</label>
+            <input
+              type="date"
+              id="editTaskDueDate"
+              min="2000-01-01"
+              max="2100-12-31"
+            />
           </div>
           <div class="form-group">
             <label for="editTaskDescription">Beschreibung</label>

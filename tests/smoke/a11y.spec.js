@@ -45,6 +45,24 @@ async function seed(request) {
     },
   });
   expect(done.status()).toBe(201);
+  // Fälligkeiten (#346): überfällig, heute, später und erledigt mit Datum, damit axe jede Darstellung prüft.
+  const now = new Date();
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+  for (const [title, employee, dueDate, status] of [
+    ['Frist überfällig', 'Eva', '2020-01-01', 'pending'],
+    ['Frist heute', 'Tom', today, 'pending'],
+    ['Frist später', 'Uli', '2099-12-31', 'in-progress'],
+    ['Frist erledigt', 'Zoe', '2020-02-02', 'completed'],
+  ]) {
+    const res = await request.post(`${app.baseURL}/api/tasks`, {
+      data: { title, employee, location: 'Beet', dueDate, status },
+    });
+    expect(res.status()).toBe(201);
+  }
 }
 
 async function openPage(page, name, theme = 'light') {

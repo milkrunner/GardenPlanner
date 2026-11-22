@@ -38,6 +38,29 @@ GartenPlaner.prototype.setupEventListeners = function () {
 		});
 	}
 
+	const filterDue = document.getElementById("filterDue");
+	if (filterDue) {
+		filterDue.addEventListener("change", (e) => {
+			this.currentFilter.due = e.target.value;
+			this.renderTasks();
+		});
+	}
+
+	const sortTasks = document.getElementById("sortTasks");
+	if (sortTasks) {
+		sortTasks.addEventListener("change", (e) => {
+			this.sortBy = e.target.value === "dueDate" ? "dueDate" : "manual";
+			this.renderTasks();
+		});
+	}
+
+	const dueDateInput = document.getElementById("taskDueDate");
+	if (dueDateInput) {
+		dueDateInput.addEventListener("input", () => {
+			this._setFieldError("taskDueDate", "");
+		});
+	}
+
 	// Suchfunktion
 	const searchInput = document.getElementById("searchInput");
 	if (searchInput) {
@@ -235,6 +258,8 @@ GartenPlaner.prototype.openEditModal = function (id) {
 	document.getElementById("editTaskEmployee").value = task.employee;
 	document.getElementById("editTaskLocation").value = task.location || "";
 	document.getElementById("editTaskDescription").value = task.description || "";
+	const editDueDate = document.getElementById("editTaskDueDate");
+	if (editDueDate) editDueDate.value = task.dueDate || "";
 
 	// Subtasks rendern
 	this.renderSubtasksInModal(task);

@@ -11,7 +11,9 @@ class GartenPlaner {
 			employee: "",
 			location: "",
 			status: "",
+			due: "",
 		};
+		this.sortBy = "manual";
 		this.searchQuery = "";
 		this.currentView = "list";
 		this.draggedTaskId = null;
