@@ -61,12 +61,8 @@ async function openPage(page, name, theme = 'light') {
   await page.waitForLoadState('networkidle');
 }
 
-// Dark-theme color contrast (.btn, #clearBtn, completed cards) is known design debt
-// tracked separately; every other rule is enforced in both themes.
+// Every axe rule, including color contrast, is enforced in both themes.
 async function axeViolations(page) {
-  const skipContrast = await page.evaluate(
-    () => document.documentElement.dataset.theme === 'dark',
-  );
   // Let entrance animations finish: mid-fade colors yield false contrast results.
   await page.evaluate(() =>
     Promise.all(
@@ -77,16 +73,13 @@ async function axeViolations(page) {
     ),
   );
   await page.evaluate(AXE);
-  const result = await page.evaluate(
-    (skip) =>
-      window.axe.run(document, {
-        runOnly: {
-          type: 'tag',
-          values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'],
-        },
-        rules: skip ? { 'color-contrast': { enabled: false } } : {},
-      }),
-    skipContrast,
+  const result = await page.evaluate(() =>
+    window.axe.run(document, {
+      runOnly: {
+        type: 'tag',
+        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'],
+      },
+    }),
   );
   return result.violations.map(
     (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
@@ -185,6 +178,11 @@ test('confirm dialog: focus lands on cancel, Tab is trapped, Escape keeps the ta
   const dialog = page.getByRole('alertdialog');
   await expect(dialog).toBeVisible();
   await expect(page.locator('#confirmCancelBtn')).toBeFocused();
+  // Regression: the confirm button once used an undefined variable and was transparent.
+  await expect(page.locator('#confirmOkBtn')).not.toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0)',
+  );
   for (let i = 0; i < 6; i++) {
     await page.keyboard.press('Tab');
     expect(
