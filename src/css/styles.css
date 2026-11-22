@@ -749,6 +749,8 @@ textarea {
 
 [data-theme='dark'] .btn-primary {
   background: var(--primary);
+  /* Heller Hintergrund: dunkler Text erreicht WCAG-AA-Kontrast, weißer nur 1,7:1 */
+  color: #052e16;
   box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
 }
 
@@ -791,6 +793,8 @@ textarea {
 }
 
 [data-theme='dark'] .btn-danger {
+  /* Heller Hintergrund: dunkler Text erreicht WCAG-AA-Kontrast, weißer nur 2,8:1 */
+  color: #450a0a;
   box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
 }
 
@@ -799,6 +803,7 @@ textarea {
 }
 
 [data-theme='dark'] .btn-danger:hover {
+  background: #fca5a5; /* bleibt hell, damit der dunkle Text lesbar bleibt */
   box-shadow: 0 6px 16px rgba(248, 113, 113, 0.4);
 }
 
@@ -2678,7 +2683,7 @@ main > section > h2::after {
 
 [data-theme='dark'] .task-card.completed {
   background: var(--bg-secondary);
-  opacity: 0.75;
+  opacity: 0.82; /* Meta-Text braucht 4.5:1 (axe-geprüft); bei 0.75 nur 4.37:1 */
 }
 
 .task-card.selected {
@@ -3515,13 +3520,24 @@ footer {
 
 .modal-actions .btn-danger,
 #confirmOkBtn.btn-danger {
-  background-color: var(--danger-color);
+  /* --danger-color war nie definiert: der Button war transparent */
+  background-color: var(--danger);
   color: white;
 }
 
 .modal-actions .btn-danger:hover,
 #confirmOkBtn.btn-danger:hover {
   background-color: #c0392b;
+}
+
+[data-theme='dark'] .modal-actions .btn-danger,
+[data-theme='dark'] #confirmOkBtn.btn-danger {
+  color: #450a0a; /* heller Hintergrund im Dark-Theme, siehe .btn-danger */
+}
+
+[data-theme='dark'] .modal-actions .btn-danger:hover,
+[data-theme='dark'] #confirmOkBtn.btn-danger:hover {
+  background-color: #fca5a5;
 }
 
 /* Responsive */
