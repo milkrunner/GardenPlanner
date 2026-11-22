@@ -70,6 +70,7 @@ function normalizeTask(raw, label, errors) {
             errors.push(`${label}: ${field} muss eine UUID v4 sein`);
         }
     }
+    // `nextDue` ist das Altfeld vor `dueDate` (#344): wird nicht mehr geschrieben, bleibt aber lesbar erhalten.
     for (const field of ['lastRecurrence', 'nextDue']) {
         if (raw[field] !== undefined && !isDateString(raw[field])) {
             errors.push(`${label}: ${field} muss ein Datum (ISO 8601) sein`);
@@ -94,6 +95,8 @@ function normalizeTask(raw, label, errors) {
         recurrence: clean.recurrence || 'none',
         createdAt: raw.createdAt,
     };
+    // Ältere Bündel ohne dueDate bleiben gültig und bekommen es nicht ergänzt.
+    if (clean.dueDate !== undefined) task.dueDate = clean.dueDate;
     if (raw.completedAt !== undefined) task.completedAt = raw.completedAt;
     if (raw.archivedAt !== undefined) task.archivedAt = raw.archivedAt;
     if (raw.sortOrder !== undefined) task.sortOrder = raw.sortOrder;

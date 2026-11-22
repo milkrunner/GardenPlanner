@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const { audit } = require('../logger');
-const { validateTask, sanitizeTaskData } = require('../validation/task-validator');
+const { validateTask, sanitizeTaskData, applyDueFilter } = require('../validation/task-validator');
 const {
     readTasks,
     readArchivedTasks,
@@ -10,7 +10,7 @@ const {
     writeTasks,
     writeArchivedTasks,
 } = require('../storage/json-store');
-const { calculateNextDue, isRecurring } = require('./recurrence');
+const { calculateNextDueDate, isRecurring } = require('./recurrence');
 
 // --- Pagination helper ---
 
@@ -33,7 +33,10 @@ function paginate(tasks, query) {
 
 // --- Task CRUD operations ---
 
-function listTasks(query) {
+// `dueFilter` kommt aus parseDueFilter (Route prüft vorher und antwortet bei Fehlern mit 400).
+const NO_DUE_FILTER = { dueFrom: null, dueTo: null, sort: null };
+
+function listTasks(query, dueFilter = NO_DUE_FILTER) {
     let tasks = readTasks();
 
     // Only allow non-sensitive filter via query param
@@ -45,11 +48,12 @@ function listTasks(query) {
         }
     }
 
+    tasks = applyDueFilter(tasks, dueFilter);
     const paginated = paginate(tasks, query);
     return paginated || tasks;
 }
 
-function searchTasks(body) {
+function searchTasks(body, dueFilter = NO_DUE_FILTER) {
     let tasks = readTasks();
     const { status, employee, location, page, limit } = body;
 
@@ -66,6 +70,7 @@ function searchTasks(body) {
         tasks = tasks.filter((t) => t.location === location.trim());
     }
 
+    tasks = applyDueFilter(tasks, dueFilter);
     const paginated = paginate(tasks, { page, limit });
     return paginated || tasks;
 }
@@ -92,6 +97,7 @@ async function createTask(body) {
         status: sanitized.status || 'pending',
         priority: sanitized.priority || 'medium',
         recurrence: sanitized.recurrence || 'none',
+        dueDate: sanitized.dueDate || null,
         createdAt: new Date().toISOString(),
         history: [
             {
@@ -101,6 +107,7 @@ async function createTask(body) {
                     title: sanitized.title,
                     employee: sanitized.employee,
                     location: sanitized.location,
+                    ...(sanitized.dueDate ? { dueDate: sanitized.dueDate } : {}),
                 },
             },
         ],
@@ -124,8 +131,9 @@ async function createTask(body) {
 }
 
 // Folgeaufgabe einer wiederholenden Aufgabe (#327). Reine Funktion: verändert weder `task` noch den Speicher,
-// damit sie vor dem Schreibvorgang gefahrlos aufgerufen werden kann. Fälligkeit (`nextDue`) = Abschlusszeit + Intervall
-// (31. Jan + 1 Monat = Monatsende). Unterpunkte starten wieder offen, `history` beginnt neu.
+// damit sie vor dem Schreibvorgang gefahrlos aufgerufen werden kann. Fälligkeit (`dueDate`, #344): altes Datum +
+// Intervall, siehe calculateNextDueDate (Monatsende begrenzt). Das frühere Feld `nextDue` wird nicht mehr
+// geschrieben, damit es keine zweite Wahrheit neben `dueDate` gibt. Unterpunkte starten wieder offen, `history` beginnt neu.
 function buildFollowUpTask(task, completedAt) {
     const now = new Date().toISOString();
     return {
@@ -141,7 +149,7 @@ function buildFollowUpTask(task, completedAt) {
         createdAt: now,
         recurrenceOf: task.id,
         lastRecurrence: completedAt,
-        nextDue: calculateNextDue(task.recurrence, completedAt),
+        dueDate: calculateNextDueDate(task.recurrence, task.dueDate, completedAt),
         history: [
             {
                 timestamp: now,
@@ -221,6 +229,11 @@ async function updateTask(id, body) {
             task.history.push(statusEntry);
             completing = sanitized.status === 'completed';
         }
+        if (sanitized.dueDate !== undefined && sanitized.dueDate !== (task.dueDate ?? null)) {
+            const label = (value) => (value ? `"${value}"` : 'kein Termin');
+            changes.push(`F\u00e4lligkeit: ${label(task.dueDate)} \u2192 ${label(sanitized.dueDate)}`);
+            task.dueDate = sanitized.dueDate;
+        }
         if (sanitized.priority !== undefined) task.priority = sanitized.priority;
         if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
         if (sanitized.subtasks !== undefined) {
@@ -262,7 +275,7 @@ async function updateTask(id, body) {
             taskId: result.task.id,
             followUpId: result.followUp.id,
             recurrence: result.task.recurrence,
-            nextDue: result.followUp.nextDue,
+            dueDate: result.followUp.dueDate,
         });
     }
     return { error: false, task: result.task, followUp: result.followUp };

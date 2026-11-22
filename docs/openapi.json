@@ -63,7 +63,7 @@
       "get": {
         "tags": ["Tasks"],
         "summary": "Aufgaben auflisten",
-        "description": "Ohne `page`/`limit` kommt ein reines Array (abwärtskompatibel), mit mindestens einem der beiden ein Seitenobjekt. Ein unbekannter `status` wird ignoriert. `employee` und `location` werden mit 400 abgelehnt (Query-Strings landen in Logs); dafür gibt es `POST /api/tasks/search`.",
+        "description": "Ohne `page`/`limit` kommt ein reines Array (abwärtskompatibel), mit mindestens einem der beiden ein Seitenobjekt. Ein unbekannter `status` wird ignoriert. `employee` und `location` werden mit 400 abgelehnt (Query-Strings landen in Logs); dafür gibt es `POST /api/tasks/search`. `dueFrom`/`dueTo` (inklusive) filtern nach Fälligkeit, `sort=dueDate` sortiert aufsteigend (ohne Termin zuletzt, vor der Pagination); ungültige Werte ergeben 400.",
         "security": [
           {
             "ApiKey": []
@@ -75,6 +75,33 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/Status"
+            }
+          },
+          {
+            "name": "dueFrom",
+            "in": "query",
+            "description": "Nur Aufgaben mit Fälligkeit ab diesem Tag (inklusive, `YYYY-MM-DD`). Aufgaben ohne Termin fallen heraus.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "dueTo",
+            "in": "query",
+            "description": "Nur Aufgaben mit Fälligkeit bis zu diesem Tag (inklusive, `YYYY-MM-DD`).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sortierung nach Fälligkeit, aufsteigend; Aufgaben ohne Termin stehen zuletzt.",
+            "schema": {
+              "type": "string",
+              "enum": ["dueDate"]
             }
           },
           {
@@ -178,7 +205,7 @@
       "post": {
         "tags": ["Tasks"],
         "summary": "Aufgaben filtern (Body)",
-        "description": "Alle Felder optional und per UND verknüpft; Vergleich exakt nach Mitarbeiter/Standort. Pagination wie bei `GET /api/tasks`.",
+        "description": "Alle Felder optional und per UND verknüpft; Vergleich exakt nach Mitarbeiter/Standort. Pagination wie bei `GET /api/tasks`. Zusätzlich `dueFrom`, `dueTo` und `sort` wie bei `GET /api/tasks`; ungültige Werte ergeben 400.",
         "security": [
           {
             "ApiKey": []
@@ -214,6 +241,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1053,7 +1083,7 @@
       "Recurrence": {
         "type": "string",
         "enum": ["none", "daily", "weekly", "monthly"],
-        "description": "Wiederholung. Beim Wechsel einer Aufgabe auf `completed` erzeugt der Server die Folgeaufgabe (`daily`: +1 Tag, `weekly`: +7 Tage, `monthly`: +1 Monat, begrenzt auf das Monatsende)."
+        "description": "Wiederholung. Beim Wechsel einer Aufgabe auf `completed` erzeugt der Server die Folgeaufgabe (`daily`: +1 Tag, `weekly`: +7 Tage, `monthly`: +1 Monat, begrenzt auf das Monatsende) mit neuem `dueDate`."
       },
       "SubtaskInput": {
         "oneOf": [
@@ -1148,6 +1178,9 @@
           "recurrence": {
             "$ref": "#/components/schemas/Recurrence"
           },
+          "dueDate": {
+            "$ref": "#/components/schemas/DueDate"
+          },
           "subtasks": {
             "type": "array",
             "maxItems": 50,
@@ -1211,6 +1244,9 @@
           "recurrence": {
             "$ref": "#/components/schemas/Recurrence"
           },
+          "dueDate": {
+            "$ref": "#/components/schemas/DueDate"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -1257,7 +1293,8 @@
           "nextDue": {
             "type": "string",
             "format": "date-time",
-            "description": "Nur an Folgeaufgaben: Fälligkeit = Abschlusszeit der Vorgängerin plus Intervall (Monatsende begrenzt, UTC)."
+            "deprecated": true,
+            "description": "Veraltet: Altfeld aus der Zeit vor `dueDate` (Abschlusszeit der Vorgängerin plus Intervall). Wird nicht mehr geschrieben und von keiner Logik ausgewertet, bleibt aber in alten Daten und beim Import erhalten. Maßgeblich ist `dueDate`."
           }
         }
       },
@@ -1321,6 +1358,21 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 200
+          },
+          "dueFrom": {
+            "type": "string",
+            "format": "date",
+            "description": "Nur Aufgaben mit `dueDate` ab diesem Tag (inklusive). Aufgaben ohne Termin fallen heraus."
+          },
+          "dueTo": {
+            "type": "string",
+            "format": "date",
+            "description": "Nur Aufgaben mit `dueDate` bis zu diesem Tag (inklusive)."
+          },
+          "sort": {
+            "type": "string",
+            "enum": ["dueDate"],
+            "description": "Sortierung nach Fälligkeit aufsteigend, Aufgaben ohne Termin zuletzt."
           }
         }
       },
@@ -1659,6 +1711,16 @@
             }
           }
         ]
+      },
+      "DueDate": {
+        "type": "string",
+        "format": "date",
+        "nullable": true,
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+        "minLength": 10,
+        "maxLength": 10,
+        "example": "2026-03-15",
+        "description": "Fälligkeitsdatum als reines Kalenderdatum `YYYY-MM-DD` ohne Uhrzeit und Zeitzone (2000-01-01 bis 2100-12-31, echtes Datum). `null` oder fehlend heißt „ohne Termin“; per `PUT` entfernt `null` das Datum."
       }
     }
   }

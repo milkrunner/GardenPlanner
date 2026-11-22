@@ -43,8 +43,34 @@ function calculateNextDue(recurrence, fromDate = new Date()) {
     }
 }
 
+function formatDate(date) {
+    return date.toISOString().slice(0, 10);
+}
+
+// Datum `YYYY-MM-DD` plus Intervall als `YYYY-MM-DD` (reines Kalenderdatum, UTC); null für `none`/ungültig.
+function addIntervalToDate(recurrence, dateString) {
+    const from = new Date(`${dateString}T00:00:00.000Z`);
+    if (typeof dateString !== 'string' || Number.isNaN(from.getTime())) return null;
+    const next = calculateNextDue(recurrence, from);
+    return next ? formatDate(new Date(next)) : null;
+}
+
+// Fälligkeitsdatum der Folgeaufgabe (#344): altes Fälligkeitsdatum plus Intervall hält den Rhythmus
+// (31. Jan + 1 Monat = Monatsende). Ohne altes Datum gilt der Abschlusstag (UTC) plus Intervall. Läge das Ergebnis
+// nicht nach dem Abschlusstag (verspätet erledigt), zählt ebenfalls Abschlusstag plus Intervall, damit die
+// Folgeaufgabe nicht sofort überfällig ist.
+function calculateNextDueDate(recurrence, previousDueDate, completedAt) {
+    const completed = new Date(completedAt);
+    if (Number.isNaN(completed.getTime())) return null;
+    const completionDay = formatDate(completed);
+    const fromCompletion = addIntervalToDate(recurrence, completionDay);
+    if (!previousDueDate) return fromCompletion;
+    const fromPrevious = addIntervalToDate(recurrence, previousDueDate);
+    return fromPrevious && fromPrevious > completionDay ? fromPrevious : fromCompletion;
+}
+
 function isRecurring(recurrence) {
     return RECURRENCES.includes(recurrence);
 }
 
-module.exports = { RECURRENCES, calculateNextDue, addMonthsClamped, isRecurring };
+module.exports = { RECURRENCES, calculateNextDue, calculateNextDueDate, addMonthsClamped, isRecurring };

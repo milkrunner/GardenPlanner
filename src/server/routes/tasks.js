@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/async-handler');
-const { validateIdParam } = require('../validation/task-validator');
+const { validateIdParam, parseDueFilter } = require('../validation/task-validator');
 const { listTasks, searchTasks, getTask, createTask, updateTask, deleteTask } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
@@ -16,12 +16,16 @@ router.get('/', (req, res) => {
             error: 'Filters employee and location are not supported on GET /api/tasks. Use POST /api/tasks/search.',
         });
     }
-    res.json(listTasks(req.query));
+    const due = parseDueFilter(req.query);
+    if (!due.valid) return res.status(400).json({ error: due.errors.join('; ') });
+    res.json(listTasks(req.query, due.filter));
 });
 
 // POST /api/tasks/search - Filter tasks with sensitive criteria via request body
 router.post('/search', (req, res) => {
-    res.json(searchTasks(req.body));
+    const due = parseDueFilter(req.body);
+    if (!due.valid) return res.status(400).json({ error: due.errors.join('; ') });
+    res.json(searchTasks(req.body, due.filter));
 });
 
 // GET /api/tasks/:id - Get single task

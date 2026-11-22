@@ -11,6 +11,8 @@
   (`backup-service.js`, under the tasks/archive locks plus a plants lock; see [BACKUP.md](BACKUP.md)).
   `recurrence.js` computes follow-up due dates (UTC, month end clamped); `task-service.js` creates the
   follow-up of a recurring task in the same locked write as the status change to `completed` (#327).
+  Tasks carry an optional `dueDate` (`YYYY-MM-DD`, no time or zone, #344); it is the only due date, so the
+  follow-up gets the old `dueDate` plus the interval and the former `nextDue` is no longer written.
 - `validation/task-validator.js`, `validation/plant-validator.js`: validation and sanitization.
   `backup-validator.js` checks import bundles with the same task rules.
 - `storage/json-store.js`: JSON task/archive persistence, caching and

@@ -9,11 +9,31 @@ function validateIdParam(req, res, next) {
     next();
 }
 
+// Fälligkeitsdatum (#344): reines Kalenderdatum `YYYY-MM-DD` ohne Uhrzeit und Zeitzone. Es muss ein echtes Datum
+// sein (kein 2026-02-30) und im plausiblen Bereich liegen. Als ISO-Text sind Datumswerte lexikografisch sortierbar.
+const DUE_DATE_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DUE_DATE_MIN = '2000-01-01';
+const DUE_DATE_MAX = '2100-12-31';
+
+function isValidDueDate(value) {
+    if (typeof value !== 'string') return false;
+    const match = DUE_DATE_REGEX.exec(value);
+    if (!match) return false;
+    const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+    const date = new Date(Date.UTC(year, month - 1, day));
+    const real = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+    return real && value >= DUE_DATE_MIN && value <= DUE_DATE_MAX;
+}
+
 function validateTask(taskData, partial = false) {
     const errors = [];
 
     if (!partial || taskData.title !== undefined) {
-        if (typeof taskData.title !== 'string' || taskData.title.trim().length < 1 || taskData.title.trim().length > 200) {
+        if (
+            typeof taskData.title !== 'string' ||
+            taskData.title.trim().length < 1 ||
+            taskData.title.trim().length > 200
+        ) {
             errors.push('Titel muss zwischen 1 und 200 Zeichen lang sein');
         }
     }
@@ -23,7 +43,11 @@ function validateTask(taskData, partial = false) {
         }
     }
     if (!partial || taskData.location !== undefined) {
-        if (typeof taskData.location !== 'string' || taskData.location.trim().length < 1 || taskData.location.trim().length > 100) {
+        if (
+            typeof taskData.location !== 'string' ||
+            taskData.location.trim().length < 1 ||
+            taskData.location.trim().length > 100
+        ) {
             errors.push('Standort muss angegeben werden (max 100 Zeichen)');
         }
     }
@@ -54,6 +78,11 @@ function validateTask(taskData, partial = false) {
         if (!valid.includes(taskData.recurrence)) {
             errors.push('Ung\u00fcltige Wiederholung (erlaubt: none, daily, weekly, monthly)');
         }
+    }
+    if (taskData.dueDate !== undefined && taskData.dueDate !== null && !isValidDueDate(taskData.dueDate)) {
+        errors.push(
+            `F\u00e4lligkeitsdatum muss ein g\u00fcltiges Datum im Format JJJJ-MM-TT zwischen ${DUE_DATE_MIN} und ${DUE_DATE_MAX} sein oder null`,
+        );
     }
     if (taskData.subtasks !== undefined) {
         if (!Array.isArray(taskData.subtasks)) {
@@ -106,8 +135,57 @@ function sanitizeTaskData(data) {
     if (data.status !== undefined) sanitized.status = data.status;
     if (data.priority !== undefined) sanitized.priority = data.priority;
     if (data.recurrence !== undefined) sanitized.recurrence = data.recurrence;
+    if (data.dueDate !== undefined) sanitized.dueDate = data.dueDate;
     if (data.subtasks !== undefined) sanitized.subtasks = data.subtasks;
     return sanitized;
 }
 
-module.exports = { validateTask, escapeHtml, sanitizeTaskData, validateIdParam };
+// Filter und Sortierung nach Fälligkeit für GET /api/tasks (Query) und POST /api/tasks/search (Body).
+// Leere Werte gelten als nicht gesetzt; ungültige Werte werden abgelehnt statt still ignoriert,
+// sonst sähe ein Tippfehler wie ein leeres Ergebnis aus.
+const SORT_FIELDS = ['dueDate'];
+
+function parseDueFilter(params) {
+    const filter = { dueFrom: null, dueTo: null, sort: null };
+    const errors = [];
+    const source = params && typeof params === 'object' ? params : {};
+    for (const name of ['dueFrom', 'dueTo']) {
+        const value = source[name];
+        if (value === undefined || value === null || value === '') continue;
+        if (isValidDueDate(value)) filter[name] = value;
+        else errors.push(`${name} muss ein g\u00fcltiges Datum im Format JJJJ-MM-TT sein`);
+    }
+    const sort = source.sort;
+    if (sort !== undefined && sort !== null && sort !== '') {
+        if (SORT_FIELDS.includes(sort)) filter.sort = sort;
+        else errors.push(`sort muss einer von ${SORT_FIELDS.join(', ')} sein`);
+    }
+    return { valid: errors.length === 0, errors, filter };
+}
+
+// Ohne Fälligkeit (fehlendes Feld oder null) fällt eine Aufgabe aus jedem Datumsfilter heraus und steht beim
+// Sortieren hinten. Die Sortierung ist stabil: gleiche Daten behalten ihre bisherige Reihenfolge.
+function applyDueFilter(tasks, filter) {
+    let result = tasks;
+    if (filter.dueFrom) result = result.filter((t) => t.dueDate && t.dueDate >= filter.dueFrom);
+    if (filter.dueTo) result = result.filter((t) => t.dueDate && t.dueDate <= filter.dueTo);
+    if (filter.sort === 'dueDate') {
+        result = [...result].sort((a, b) => {
+            if (!a.dueDate && !b.dueDate) return 0;
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0;
+        });
+    }
+    return result;
+}
+
+module.exports = {
+    validateTask,
+    escapeHtml,
+    sanitizeTaskData,
+    validateIdParam,
+    isValidDueDate,
+    parseDueFilter,
+    applyDueFilter,
+};
