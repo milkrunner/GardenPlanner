@@ -1,0 +1,40 @@
+# Konfiguration der automatisch erzeugten GitHub-Release-Notizen
+# (`gh release create --generate-notes`, siehe docs/RELEASING.md).
+# Die Einträge werden nach den Labels der gemergten Pull Requests gruppiert.
+changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+  categories:
+    - title: Sicherheit
+      labels:
+        - security
+    - title: Fehlerbehebungen
+      labels:
+        - bug
+    - title: Neue Funktionen und Verbesserungen
+      labels:
+        - enhancement
+        - frontend
+        - backend
+        - accessibility
+        - performance
+        - ux
+        - design
+    - title: Build, CI und Docker
+      labels:
+        - devops
+        - github_actions
+        - testing
+        - code-quality
+    - title: Abhängigkeiten
+      labels:
+        - dependencies
+    - title: Dokumentation
+      labels:
+        - documentation
+    - title: Weitere Änderungen
+      labels:
+        - '*'

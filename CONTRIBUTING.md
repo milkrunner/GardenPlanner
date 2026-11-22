@@ -73,6 +73,13 @@ It needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (acce
 token with write permission); never put them in files or logs. The logo and categories
 cannot be set by the script and are maintained in the Docker Hub web UI.
 
+## Releases
+
+Versionen entstehen nur durch einen bewusst gepushten Tag `vX.Y.Z`; Ablauf, Docker-Tags und
+Rücknahme stehen in [docs/RELEASING.md](docs/RELEASING.md), Änderungen im
+[CHANGELOG.md](CHANGELOG.md). Neue Einträge kommen unter `Unreleased`. Dependabot-Pull-Requests
+werden wie jede andere Änderung geprüft und nie automatisch gemergt.
+
 ## Existing browser test pages
 
 `tests/{form,security,storage,encryption,rate-limit,error}-test.html` are manual

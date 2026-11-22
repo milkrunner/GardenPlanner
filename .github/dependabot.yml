@@ -1,0 +1,75 @@
+# Dependabot öffnet nur Pull Requests. Es gibt bewusst kein Auto-Merge: Jede
+# Aktualisierung läuft durch die normale CI und wird von Hand geprüft und gemergt.
+# Siehe docs/DEPENDENCIES.md (insbesondere zu den `overrides` in package.json).
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    # Die `overrides` (glob, minimatch) werden von Dependabot nicht angefasst. Sie werden
+    # nach docs/DEPENDENCIES.md von Hand entfernt, sobald Jest sie nicht mehr braucht.
+    labels:
+      - dependencies
+      - javascript
+    commit-message:
+      prefix: 'build(deps)'
+      prefix-development: 'build(deps-dev)'
+    groups:
+      # Minor- und Patch-Updates je Bereich in einem PR; Major-Updates (z. B. Express 5)
+      # bleiben einzelne PRs, damit sie getrennt geprüft werden können.
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      production-dependencies:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 2
+    labels:
+      - dependencies
+      - devops
+    commit-message:
+      prefix: 'build(docker)'
+    ignore:
+      # Die Node-Hauptversion wird gemeinsam mit .nvmrc, `engines` und der CI angehoben,
+      # nicht durch einen Dependabot-PR allein.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github_actions
+    commit-message:
+      prefix: 'ci(deps)'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
