@@ -219,11 +219,42 @@ describe('Speicherüberwachung', () => {
       totalSizeMB: '4.00',
       estimatedQuotaMB: '5.00',
     });
-    expect(toasts().length).toBeGreaterThan(0);
+    // Titel und Text der Warnung selbst, nicht die allgemeine Fehlermeldung
+    expect(toasts()).toHaveLength(1);
+    expect(toasts()[0].querySelector('strong').textContent).toContain(
+      'Speicherplatz wird knapp',
+    );
+    expect(toasts()[0].querySelector('p').textContent).toContain('80.00%');
+    expect(toasts()[0].textContent).not.toContain('unerwarteter Fehler');
     expect(browser.window.console.warn).toHaveBeenCalledWith(
       expect.stringContaining('Storage warning'),
       expect.any(Object),
     );
+  });
+
+  test('kritische Speicherwarnung bleibt sichtbar, bis sie geschlossen wird', () => {
+    jest.useFakeTimers();
+    try {
+      eb.showStorageWarning('critical', {
+        usagePercent: '97.00',
+        totalSizeMB: '4.85',
+        estimatedQuotaMB: '5.00',
+      });
+      jest.advanceTimersByTime(60 * 60 * 1000);
+      expect(toasts()).toHaveLength(1);
+      toasts()[0].querySelector('.error-toast-close').click();
+      expect(toasts()).toHaveLength(0);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test('showToast zeigt Titel und Text nur als Text (kein HTML)', () => {
+    eb.showToast('<img src=x onerror=alert(1)>', '<b>fett</b>', 1000);
+    const toast = toasts()[0];
+    expect(toast.querySelector('img')).toBeNull();
+    expect(toast.querySelector('b')).toBeNull();
+    expect(toast.textContent).toContain('<b>fett</b>');
   });
 
   test('das Monitoring läuft periodisch und lässt sich stoppen', () => {

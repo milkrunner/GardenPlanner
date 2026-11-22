@@ -245,14 +245,11 @@ describe('showRateLimitWarning', () => {
   });
 
   test('nutzt die ErrorBoundary, wenn vorhanden (Anzeige max. 8 Sekunden)', () => {
-    browser.window.errorBoundary = { showErrorNotification: jest.fn() };
+    browser.window.errorBoundary = { showToast: jest.fn() };
     limiter.showRateLimitWarning('api', 20000);
-    expect(
-      browser.window.errorBoundary.showErrorNotification,
-    ).toHaveBeenCalledWith(
+    expect(browser.window.errorBoundary.showToast).toHaveBeenCalledWith(
       expect.stringContaining('Zu viele Anfragen'),
       expect.stringContaining('20 Sekunden'),
-      'warning',
       8000,
     );
   });
