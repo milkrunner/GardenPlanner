@@ -53,4 +53,4 @@ function listCategories() {
     return [...new Set(plants.map((p) => p.category))].sort();
 }
 
-module.exports = { readPlants, listPlants, getPlant, listCategories };
+module.exports = { PLANTS_FILE, readPlants, listPlants, getPlant, listCategories };

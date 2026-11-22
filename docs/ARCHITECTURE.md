@@ -5,9 +5,12 @@
 - `server.js`: process startup and shutdown. Importing it does not listen on a port.
 - `src/server/app.js`: Express composition, middleware order, static paths and routes.
 - `middleware/`: API-key authentication, security headers and final error handling.
-- `routes/`: HTTP mapping for tasks, archive, plants and auth status.
-- `services/`: task operations, plant queries and pagination.
-- `validation/task-validator.js`: validation and sanitization.
+- `routes/`: HTTP mapping for tasks, archive, plants, auth status and backup (`GET /api/export`,
+  `POST /api/import`; the import route has its own 5 MB body parser, see `app.js`).
+- `services/`: task operations, plant queries, pagination and export/import (`backup-service.js`, under the
+  tasks/archive locks plus a plants lock; see [BACKUP.md](BACKUP.md)).
+- `validation/task-validator.js`: validation and sanitization. `backup-validator.js` checks import bundles with
+  the same task rules.
 - `storage/json-store.js`: JSON task/archive persistence, caching and
   in-process locks.
   `DATA_DIR` is resolved before module imports; set it before loading the application.

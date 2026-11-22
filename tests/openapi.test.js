@@ -108,7 +108,7 @@ function responseSchema(method, url, status) {
 }
 
 beforeEach(() => {
-  for (const file of ['tasks.json', 'archived-tasks.json']) {
+  for (const file of ['tasks.json', 'archived-tasks.json', 'plants.json']) {
     fs.rmSync(path.join(DATA_DIR, file), { force: true });
   }
   resetCaches();
@@ -322,6 +322,75 @@ describe('OpenAPI spec (#326)', () => {
         'GET',
         '/api/plant-categories',
         await request(app).get('/api/plant-categories'),
+      );
+    });
+
+    test('export and import endpoints', async () => {
+      const { body: task } = await request(app)
+        .post('/api/tasks')
+        .send(validTask);
+      const exported = await request(app).get('/api/export');
+      await expectMatches('GET', '/api/export', exported);
+      const bundle = exported.body;
+      const post = (query, body) =>
+        request(app).post(`/api/import${query}`).send(body);
+
+      await expectMatches('POST', '/api/import', await post('', bundle)); // 409
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await post('?mode=merge', bundle),
+      );
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await post('?mode=replace&confirm=replace', bundle),
+      );
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await post('?mode=replace', bundle),
+      );
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await post('?mode=bogus', bundle),
+      );
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await post('?mode=merge', { formatVersion: 1, tasks: [{}] }),
+      );
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await post('?mode=merge', {
+          formatVersion: 1,
+          tasks: Array.from({ length: 10001 }, () => ({})),
+          archivedTasks: [],
+        }),
+      );
+
+      await request(app).delete(`/api/tasks/${task.id}`);
+      await expectMatches('POST', '/api/import', await post('', bundle)); // 200, empty instance
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await request(app)
+          .post('/api/import')
+          .send({ formatVersion: 1, tasks: 'x', archivedTasks: [] }),
+      );
+      await expectMatches(
+        'POST',
+        '/api/import',
+        await request(app)
+          .post('/api/import')
+          .send({
+            formatVersion: 1,
+            tasks: [],
+            archivedTasks: [],
+            padding: 'x'.repeat(6 * 1024 * 1024),
+          }),
       );
     });
 
