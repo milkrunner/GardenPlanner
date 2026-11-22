@@ -166,8 +166,10 @@
 				var waterLabel =
 					{ low: "Wenig", medium: "Mittel", high: "Viel" }[p.water] || p.water;
 
+				// Der zugängliche Name enthält den gesamten sichtbaren Text in dieser Reihenfolge
+				// (WCAG 2.5.3 "Label in Name"; axe label-content-name-mismatch).
 				return `
-                <div class="plant-card" data-plant-id="${Security.escapeHtml(p.id)}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${safeName}, ${safeCategory}: Details öffnen">
+                <div class="plant-card" data-plant-id="${Security.escapeHtml(p.id)}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${safeName}, ${safeCategory}, ${Security.escapeHtml(diffLabel)}, ${Security.escapeHtml(sunLabel)}, ${Security.escapeHtml(waterLabel)} Wasser: Details öffnen">
                     <div class="plant-card-icon" aria-hidden="true">${Security.escapeHtml(p.icon)}</div>
                     <div class="plant-card-body">
                         <h3 class="plant-card-name">${safeName}</h3>

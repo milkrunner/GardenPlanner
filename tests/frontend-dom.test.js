@@ -396,6 +396,15 @@ describe('other scripts', () => {
     const card = document.querySelector('.plant-card');
     expect(card.getAttribute('role')).toBe('button');
     expect(card.tabIndex).toBe(0);
+    // WCAG 2.5.3: der zugängliche Name enthält den gesamten sichtbaren Text
+    const accessibleName = card.getAttribute('aria-label');
+    const visible = [
+      card.querySelector('.plant-card-name'),
+      card.querySelector('.plant-card-category'),
+      ...card.querySelectorAll('.plant-tag'),
+    ].map((node) => node.textContent);
+    expect(visible).toHaveLength(5);
+    visible.forEach((text) => expect(accessibleName).toContain(text));
     card.focus();
     card.dispatchEvent(
       new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
