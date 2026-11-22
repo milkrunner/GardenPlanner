@@ -12,7 +12,7 @@
   padding: 0;
   margin: -1px;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border-width: 0;
 }
@@ -324,7 +324,7 @@ header h1 {
   transition: all 0.2s;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .nav-container {
     flex-direction: column;
     align-items: stretch;
@@ -337,7 +337,7 @@ header h1 {
 }
 
 /* Main Content */
-@keyframes fadeIn {
+@keyframes fade-in {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -354,7 +354,7 @@ main {
   max-width: 100%;
   width: 100%;
   margin: 0;
-  animation: fadeIn 0.5s ease-out;
+  animation: fade-in 0.5s ease-out;
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-lg);
@@ -372,7 +372,7 @@ body:has(.add-task-section) .container {
   padding: 0;
 }
 
-@media (min-width: 1200px) {
+@media (width >= 1200px) {
   main {
     grid-template-columns: 280px 1fr;
     grid-template-areas:
@@ -456,7 +456,7 @@ body:has(.add-task-section) .container {
 
 section {
   margin-bottom: 3rem;
-  animation: fadeIn 0.6s ease-out;
+  animation: fade-in 0.6s ease-out;
 }
 
 section h2 {
@@ -539,7 +539,7 @@ section h2 {
   background-clip: text;
 }
 
-@media (min-width: 1200px) {
+@media (width >= 1200px) {
   #filter-heading,
   #tasksHeaderTitle {
     font-size: var(--text-base);
@@ -556,7 +556,7 @@ section h2 {
   width: 100%;
 }
 
-@media (min-width: 768px) {
+@media (width >= 768px) {
   .form-row {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1296,13 +1296,13 @@ textarea {
 }
 
 /* Responsive - Weather */
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .weather-forecast {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .weather-section {
     padding: 1.5rem;
   }
@@ -1358,7 +1358,7 @@ textarea {
   }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
   .weather-section {
     padding: 1rem;
   }
@@ -1729,7 +1729,7 @@ textarea {
   margin-bottom: 0;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .charts-section {
     grid-template-columns: 1fr;
   }
@@ -1824,7 +1824,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  animation: slideInLeft 0.5s ease-out backwards;
+  animation: slide-in-left 0.5s ease-out backwards;
 }
 
 .chart-bar-item:nth-child(1) {
@@ -1847,7 +1847,7 @@ textarea {
   animation-delay: 0.5s;
 }
 
-@keyframes slideInLeft {
+@keyframes slide-in-left {
   from {
     opacity: 0;
     transform: translateX(-20px);
@@ -2149,13 +2149,13 @@ main > section > h2::after {
   gap: var(--space-xl);
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
@@ -2595,7 +2595,7 @@ main > section > h2::after {
 }
 
 /* Task Card Animations */
-@keyframes slideInFromRight {
+@keyframes slide-in-from-right {
   from {
     opacity: 0;
     transform: translateX(50px);
@@ -2607,7 +2607,7 @@ main > section > h2::after {
   }
 }
 
-@keyframes fadeOut {
+@keyframes fade-out {
   from {
     opacity: 1;
     transform: scale(1);
@@ -2643,7 +2643,7 @@ main > section > h2::after {
   cursor: move;
   gap: var(--space-md);
   margin-bottom: 0.75rem;
-  animation: slideInFromRight 0.4s ease-out;
+  animation: slide-in-from-right 0.4s ease-out;
   box-shadow: 0 2px 6px rgb(0 0 0 / 5%);
 }
 
@@ -2659,7 +2659,7 @@ main > section > h2::after {
 }
 
 .task-card.task-removing {
-  animation: fadeOut 0.4s ease-out forwards;
+  animation: fade-out 0.4s ease-out forwards;
 }
 
 .task-card.task-completing {
@@ -3167,7 +3167,7 @@ footer {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  animation: modalSlideIn 0.3s ease-out;
+  animation: modal-slide-in 0.3s ease-out;
   transition: background-color 0.3s ease;
   border: 1px solid var(--border);
 }
@@ -3182,7 +3182,7 @@ footer {
   border-color: var(--border-light);
 }
 
-@keyframes modalSlideIn {
+@keyframes modal-slide-in {
   from {
     opacity: 0;
     transform: translateY(-50px);
@@ -3548,7 +3548,7 @@ footer {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .form-row {
     flex-direction: column;
   }
@@ -3593,7 +3593,7 @@ footer {
 
   .task-title {
     font-size: var(--text-base);
-    word-break: break-word;
+    overflow-wrap: anywhere;
   }
 
   .task-meta {
@@ -3715,7 +3715,7 @@ footer {
 }
 
 /* Tablet und mittlere Bildschirme */
-@media (min-width: 768px) and (max-width: 1199px) {
+@media (width >= 768px) and (width <= 1199px) {
   main {
     padding: 1.5rem;
     grid-template-columns: 1fr;
@@ -3749,7 +3749,7 @@ footer {
 }
 
 /* Desktop - kleiner Bildschirm */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   header {
     padding: 1.5rem;
   }
@@ -3880,7 +3880,7 @@ footer {
 }
 
 /* Sehr kleine Geräte (Smartphones im Portrait-Modus) */
-@media (max-width: 480px) {
+@media (width <= 480px) {
   header h1 {
     font-size: var(--text-2xl);
   }
@@ -3915,7 +3915,7 @@ footer {
 }
 
 /* Landscape-Modus für Tablets */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (width >= 769px) and (width <= 1024px) {
   .task-card {
     padding: 18px;
   }
@@ -4047,7 +4047,7 @@ footer {
   gap: 16px;
   font-size: 0.95rem;
   font-weight: 500;
-  animation: undoSlideUp 0.3s ease-out;
+  animation: undo-slide-up 0.3s ease-out;
   max-width: 90vw;
 }
 
@@ -4057,7 +4057,7 @@ footer {
   box-shadow: 0 6px 24px rgb(0 0 0 / 60%);
 }
 
-@keyframes undoSlideUp {
+@keyframes undo-slide-up {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
@@ -4070,10 +4070,10 @@ footer {
 }
 
 .undo-notification-hiding {
-  animation: undoSlideDown 0.3s ease-in forwards;
+  animation: undo-slide-down 0.3s ease-in forwards;
 }
 
-@keyframes undoSlideDown {
+@keyframes undo-slide-down {
   from {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -4220,7 +4220,7 @@ footer {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.5cm;
     margin-bottom: 0.5cm;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   /* !important: Dark-Theme-Karten (`[data-theme='dark'] .stat-card`) */
@@ -4228,7 +4228,7 @@ footer {
     background: white !important;
     border: 1px solid #ddd !important;
     padding: 0.4cm;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .stat-card h3 {
@@ -4250,7 +4250,7 @@ footer {
     border-bottom: 2px solid #1b5e3f;
     padding: 0.3cm 0;
     margin: 0.5cm 0 0.3cm;
-    page-break-after: avoid;
+    break-after: avoid;
   }
 
   .section-header h2 {
@@ -4268,7 +4268,7 @@ footer {
     border-left: 4px solid #1b5e3f !important;
     padding: 0.4cm;
     margin-bottom: 0.3cm;
-    page-break-inside: avoid;
+    break-inside: avoid;
     box-shadow: none !important;
   }
 
@@ -4343,14 +4343,14 @@ footer {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0.5cm;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .chart-card {
     background: white;
     border: 1px solid #ddd;
     padding: 0.4cm;
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .chart-card h3 {
@@ -4408,12 +4408,12 @@ footer {
   /* Seitenumbrüche optimieren */
   .dashboard-section,
   .statistics-section {
-    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   h2,
   h3 {
-    page-break-after: avoid;
+    break-after: avoid;
   }
 
   /* Footer für Druckinfo */
@@ -4587,7 +4587,7 @@ footer {
   box-shadow: 0 8px 24px rgb(239 68 68 / 30%);
   padding: 1.5rem;
   z-index: 10000;
-  animation: errorSlideIn 0.3s ease-out;
+  animation: error-slide-in 0.3s ease-out;
 }
 
 .error-toast-content {
@@ -4599,7 +4599,7 @@ footer {
 .error-toast-icon {
   font-size: var(--text-3xl);
   flex-shrink: 0;
-  animation: errorPulse 2s infinite;
+  animation: error-pulse 2s infinite;
 }
 
 .error-toast-text {
@@ -4641,10 +4641,10 @@ footer {
 }
 
 .error-toast-fade {
-  animation: errorSlideOut 0.3s ease-in forwards;
+  animation: error-slide-out 0.3s ease-in forwards;
 }
 
-@keyframes errorSlideIn {
+@keyframes error-slide-in {
   from {
     transform: translateX(120%);
     opacity: 0;
@@ -4656,7 +4656,7 @@ footer {
   }
 }
 
-@keyframes errorSlideOut {
+@keyframes error-slide-out {
   from {
     transform: translateX(0);
     opacity: 1;
@@ -4668,7 +4668,7 @@ footer {
   }
 }
 
-@keyframes errorPulse {
+@keyframes error-pulse {
   0%,
   100% {
     transform: scale(1);
@@ -4810,7 +4810,7 @@ footer {
 
 .storage-info-progress-bar.critical {
   background: linear-gradient(90deg, #f44336 0%, #e91e63 100%);
-  animation: storagePulse 1.5s infinite;
+  animation: storage-pulse 1.5s infinite;
 }
 
 .storage-info-details {
@@ -4855,7 +4855,7 @@ footer {
   background: #fee;
 }
 
-@keyframes storagePulse {
+@keyframes storage-pulse {
   0%,
   100% {
     opacity: 1;
@@ -4913,10 +4913,10 @@ footer {
 }
 
 .error-toast.rate-limit .error-toast-icon {
-  animation: rateLimitPulse 1.5s infinite;
+  animation: rate-limit-pulse 1.5s infinite;
 }
 
-@keyframes rateLimitPulse {
+@keyframes rate-limit-pulse {
   0%,
   100% {
     transform: scale(1);
@@ -4958,12 +4958,12 @@ footer {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  animation: badgeSlideIn 0.3s ease-out;
+  animation: badge-slide-in 0.3s ease-out;
 }
 
 .rate-limit-badge-icon {
   font-size: 1.2rem;
-  animation: rateLimitPulse 1.5s infinite;
+  animation: rate-limit-pulse 1.5s infinite;
 }
 
 .rate-limit-badge-text {
@@ -4980,7 +4980,7 @@ footer {
   font-size: var(--text-base);
 }
 
-@keyframes badgeSlideIn {
+@keyframes badge-slide-in {
   from {
     transform: translateY(100px);
     opacity: 0;
@@ -5031,7 +5031,7 @@ footer {
 }
 
 /* Mobile Anpassungen */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .rate-limit-badge {
     bottom: 60px;
     right: 10px;
@@ -5062,7 +5062,7 @@ footer {
 .error-boundary-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
-  animation: errorPulse 2s infinite;
+  animation: error-pulse 2s infinite;
 }
 
 .error-boundary-title {
@@ -5163,7 +5163,7 @@ footer {
 }
 
 /* Responsive Anpassungen */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .active-users-indicator {
     top: 0.5rem;
     right: 0.5rem;
@@ -5420,7 +5420,7 @@ footer {
 }
 
 /* Dashboard mit vier Kennzahlen: auf Tablets zwei statt drei Spalten */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (width >= 769px) and (width <= 1024px) {
   body:has(#statOverdue) .stats-section {
     grid-template-columns: repeat(2, 1fr);
   }
