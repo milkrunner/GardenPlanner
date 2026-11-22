@@ -151,7 +151,7 @@
 			bar = el("div", { id: "gpStatusBar" });
 			document.body.insertBefore(bar, document.body.firstChild);
 		}
-		bar.className = `gp-status-bar gp-status-bar--${kind}`;
+		bar.className = `gp-status-bar gp-status-bar-${kind}`;
 		bar.setAttribute("role", kind === "offline" ? "status" : "alert");
 		bar.replaceChildren(el("span", { text }));
 		if (action) {

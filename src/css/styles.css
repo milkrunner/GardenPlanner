@@ -5193,8 +5193,8 @@ footer {
   border-bottom: 2px solid var(--warning);
 }
 
-.gp-status-bar--error,
-.gp-status-bar--auth {
+.gp-status-bar-error,
+.gp-status-bar-auth {
   background: var(--error-light);
   border-bottom-color: var(--error);
 }
