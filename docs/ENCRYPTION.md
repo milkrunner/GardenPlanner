@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-Der Gartenplaner verwendet **AES-GCM Verschlüsselung** zum Schutz sensibler Daten im LocalStorage. Die Verschlüsselung erfolgt automatisch und transparent für den Benutzer mit der modernen Web Crypto API.
+Der Gartenplaner verwendet **AES-GCM Verschlüsselung** zum Schutz sensibler Daten im localStorage. Die Verschlüsselung erfolgt automatisch und transparent für den Benutzer mit der modernen Web Crypto API.
 
 ## Features
 
@@ -325,7 +325,7 @@ Verschlüsselte Daten sind ca. **30-40% größer** als unverschlüsselt:
                  │
                  ▼
 ┌─────────────────────────────────────────────┐
-│      Browser LocalStorage                   │
+│      Browser localStorage                   │
 │  - Verschlüsselte Daten: Base64             │
 │  - Format: {encrypted, data, algorithm}     │
 └─────────────────────────────────────────────┘
@@ -386,4 +386,4 @@ Bei Fragen oder Problemen:
 
 ---
 
-**⚠️ Wichtiger Hinweis**: Client-seitige Verschlüsselung schützt Daten nur im LocalStorage. Für vollständigen Schutz ist immer auch **HTTPS**, **Server-seitige Sicherheit** und **sichere Authentifizierung** erforderlich!
+**⚠️ Wichtiger Hinweis**: Client-seitige Verschlüsselung schützt Daten nur im localStorage. Für vollständigen Schutz ist immer auch **HTTPS**, **Server-seitige Sicherheit** und **sichere Authentifizierung** erforderlich!

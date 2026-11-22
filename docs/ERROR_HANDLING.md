@@ -12,14 +12,14 @@ Globaler Error Handler der alle Fehler abfängt:
 
 - Runtime Errors (JavaScript-Fehler)
 - Unhandled Promise Rejections
-- Storage-Fehler (LocalStorage quota exceeded)
+- Storage-Fehler (localStorage quota exceeded)
 - DOM-Fehler
 
 ### 2. Safe Wrappers
 
 #### SafeStorage
 
-Fehlertolerante LocalStorage-Operationen:
+Fehlertolerante localStorage-Operationen:
 
 ```javascript
 // Lesen mit Fallback
@@ -60,7 +60,7 @@ const safeAsyncFn = safeAsync(myAsyncFunction, fallbackValue);
 
 Das System versucht automatisch, sich von Fehlern zu erholen:
 
-**LocalStorage-Fehler:**
+**localStorage-Fehler:**
 
 - Automatisches Cleanup alter Daten
 - Entfernen von Error-Logs
@@ -98,7 +98,7 @@ Kritische Fehler werden dem Benutzer angezeigt:
 Alle Fehler werden geloggt:
 
 - Maximum 50 Fehler im Memory
-- Maximum 100 Fehler in LocalStorage
+- Maximum 100 Fehler in localStorage
 - Automatisches Rotation/Cleanup
 - Timestamp und Kontext-Informationen
 
@@ -165,7 +165,7 @@ errorBoundary.clearErrors();
 | --------- | ---------------------------- | ----------- |
 | `runtime` | JavaScript Runtime Errors    | Re-Render   |
 | `promise` | Unhandled Promise Rejections | Logging     |
-| `storage` | LocalStorage Errors          | Cleanup     |
+| `storage` | localStorage Errors          | Cleanup     |
 | `async`   | Async Function Errors        | Fallback    |
 | `dom`     | DOM-Operationen              | Null-Return |
 
@@ -235,7 +235,7 @@ errorBoundary.onError('storage', (error) => {
 
 1. **Error tritt auf**
 2. **Error Boundary fängt ab**
-3. **Error wird geloggt** (Memory + LocalStorage)
+3. **Error wird geloggt** (Memory + localStorage)
 4. **Callbacks werden ausgeführt**
 5. **User-Notification** (bei kritischen Fehlern)
 6. **Recovery-Versuch** (automatisch)
