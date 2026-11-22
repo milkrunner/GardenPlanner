@@ -66,7 +66,11 @@ Task pages load config/security/encryption/rate-limiter/logger/error-handler, th
 `api.js`, `auth-gate.js`, `app.js`, and `task-{state,filters,renderer,events,export}.js` in order.
 `app.js` defines `GartenPlaner`; later scripts extend its prototype before the
 DOMContentLoaded initialization. Page-specific dashboard/statistics initialization
-follows those scripts. Plants and log viewer have their own entry scripts.
+follows those scripts. Plants and log viewer have their own entry scripts. `plants.js` also maintains the library (#330):
+add/edit form and delete confirmation are dialogs built with DOM builders (no `innerHTML` for plant data),
+call `window.TaskAPI._fetch` (API key, 401 dialog), mirror the limits of `plant-validator.js` for early
+feedback, translate server answers (`errors[]` for 400, 404/409) into messages, and reload the library and
+category filter after every change.
 `window.GP` and explicit classic-script globals are shared interfaces, not imports.
 
 Diagnostics: the browser console stays quiet in production. `GP.debug()` (config.js)
@@ -110,6 +114,8 @@ dashboard task flow.
   for dialogs, plant cards and the log viewer; `tests/smoke/harness.js` starts the
   real app with disposable storage (one instance per test: the API rate limit is
   100 requests per 15 minutes).
+- `tests/smoke/plants.spec.js`: add, edit and delete plants through the UI against the real app, plus axe
+  (light/dark) for the form, its error state and the delete dialog.
 - `tests/smoke/tasks.spec.js`: Chromium + real Express server + disposable storage.
 - `tests/setup.js`: per-suite Jest storage/log isolation and cleanup.
 - `.github/workflows/test.yml`: reproducible local-equivalent validation.

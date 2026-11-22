@@ -411,6 +411,245 @@ describe('other scripts', () => {
     expect(modal.style.display).toBe('none');
     expect(document.activeElement).toBe(card);
   });
+
+  describe('plant library maintenance (#330)', () => {
+    const plant = {
+      id: 'tomato',
+      name: HOSTILE,
+      category: HOSTILE,
+      icon: '🍅',
+      difficulty: 'easy',
+      sun: 'full',
+      water: 'low',
+      season: ['summer'],
+      spacing: '50 cm',
+      germination: '1',
+      harvest: '2',
+      tips: HOSTILE,
+      companions: [HOSTILE],
+      avoid: [],
+    };
+    const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
+    // Loads the real plants page and scripts; `respond(url, options)` answers writes.
+    async function plantPage(respond) {
+      const html = fs.readFileSync(
+        path.join(ROOT, 'public/plants.html'),
+        'utf8',
+      );
+      const window = createWindow(html);
+      const calls = [];
+      window.fetch = async (url, options = {}) => {
+        const method = options.method || 'GET';
+        calls.push({ url: String(url), method, body: options.body });
+        let result = { status: 200, body: [plant] };
+        if (String(url).includes('categories')) {
+          result = { status: 200, body: [HOSTILE] };
+        } else if (method !== 'GET') {
+          result = respond(String(url), options);
+        }
+        return {
+          ok: result.status < 400,
+          status: result.status,
+          json: async () => result.body,
+        };
+      };
+      load(window, 'config.js', 'security.js', 'api.js', 'plants.js');
+      // jsdom fires DOMContentLoaded itself once the scripts are loaded (init must run once).
+      await tick();
+      return { window, document: window.document, calls };
+    }
+    const fill = (document, id, value) => {
+      document.getElementById(id).value = value;
+    };
+    const submit = async (window, form) => {
+      form.dispatchEvent(
+        new window.Event('submit', { bubbles: true, cancelable: true }),
+      );
+      await tick();
+    };
+
+    test('add form is a labelled modal dialog and validates before sending', async () => {
+      const { window, document, calls } = await plantPage(() => ({
+        status: 201,
+        body: { ...plant, id: 'neu', name: 'Neu' },
+      }));
+      const add = document.getElementById('plantAddBtn');
+      add.focus();
+      add.click();
+      const dialog = document.getElementById('plantFormModal');
+      expect(dialog.getAttribute('role')).toBe('dialog');
+      expect(dialog.getAttribute('aria-modal')).toBe('true');
+      expect(
+        document.getElementById(dialog.getAttribute('aria-labelledby'))
+          .textContent,
+      ).toBe('Pflanze hinzufügen');
+      expect(document.activeElement.id).toBe('plantForm-name');
+      dialog.querySelectorAll('input, select, textarea').forEach((control) => {
+        const label = control.id
+          ? dialog.querySelector(`label[for="${control.id}"]`)
+          : control.closest('label');
+        expect(label).not.toBeNull();
+      });
+      // Category suggestions come from the server and stay text.
+      const option = dialog.querySelector('#plantFormCategories option');
+      expect(option.value).toBe(HOSTILE);
+      expect(dialog.querySelector('img, b')).toBeNull();
+
+      const form = dialog.querySelector('form');
+      await submit(window, form);
+      const alert = dialog.querySelector('[role="alert"]');
+      expect(alert.textContent).toContain('Name muss angegeben werden');
+      expect(alert.textContent).toContain('Kategorie muss angegeben werden');
+      expect(
+        document.getElementById('plantForm-name').getAttribute('aria-invalid'),
+      ).toBe('true');
+      expect(document.activeElement.id).toBe('plantForm-name');
+      expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+
+      fill(document, 'plantForm-name', 'Neu <b>');
+      fill(document, 'plantForm-category', 'Gemüse');
+      await submit(window, form);
+      expect(alert.textContent).toContain('spitzen Klammern');
+      expect(calls.filter((c) => c.method === 'POST')).toHaveLength(0);
+
+      fill(document, 'plantForm-name', ' Neu ');
+      fill(document, 'plantForm-companions', 'Salat\n\n  Spinat  \n');
+      dialog.querySelector('input[value="autumn"]').checked = true;
+      await submit(window, form);
+      const post = calls.find((c) => c.method === 'POST');
+      expect(post.url).toBe('/api/plants');
+      expect(JSON.parse(post.body)).toMatchObject({
+        name: 'Neu',
+        category: 'Gemüse',
+        season: ['autumn'],
+        companions: ['Salat', 'Spinat'],
+      });
+      expect(document.getElementById('plantFormModal')).toBeNull();
+      expect(document.getElementById('plantNotice').textContent).toContain(
+        'Neu',
+      );
+      // Library and category filter are reloaded after saving.
+      expect(
+        calls.filter((c) => c.url.includes('plant-categories')).length,
+      ).toBe(2);
+    });
+
+    test('server errors are shown as readable text and keep the form open', async () => {
+      let answer = {
+        status: 400,
+        body: { errors: [`Name ${HOSTILE}, kaputt`, 'Icon zu lang'] },
+      };
+      const { window, document } = await plantPage(() => answer);
+      document.getElementById('plantAddBtn').click();
+      fill(document, 'plantForm-name', 'Neu');
+      fill(document, 'plantForm-category', 'Gemüse');
+      const form = document.querySelector('#plantFormModal form');
+      await submit(window, form);
+      const alert = document.getElementById('plantFormError');
+      expect(alert.querySelectorAll('li')).toHaveLength(2);
+      expect(alert.querySelector('li').textContent).toBe(
+        `Name ${HOSTILE}, kaputt`,
+      );
+      expect(alert.querySelector('img, b')).toBeNull();
+      expect(document.getElementById('plantFormModal')).not.toBeNull();
+      expect(form.querySelector('button[type="submit"]').disabled).toBe(false);
+      answer = { status: 409, body: { error: 'Plant with ID "neu" exists' } };
+      await submit(window, form);
+      expect(alert.textContent).toContain('bereits eine Pflanze');
+      expect(alert.textContent).not.toContain('Plant with ID');
+    });
+
+    test('edit prefills with stored values as text, Escape restores focus', async () => {
+      const { window, document, calls } = await plantPage((url) => ({
+        status: 200,
+        body: { ...plant, id: url.split('/').pop(), name: 'Neu' },
+      }));
+      const card = document.querySelector('.plant-card');
+      card.focus();
+      card.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      );
+      document.querySelector('.plant-edit-btn').click();
+      // The detail dialog is closed while the form is open.
+      expect(document.getElementById('plantModal').style.display).toBe('none');
+      const dialog = document.getElementById('plantFormModal');
+      expect(dialog.querySelector('h2').textContent).toBe('Pflanze bearbeiten');
+      expect(document.getElementById('plantForm-name').value).toBe(HOSTILE);
+      expect(document.getElementById('plantForm-companions').value).toBe(
+        HOSTILE,
+      );
+      expect(dialog.querySelector('input[value="summer"]').checked).toBe(true);
+      expect(dialog.querySelector('img, b')).toBeNull();
+      dialog.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+      expect(document.getElementById('plantFormModal')).toBeNull();
+      expect(document.activeElement).toBe(card);
+      expect(calls.filter((c) => c.method !== 'GET')).toHaveLength(0);
+
+      document.querySelector('.plant-card').click();
+      document.querySelector('.plant-edit-btn').click();
+      fill(document, 'plantForm-name', 'Neu');
+      fill(document, 'plantForm-category', 'Gemüse');
+      fill(document, 'plantForm-companions', 'Salat');
+      fill(document, 'plantForm-tips', 'Tipp');
+      await submit(window, document.querySelector('#plantFormModal form'));
+      const put = calls.find((c) => c.method === 'PUT');
+      expect(put.url).toBe('/api/plants/tomato');
+      expect(JSON.parse(put.body).name).toBe('Neu');
+    });
+
+    test('delete asks for confirmation in an alertdialog and only then calls the API', async () => {
+      const { window, document, calls } = await plantPage(() => ({
+        status: 204,
+        body: null,
+      }));
+      document.querySelector('.plant-card').click();
+      document.querySelector('.plant-delete-btn').click();
+      const dialog = document.getElementById('plantDeleteModal');
+      expect(dialog.getAttribute('role')).toBe('alertdialog');
+      expect(dialog.getAttribute('aria-modal')).toBe('true');
+      expect(dialog.querySelector('#plantDeleteMessage').textContent).toContain(
+        HOSTILE,
+      );
+      expect(dialog.querySelector('img, b')).toBeNull();
+      expect(document.activeElement.textContent).toBe('Abbrechen');
+      expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
+      dialog.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+      expect(document.getElementById('plantDeleteModal')).toBeNull();
+      expect(calls.filter((c) => c.method === 'DELETE')).toHaveLength(0);
+
+      document.querySelector('.plant-card').click();
+      document.querySelector('.plant-delete-btn').click();
+      document.querySelector('#plantDeleteModal .btn-danger').click();
+      await tick();
+      expect(calls.find((c) => c.method === 'DELETE').url).toBe(
+        '/api/plants/tomato',
+      );
+      expect(document.getElementById('plantDeleteModal')).toBeNull();
+      expect(document.getElementById('plantNotice').textContent).toContain(
+        'gelöscht',
+      );
+      expect(document.activeElement.id).toBe('plantAddBtn');
+    });
+
+    test('a failed delete keeps the dialog open and explains the 404', async () => {
+      const { document } = await plantPage(() => ({
+        status: 404,
+        body: { error: 'Plant not found' },
+      }));
+      document.querySelector('.plant-card').click();
+      document.querySelector('.plant-delete-btn').click();
+      document.querySelector('#plantDeleteModal .btn-danger').click();
+      await tick();
+      const alert = document.getElementById('plantDeleteError');
+      expect(alert.getAttribute('role')).toBe('alert');
+      expect(alert.textContent).toContain('gibt es nicht mehr');
+      expect(document.getElementById('plantDeleteModal')).not.toBeNull();
+    });
+  });
 });
 
 describe('static page markup', () => {
