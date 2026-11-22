@@ -198,6 +198,38 @@ describe('OpenAPI spec (#326)', () => {
         await request(app).post('/api/tasks/search').send({ employee: 'Max' }),
       );
       await expectMatches(
+        'GET',
+        '/api/tasks',
+        await request(app).get('/api/tasks?dueFrom=2026-01-01&sort=dueDate'),
+      );
+      await expectMatches(
+        'GET',
+        '/api/tasks',
+        await request(app).get('/api/tasks?dueFrom=2026-02-30'),
+      );
+      await expectMatches(
+        'POST',
+        '/api/tasks/search',
+        await request(app).post('/api/tasks/search').send({ sort: 'title' }),
+      );
+      const dated = await request(app)
+        .post('/api/tasks')
+        .send({ ...validTask, dueDate: '2026-03-15', recurrence: 'daily' });
+      expect(dated.body.dueDate).toBe('2026-03-15');
+      await expectMatches('POST', '/api/tasks', dated);
+      await expectMatches(
+        'POST',
+        '/api/tasks',
+        await request(app)
+          .post('/api/tasks')
+          .send({ ...validTask, dueDate: '2026-02-30' }),
+      );
+      const cleared = await request(app)
+        .put(`/api/tasks/${dated.body.id}`)
+        .send({ dueDate: null });
+      expect(cleared.body.dueDate).toBeNull();
+      await expectMatches('PUT', '/api/tasks/{id}', cleared);
+      await expectMatches(
         'POST',
         '/api/tasks/search',
         await request(app)

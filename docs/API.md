@@ -60,15 +60,47 @@ Unbekannte Pfade unter `/api` liefern Expresss Standard-`404` als HTML, nicht al
 
 Pflichtfelder beim Erstellen sind `title` (1–200 Zeichen) und `location` (1–100). Optional sind `employee`
 (max. 100), `description` (max. 2000), `notes` (max. 5000), `status` (`pending`, `in-progress`, `completed`),
-`priority` (`low`, `medium`, `high`), `recurrence` (`none`, `daily`, `weekly`, `monthly`) und `subtasks`
-(max. 50; Strings oder `{"text": "…", "completed": false}`). Der Server vergibt `id`, `createdAt`,
-`sortOrder` und eine `history`. Bei `completed` setzt er `completedAt`. Zu `recurrence` siehe
-[Wiederholende Aufgaben](#wiederholende-aufgaben).
+`priority` (`low`, `medium`, `high`), `recurrence` (`none`, `daily`, `weekly`, `monthly`), `dueDate`
+(siehe [Fälligkeitsdatum](#fälligkeitsdatum)) und `subtasks` (max. 50; Strings oder
+`{"text": "…", "completed": false}`). Der Server vergibt `id`, `createdAt`, `sortOrder` und eine `history`.
+Bei `completed` setzt er `completedAt`. Zu `recurrence` siehe [Wiederholende Aufgaben](#wiederholende-aufgaben).
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks \
   -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" \
   -d '{"title":"Tomaten gießen","employee":"Lisa","location":"Gewächshaus","priority":"high"}'
+```
+
+### Fälligkeitsdatum
+
+`dueDate` ist ein reines Kalenderdatum im Format `YYYY-MM-DD` ohne Uhrzeit und Zeitzone (#344). Der Wert gilt
+für den Garten, nicht für einen Zeitpunkt: `2026-03-15` ist am 15. März fällig, egal wo Server und Client
+stehen. Deshalb gibt es keine Zeitzonen-Umrechnung. Erlaubt sind echte Kalenderdaten von `2000-01-01` bis
+`2100-12-31` (kein `2026-02-30`, kein `2026-03-15T10:00:00Z`, kein leerer Text); alles andere ergibt `400` mit `errors`.
+
+- **Ohne Termin:** `null` oder weglassen. Neue Aufgaben ohne Datum liefern `"dueDate": null`. Ältere Aufgaben,
+  die vor diesem Feld gespeichert wurden, haben es gar nicht und gelten ebenfalls als „ohne Termin“; eine
+  Migration ist nicht nötig.
+- **Ändern und Entfernen:** `PUT` setzt oder ändert das Datum, `{"dueDate": null}` entfernt es. Ein `PUT`
+  ohne `dueDate` lässt es unberührt. Jede echte Änderung steht in der `history` (`edited`, z. B.
+  `Fälligkeit: "2026-03-15" → "kein Termin"`); ein unverändertes Datum erzeugt keinen Eintrag.
+- **Filter und Sortierung:** `GET /api/tasks` und `POST /api/tasks/search` kennen `dueFrom` und `dueTo`
+  (beide inklusive, `YYYY-MM-DD`) sowie `sort=dueDate` (aufsteigend). Aufgaben ohne Termin fallen aus jedem
+  Datumsfilter heraus und stehen beim Sortieren zuletzt. Sortiert und gefiltert wird vor der Pagination.
+  Ein ungültiger Wert ergibt `400` mit `{"error": "…"}`. Ein Datum enthält keine personenbezogenen Daten und
+  darf deshalb in der URL stehen.
+- **Wiederholung:** Siehe unten. `dueDate` ist die einzige Fälligkeit; das frühere Feld `nextDue` wird nicht
+  mehr geschrieben.
+- **Export und Import:** `dueDate` bleibt erhalten (Export, `mode=merge` und `mode=replace`). Ein Bündel ohne
+  das Feld bleibt gültig, ein ungültiges Datum weist das ganze Bündel ab.
+
+```bash
+curl -X PUT http://localhost:8080/api/tasks/$ID \
+  -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" \
+  -d '{"dueDate":"2026-03-15"}'
+
+curl -H "X-API-Key: $API_KEY" \
+  "http://localhost:8080/api/tasks?dueFrom=2026-03-01&dueTo=2026-03-31&sort=dueDate"
 ```
 
 ### Wiederholende Aufgaben
@@ -80,11 +112,18 @@ oder `monthly`, legt der Server die Folgeaufgabe an (#327). Die Antwort bleibt d
 - **Inhalt der Folgeaufgabe:** `title`, `employee`, `location`, `description`, `notes`, `priority` und
   `recurrence` der Vorlage, `status` `pending`, Unterpunkte wieder offen, eigene `id`, `createdAt` und eine
   neue `history` (`created`). Zusätzlich `recurrenceOf` (ID der Vorlage), `lastRecurrence` (Abschlusszeit)
-  und `nextDue`. Die Vorlage erhält `followUpId`, und ihr `completed`-Historieneintrag nennt es in
+  und `dueDate`. Die Vorlage erhält `followUpId`, und ihr `completed`-Historieneintrag nennt es in
   `details.followUpId`.
-- **Fälligkeit `nextDue`:** Abschlusszeit plus Intervall in UTC: `daily` +1 Tag, `weekly` +7 Tage, `monthly`
-  +1 Kalendermonat. Am Monatsende gilt der letzte Tag des Zielmonats: 31. Jan. + 1 Monat = 28. Feb.
-  (29. Feb. im Schaltjahr), 31. Mär. + 1 Monat = 30. Apr.
+- **Fälligkeit `dueDate` der Folgeaufgabe:** altes `dueDate` der Vorlage plus Intervall: `daily` +1 Tag,
+  `weekly` +7 Tage, `monthly` +1 Kalendermonat. So bleibt der Rhythmus auch bei früher Erledigung erhalten.
+  Hatte die Vorlage kein `dueDate`, oder läge das Ergebnis nicht nach dem Abschlusstag (verspätet erledigt),
+  gilt stattdessen der Abschlusstag plus Intervall; die Folgeaufgabe ist also nie sofort überfällig.
+  Der Abschlusstag ist das UTC-Datum von `completedAt`. Am Monatsende gilt der letzte Tag des Zielmonats: 31. Jan. + 1 Monat = 28. Feb. (29. Feb. im Schaltjahr), 31. Mär. + 1 Monat = 30. Apr. Ein im selben `PUT`
+  gesetztes `dueDate` zählt als Ausgangsdatum.
+- **`nextDue` (veraltet):** Das Feld stammt aus #327 und enthielt Abschlusszeit plus Intervall als Zeitstempel.
+  Es wird nicht mehr geschrieben, damit es keine zweite Fälligkeit neben `dueDate` gibt, und keine Logik
+  wertet es aus. In bereits gespeicherten Daten und in Export-Bündeln bleibt es erhalten und wird beim Import
+  weiter geprüft (ISO-Datum); nach Bedarf in `dueDate` umrechnen.
 - **Alles oder nichts:** Statusänderung und Folgeaufgabe entstehen im selben Sperr- und Schreibvorgang auf
   `tasks.json` (eine Datei, temporäre Datei plus Umbenennen). Schlägt das Schreiben fehl, antwortet der
   Server mit `500` und beides fehlt; ein erneutes PUT ist gefahrlos.
@@ -100,7 +139,8 @@ oder `monthly`, legt der Server die Folgeaufgabe an (#327). Die Antwort bleibt d
 
 Ohne `page` und `limit` liefert `GET /api/tasks` ein reines Array. Mit mindestens einem der beiden kommt
 ein Seitenobjekt `{"data": […], "total": 42, "page": 1, "limit": 50, "pages": 1}`. `limit` darf 1 bis 200
-sein, sonst gilt 50. Ein unbekannter `status` wird ignoriert.
+sein, sonst gilt 50. Ein unbekannter `status` wird ignoriert. Zusätzlich gibt es die Datumsfilter und die
+Sortierung aus [Fälligkeitsdatum](#fälligkeitsdatum).
 
 ```bash
 curl -H "X-API-Key: $API_KEY" "http://localhost:8080/api/tasks?status=pending&page=1&limit=20"
@@ -110,7 +150,8 @@ curl -H "X-API-Key: $API_KEY" "http://localhost:8080/api/tasks?status=pending&pa
 
 `employee` und `location` stehen bewusst nicht in der URL, weil Query-Strings in Request-Logs landen.
 `GET /api/tasks?employee=…` ergibt `400`. Stattdessen geht die Suche per Body; alle Felder sind optional,
-verglichen wird exakt, mehrere Felder gelten gemeinsam. `page` und `limit` funktionieren wie oben.
+verglichen wird exakt, mehrere Felder gelten gemeinsam. `page` und `limit` funktionieren wie oben, ebenso
+`dueFrom`, `dueTo` und `sort`.
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks/search \

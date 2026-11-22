@@ -7,6 +7,7 @@ const { app, resetCaches } = require('../src/server/app');
 const store = require('../src/server/storage/json-store');
 const {
   calculateNextDue,
+  calculateNextDueDate,
   addMonthsClamped,
 } = require('../src/server/services/recurrence');
 
@@ -129,9 +130,10 @@ describe('completing a recurring task via PUT (#327)', () => {
         'Kanne füllen',
         'Tomaten',
       ]);
-      expect(followUp.nextDue).toBe(
-        calculateNextDue(recurrence, res.body.completedAt),
+      expect(followUp.dueDate).toBe(
+        calculateNextDue(recurrence, res.body.completedAt).slice(0, 10),
       );
+      expect(followUp).not.toHaveProperty('nextDue');
       expect(res.body.followUpId).toBe(followUp.id);
 
       const stored = readTasks();
@@ -147,13 +149,14 @@ describe('completing a recurring task via PUT (#327)', () => {
     },
   );
 
-  test('nextDue is completion time plus the interval', async () => {
+  test('dueDate is the completion day plus the interval when the task had none', async () => {
     jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick'] });
     jest.setSystemTime(new Date('2025-01-31T09:00:00.000Z'));
     const original = await create({ recurrence: 'monthly' });
+    expect(original.dueDate).toBeNull();
     const res = await complete(original.id);
     expect(res.body.completedAt).toBe('2025-01-31T09:00:00.000Z');
-    expect(res.body.followUp.nextDue).toBe('2025-02-28T09:00:00.000Z');
+    expect(res.body.followUp.dueDate).toBe('2025-02-28');
   });
 
   test('month end in a leap year ends on 29 February', async () => {
@@ -161,7 +164,49 @@ describe('completing a recurring task via PUT (#327)', () => {
     jest.setSystemTime(new Date('2024-01-31T09:00:00.000Z'));
     const original = await create({ recurrence: 'monthly' });
     const res = await complete(original.id);
-    expect(res.body.followUp.nextDue).toBe('2024-02-29T09:00:00.000Z');
+    expect(res.body.followUp.dueDate).toBe('2024-02-29');
+  });
+
+  test.each([
+    ['daily', '2025-03-10', '2025-03-11'],
+    ['weekly', '2025-03-10', '2025-03-17'],
+    ['monthly', '2025-01-31', '2025-02-28'],
+    ['monthly', '2024-01-31', '2024-02-29'],
+    ['monthly', '2025-12-15', '2026-01-15'],
+  ])(
+    'a %s task due %s, completed early, is followed by one due %s',
+    async (recurrence, dueDate, expected) => {
+      jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick'] });
+      jest.setSystemTime(
+        new Date(`${dueDate.slice(0, 4)}-01-01T09:00:00.000Z`),
+      );
+      const original = await create({ recurrence, dueDate });
+      const res = await complete(original.id);
+      expect(res.body.dueDate).toBe(dueDate);
+      expect(res.body.followUp.dueDate).toBe(expected);
+      expect(readTasks().find((t) => t.id === res.body.followUp.id)).toEqual(
+        res.body.followUp,
+      );
+    },
+  );
+
+  test('a late completion does not leave the follow-up overdue', async () => {
+    jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick'] });
+    jest.setSystemTime(new Date('2025-03-20T09:00:00.000Z'));
+    const original = await create({
+      recurrence: 'weekly',
+      dueDate: '2025-03-01',
+    });
+    const res = await complete(original.id);
+    expect(res.body.followUp.dueDate).toBe('2025-03-27');
+  });
+
+  test('a PUT can set the due date together with the completion', async () => {
+    jest.useFakeTimers({ doNotFake: ['setImmediate', 'nextTick'] });
+    jest.setSystemTime(new Date('2025-01-01T09:00:00.000Z'));
+    const original = await create({ recurrence: 'daily' });
+    const res = await complete(original.id, { dueDate: '2025-01-10' });
+    expect(res.body.followUp.dueDate).toBe('2025-01-11');
   });
 
   test.each(['none', undefined])(
@@ -365,6 +410,42 @@ describe('atomicity (#327)', () => {
   });
 });
 
+describe('calculateNextDueDate (#344)', () => {
+  test('keeps the rhythm of the old due date and clamps at month end', () => {
+    expect(
+      calculateNextDueDate('daily', '2025-03-10', '2025-03-01T10:00:00Z'),
+    ).toBe('2025-03-11');
+    expect(
+      calculateNextDueDate('monthly', '2025-01-31', '2025-01-15T10:00:00Z'),
+    ).toBe('2025-02-28');
+  });
+
+  test('falls back to the completion day without or with a stale due date', () => {
+    expect(calculateNextDueDate('weekly', null, '2025-03-20T10:00:00Z')).toBe(
+      '2025-03-27',
+    );
+    expect(
+      calculateNextDueDate('weekly', undefined, '2025-03-20T10:00:00Z'),
+    ).toBe('2025-03-27');
+    expect(
+      calculateNextDueDate('daily', '2025-03-20', '2025-03-20T23:00:00Z'),
+    ).toBe('2025-03-21');
+    expect(
+      calculateNextDueDate('daily', '2025-01-01', '2025-03-20T10:00:00Z'),
+    ).toBe('2025-03-21');
+  });
+
+  test('returns null for no recurrence or unusable input', () => {
+    expect(
+      calculateNextDueDate('none', '2025-03-10', '2025-03-01T10:00:00Z'),
+    ).toBeNull();
+    expect(calculateNextDueDate('daily', null, 'kein Datum')).toBeNull();
+    expect(
+      calculateNextDueDate('daily', 'kein Datum', '2025-03-01T10:00:00Z'),
+    ).toBe('2025-03-02');
+  });
+});
+
 describe('export and import keep the recurrence links (#327)', () => {
   test('a restored completed task does not create a second follow-up', async () => {
     const original = await create({ recurrence: 'daily' });
@@ -375,7 +456,7 @@ describe('export and import keep the recurrence links (#327)', () => {
     expect(restored.followUpId).toBe(followUp.id);
     expect(followUp).toMatchObject({
       recurrenceOf: original.id,
-      nextDue: done.body.followUp.nextDue,
+      dueDate: done.body.followUp.dueDate,
       lastRecurrence: done.body.completedAt,
     });
 
@@ -394,6 +475,18 @@ describe('export and import keep the recurrence links (#327)', () => {
     expect(readTasks()).toHaveLength(2);
   });
 
+  test('the legacy nextDue of old data survives an import round trip', async () => {
+    const original = await create({ recurrence: 'daily' });
+    const exported = (await request(app).get('/api/export').expect(200)).body;
+    exported.tasks[0].nextDue = '2025-02-01T09:00:00.000Z';
+    fs.writeFileSync(store.TASKS_FILE, '[]');
+    resetCaches();
+    await request(app).post('/api/import').send(exported).expect(200);
+    const restored = readTasks().find((t) => t.id === original.id);
+    expect(restored.nextDue).toBe('2025-02-01T09:00:00.000Z');
+    expect(restored.dueDate).toBeNull();
+  });
+
   test('malformed link fields make the bundle invalid', async () => {
     const original = await create({ recurrence: 'daily' });
     const done = await complete(original.id);
@@ -401,7 +494,7 @@ describe('export and import keep the recurrence links (#327)', () => {
     exported.tasks = exported.tasks.map((t) => ({
       ...t,
       followUpId: t.followUpId && 'nicht-uuid',
-      nextDue: t.nextDue && 'kein Datum',
+      nextDue: 'kein Datum',
     }));
     const res = await request(app)
       .post('/api/import?mode=replace&confirm=replace')

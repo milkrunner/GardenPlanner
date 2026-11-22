@@ -14,6 +14,9 @@ Releases steht in [docs/RELEASING.md](docs/RELEASING.md).
   automatische GitHub-Release-Notizen und Dependabot-Konfiguration (#333).
 - Pflanzenbibliothek pflegen: Pflanzen lassen sich auf der Pflanzenseite hinzufügen, bearbeiten und
   nach Bestätigung löschen; Fehlermeldungen des Servers werden verständlich angezeigt (#330).
+- API: optionales Fälligkeitsdatum `dueDate` (`YYYY-MM-DD`) je Aufgabe mit Filter
+  (`dueFrom`, `dueTo`) und Sortierung (`sort=dueDate`); die Folgeaufgabe einer wiederholenden
+  Aufgabe erhält ein neues `dueDate`, das Altfeld `nextDue` wird nicht mehr geschrieben (#344).
 
 ## Frühere Entwicklung
 
