@@ -95,7 +95,7 @@ Due dates (#346): `dueDate` is a plain `YYYY-MM-DD` string. `task-filters.js` pa
 with `toLocaleDateString('de-DE')`, derives the status (overdue, today, next 7 days) from the local day and
 backs the due filter and sorting; the card shows the state as text, not only as color. The former browser
 `nextDue` of old `localStorage` copies is deliberately discarded: it is never read or sent, and the next
-successful load from the API replaces the copy (the server writes `dueDate` only). LocalStorage also supports
+successful load from the API replaces the copy (the server writes `dueDate` only). `localStorage` also supports
 fallback/browser state. Preserve escaping at HTML boundaries and inspect all pages
 when changing script order. The smoke test exercises the creation page and
 dashboard task flow.
