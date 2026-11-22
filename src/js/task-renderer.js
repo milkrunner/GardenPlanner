@@ -77,6 +77,11 @@ GartenPlaner.prototype._fillSelect = function (select, allLabel, values) {
 };
 
 GartenPlaner.prototype.renderTasks = function () {
+	// Wochenansicht (#348, task-week.js): gleiche Filter und Suche, eigene Darstellung.
+	if (this.currentView === "week" && typeof this.renderWeek === "function") {
+		this.renderWeek();
+		return;
+	}
 	var filteredTasks = this.getFilteredTasks();
 	var tasksList = document.getElementById("tasksList");
 
@@ -278,38 +283,6 @@ GartenPlaner.prototype.renderPlantRef = function (task) {
 	}
 	var href = "/plants?plant=" + encodeURIComponent(plant.id);
 	return `<span class="task-plant">${label}<a href="${Security.escapeHtml(href)}"><span aria-hidden="true">${Security.escapeHtml(plant.icon || "")}</span> ${Security.escapeHtml(plant.name)}</a></span>`;
-};
-
-GartenPlaner.prototype.switchView = function () {
-	var listView = document.getElementById("tasksList");
-	var calendarView = document.getElementById("tasksCalendar");
-
-	if (!listView || !calendarView) {
-		return;
-	}
-
-	if (this.currentView === "list") {
-		listView.style.display = "flex";
-		calendarView.style.display = "none";
-	} else {
-		listView.style.display = "none";
-		calendarView.style.display = "block";
-		this.renderCalendar();
-	}
-};
-
-GartenPlaner.prototype.renderCalendar = function () {
-	var calendarDiv = document.getElementById("calendarView");
-	if (!calendarDiv) {
-		return;
-	}
-
-	this._renderEmptyState(calendarDiv, {
-		icon: "📅",
-		title: "Kalenderansicht nicht verfügbar",
-		message:
-			"Die Kalenderansicht ist deaktiviert, da Aufgaben keine Datumsinformationen enthalten.",
-	});
 };
 
 GartenPlaner.prototype.updateEmployeeFilter = function () {

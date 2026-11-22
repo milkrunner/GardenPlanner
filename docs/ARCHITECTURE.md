@@ -70,7 +70,8 @@ decision: see [ADR 0001: Mehrbenutzerbetrieb](decisions/0001-mehrbenutzerbetrieb
 
 `public/` contains page markup, `src/css/` styles, `src/js/` classic browser scripts.
 Task pages load config/security/encryption/rate-limiter/logger/error-handler, then
-`api.js`, `auth-gate.js`, `app.js`, and `task-{state,filters,renderer,events,export}.js` in order.
+`api.js`, `auth-gate.js`, `app.js`, and `task-{state,filters,renderer,events,export}.js` in order; the dashboard
+additionally loads `task-week.js` between `task-renderer.js` and `task-events.js`.
 `app.js` defines `GartenPlaner`; later scripts extend its prototype before the
 DOMContentLoaded initialization. Page-specific dashboard/statistics initialization
 follows those scripts. Plants and log viewer have their own entry scripts. `plants.js` also maintains the library (#330):
@@ -106,6 +107,13 @@ Plant reference (#347): the task pages load `GET /api/plants` once (`loadPlants`
 `#taskPlant`/`#editTaskPlant` selects (`populatePlantSelect`, DOM builders; an orphaned reference stays selectable) and
 to render the card link (`renderPlantRef`: icon and name to `/plants?plant=<id>`, or the text "Pflanze nicht mehr
 vorhanden"; nothing while the library is not loaded). `plants.js` opens the detail dialog for `?plant=`.
+
+Week view (#348, dashboard only): `task-week.js` adds a "Liste/Woche" toggle (`setView`, `aria-pressed`) and renders the
+active tasks of one week (Monday start, ISO calendar week in the title, "today" marked as text, undated tasks in their own
+list) with DOM builders only. Days are plain `YYYY-MM-DD` strings and are shifted by calendar days, never by
+milliseconds, so daylight-saving changes cannot skip or repeat a day. `renderTasks` delegates to `renderWeek` while
+`currentView === "week"`, so filters, search and every save re-render the week; the task buttons open the existing edit
+dialog (including its date field) and focus returns to the moved task. Archive and bulk selection exist only in the list.
 Preserve escaping at HTML boundaries and inspect all pages
 when changing script order. The smoke test exercises the creation page and
 dashboard task flow.
@@ -126,6 +134,8 @@ dashboard task flow.
 - `tests/frontend-state.test.js`: jsdom runs `task-state.js`, `task-filters.js`, `task-export.js`
   and the sorting in `task-renderer.js` against mocked `TaskAPI`: archive/restore, offline
   fallback and error typing (`handleLoadFailure`), filter, sort, export/import.
+- `tests/week-view.test.js`: week calculation (year change, ISO week numbers, daylight-saving changes in separate
+  processes with `TZ`), grouping, rendering, escaping and navigation of the week view (#348).
 - `npm run test:coverage`: V8 coverage over `src/` including the browser scripts, with
   minimum values in `jest.config.cjs`.
 - `tests/frontend-{security,rate-limiter,error-handler,encryption}.test.js`: jsdom runs the

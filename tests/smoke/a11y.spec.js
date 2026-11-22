@@ -139,6 +139,57 @@ for (const theme of ['light', 'dark']) {
   }
 }
 
+// Wochenansicht (#348): axe in beiden Themes, auch mit Aufgaben in der Woche und feindlichen Texten.
+for (const theme of ['light', 'dark']) {
+  test(`axe: dashboard week view (${theme}) has no violations`, async ({
+    page,
+    request,
+  }) => {
+    const res = await request.post(`${app.baseURL}/api/tasks`, {
+      data: {
+        title: `Woche ${HOSTILE}`,
+        employee: `Ada ${HOSTILE}`,
+        location: `Beet ${HOSTILE}`,
+        dueDate: [
+          new Date().getFullYear(),
+          String(new Date().getMonth() + 1).padStart(2, '0'),
+          String(new Date().getDate()).padStart(2, '0'),
+        ].join('-'),
+      },
+    });
+    expect(res.status()).toBe(201);
+    await openPage(page, 'dashboard', theme);
+    await page.getByRole('button', { name: 'Woche', exact: true }).click();
+    await expect(page.locator('.week-day')).toHaveCount(7);
+    await expect(page.locator('.week-task').first()).toBeVisible();
+    expect(await page.locator('#tasksWeek img, #tasksWeek b').count()).toBe(0);
+    expect(await axeViolations(page)).toEqual([]);
+  });
+}
+
+test('week view: toggle, navigation and tasks are reachable by keyboard', async ({
+  page,
+}) => {
+  await openPage(page, 'dashboard');
+  const weekToggle = page.getByRole('button', { name: 'Woche', exact: true });
+  await expect(weekToggle).toHaveAttribute('aria-pressed', 'false');
+  await weekToggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(weekToggle).toHaveAttribute('aria-pressed', 'true');
+  const reached = new Set();
+  for (let i = 0; i < 40 && reached.size < 4; i++) {
+    await page.keyboard.press('Tab');
+    const label = await page.evaluate(() => {
+      const el = document.activeElement;
+      return el.closest('#tasksWeek') ? el.textContent.trim() : '';
+    });
+    if (/Vorherige Woche|^Heute$|Nächste Woche|Frist/.test(label)) {
+      reached.add(label.replace(/\s+/g, ' '));
+    }
+  }
+  expect(reached.size).toBeGreaterThanOrEqual(4);
+});
+
 test('untrusted task data stays text on dashboard, statistics and filters', async ({
   page,
 }) => {
