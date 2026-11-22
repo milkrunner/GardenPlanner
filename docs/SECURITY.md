@@ -130,3 +130,30 @@ CSRF-Schutz zeitgleich ergänzt werden.
 Ohne `API_KEY` (lokale Entwicklung oder bewusst mit `ALLOW_UNAUTHENTICATED=true`) ist die
 API offen; dann schützt auch kein CSRF-Token, weil jeder Client direkt zugreifen kann.
 Produktion startet ohne `API_KEY` nicht (siehe `README.md`, Abschnitt Konfiguration).
+
+## Backend: Reverse Proxy (`TRUST_PROXY`)
+
+Standardmäßig vertraut der Server dem Header `X-Forwarded-For` **nicht**: `req.ip` ist die Adresse
+der TCP-Verbindung. Das ist für direkt erreichbare Server sicher, weil ein Client den Header sonst
+frei setzen könnte, um das Rate-Limit (`express-rate-limit`, Schlüssel `req.ip`) zu umgehen und
+falsche Adressen in Request- und Audit-Log (`auth_failure`) zu erzeugen.
+
+Hinter einem Reverse Proxy zeigt dieser Standard die Proxy-Adresse: alle Clients teilen sich ein
+Rate-Limit-Fenster. Dann `TRUST_PROXY` setzen (Express-Einstellung `trust proxy`, einmal beim Import
+von `src/server/app.js` gelesen):
+
+| Wert                                   | Bedeutung                                                   |
+| -------------------------------------- | ----------------------------------------------------------- |
+| nicht gesetzt, leer, `false`, `0`      | aus (Standard)                                              |
+| Ganzzahl `1`–`32`                      | Anzahl vertrauenswürdiger Proxy-Hops (empfohlen, meist `1`) |
+| `loopback`, `linklocal`, `uniquelocal` | Express-Schlüsselwörter, kommagetrennt kombinierbar         |
+| IP-Adresse oder CIDR (IPv4/IPv6)       | vertrauenswürdige Proxy-Adressen/-Subnetze, kommagetrennt   |
+| `true`                                 | jedem Hop vertrauen (Start mit Warnung, siehe unten)        |
+
+`true` ist nur sicher, wenn der Server ausschließlich über einen Proxy erreichbar ist, der
+`X-Forwarded-For` überschreibt oder anfügt. Ist der Server direkt erreichbar, kann jeder Client mit
+einem gefälschten Header beliebige Adressen vortäuschen. Bevorzugt eine Hop-Anzahl oder die
+Proxy-Subnetze verwenden; bei einer Hop-Anzahl zählt die Adresse von rechts, vorangestellte
+gefälschte Einträge werden ignoriert. Ein ungültiger Wert verhindert den Start (Exit-Code 1), damit
+ein Tippfehler das Rate-Limit nicht unbemerkt verschlechtert; wird `app.js` ohne diese Prüfung
+importiert, gilt „aus“. Tests: `tests/trust-proxy.test.js`.

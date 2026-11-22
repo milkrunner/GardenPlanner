@@ -11,6 +11,7 @@ const { validateTask, escapeHtml, sanitizeTaskData } = require('./validation/tas
 const { paginate } = require('./services/task-service');
 const { resetCaches } = require('./storage/json-store');
 const { listCategories } = require('./services/plant-service');
+const { parseTrustProxy } = require('./config');
 
 const tasksRouter = require('./routes/tasks');
 const archiveRouter = require('./routes/archive');
@@ -18,6 +19,11 @@ const plantsRouter = require('./routes/plants');
 const authRouter = require('./routes/auth');
 
 const app = express();
+
+// Reverse proxy (#334): off by default so X-Forwarded-For cannot be spoofed on a directly reachable
+// server. TRUST_PROXY is read once at import; an invalid value falls back to off (server.js refuses
+// to start with it, see checkStartupConfig).
+app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY).value);
 
 // --- Project root for static files ---
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
@@ -44,7 +50,7 @@ const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100,
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
 });
 app.use(limiter);
 
@@ -61,7 +67,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // HTML page routes (with and without .html extension)
 const pages = ['index', 'dashboard', 'statistics', 'logs', 'plants'];
-pages.forEach(page => {
+pages.forEach((page) => {
     app.get(`/${page}`, limiter, (req, res) => {
         res.sendFile(path.join(PROJECT_ROOT, 'public', `${page}.html`));
     });
