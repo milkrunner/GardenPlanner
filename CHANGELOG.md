@@ -21,6 +21,12 @@ Releases steht in [docs/RELEASING.md](docs/RELEASING.md).
   (deutsches Format, „Überfällig“ und „Heute fällig“ auch als Text), Kennzahl „Überfällige Aufgaben“,
   Filter nach Fälligkeit und Sortierung im Dashboard. Das alte Browser-`nextDue` aus
   `localStorage`-Kopien wird bewusst verworfen (#346).
+- API: optionale Pflanzenreferenz `plantId` (Slug) an Aufgaben mit Prüfung gegen die Pflanzenbibliothek
+  beim Anlegen und Ändern (sonst `400`), Filter `GET /api/tasks?plantId=…` und `POST /api/tasks/search`.
+  Eine später gelöschte Pflanze lässt die Aufgabe gültig; Altdaten brauchen keine Migration (#347).
+- Oberfläche: Pflanzenauswahl im Formular und im Bearbeiten-Dialog, Karten zeigen Icon und Name mit Link
+  zur Pflanzenseite (`/plants?plant=<id>` öffnet die Details), eine gelöschte Pflanze erscheint als
+  „Pflanze nicht mehr vorhanden“ (#347).
 
 ## Frühere Entwicklung
 

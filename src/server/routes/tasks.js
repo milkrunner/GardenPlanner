@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { asyncHandler } = require('../middleware/async-handler');
-const { validateIdParam, parseDueFilter } = require('../validation/task-validator');
+const { validateIdParam, parseDueFilter, parsePlantFilter } = require('../validation/task-validator');
 const { listTasks, searchTasks, getTask, createTask, updateTask, deleteTask } = require('../services/task-service');
 
 // GET /api/tasks - List tasks with optional pagination (?page=1&limit=50)
@@ -18,14 +18,18 @@ router.get('/', (req, res) => {
     }
     const due = parseDueFilter(req.query);
     if (!due.valid) return res.status(400).json({ error: due.errors.join('; ') });
-    res.json(listTasks(req.query, due.filter));
+    const plant = parsePlantFilter(req.query);
+    if (!plant.valid) return res.status(400).json({ error: plant.errors.join('; ') });
+    res.json(listTasks(req.query, due.filter, plant.plantId));
 });
 
 // POST /api/tasks/search - Filter tasks with sensitive criteria via request body
 router.post('/search', (req, res) => {
     const due = parseDueFilter(req.body);
     if (!due.valid) return res.status(400).json({ error: due.errors.join('; ') });
-    res.json(searchTasks(req.body, due.filter));
+    const plant = parsePlantFilter(req.body);
+    if (!plant.valid) return res.status(400).json({ error: plant.errors.join('; ') });
+    res.json(searchTasks(req.body, due.filter, plant.plantId));
 });
 
 // GET /api/tasks/:id - Get single task

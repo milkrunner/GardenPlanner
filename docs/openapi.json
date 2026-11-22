@@ -63,7 +63,7 @@
       "get": {
         "tags": ["Tasks"],
         "summary": "Aufgaben auflisten",
-        "description": "Ohne `page`/`limit` kommt ein reines Array (abwärtskompatibel), mit mindestens einem der beiden ein Seitenobjekt. Ein unbekannter `status` wird ignoriert. `employee` und `location` werden mit 400 abgelehnt (Query-Strings landen in Logs); dafür gibt es `POST /api/tasks/search`. `dueFrom`/`dueTo` (inklusive) filtern nach Fälligkeit, `sort=dueDate` sortiert aufsteigend (ohne Termin zuletzt, vor der Pagination); ungültige Werte ergeben 400.",
+        "description": "Ohne `page`/`limit` kommt ein reines Array (abwärtskompatibel), mit mindestens einem der beiden ein Seitenobjekt. Ein unbekannter `status` wird ignoriert. `employee` und `location` werden mit 400 abgelehnt (Query-Strings landen in Logs); dafür gibt es `POST /api/tasks/search`. `dueFrom`/`dueTo` (inklusive) filtern nach Fälligkeit, `sort=dueDate` sortiert aufsteigend (ohne Termin zuletzt, vor der Pagination); `plantId` filtert nach der Pflanzenreferenz; ungültige Werte ergeben 400.",
         "security": [
           {
             "ApiKey": []
@@ -93,6 +93,14 @@
             "schema": {
               "type": "string",
               "format": "date"
+            }
+          },
+          {
+            "name": "plantId",
+            "in": "query",
+            "description": "Nur Aufgaben, die auf diese Pflanze verweisen (Slug, z. B. `tomato`). Ein Slug ohne Pflanze in der Bibliothek liefert die Aufgaben mit verwaister Referenz, sonst nichts; ein ungültiges Format ergibt 400.",
+            "schema": {
+              "$ref": "#/components/schemas/PlantId"
             }
           },
           {
@@ -205,7 +213,7 @@
       "post": {
         "tags": ["Tasks"],
         "summary": "Aufgaben filtern (Body)",
-        "description": "Alle Felder optional und per UND verknüpft; Vergleich exakt nach Mitarbeiter/Standort. Pagination wie bei `GET /api/tasks`. Zusätzlich `dueFrom`, `dueTo` und `sort` wie bei `GET /api/tasks`; ungültige Werte ergeben 400.",
+        "description": "Alle Felder optional und per UND verknüpft; Vergleich exakt nach Mitarbeiter/Standort. Pagination wie bei `GET /api/tasks`. Zusätzlich `dueFrom`, `dueTo`, `sort` und `plantId` wie bei `GET /api/tasks`; ungültige Werte ergeben 400.",
         "security": [
           {
             "ApiKey": []
@@ -303,7 +311,7 @@
       "put": {
         "tags": ["Tasks"],
         "summary": "Aufgabe ändern (partiell)",
-        "description": "Nur gesendete Felder ändern sich. Statuswechsel und Änderungen erzeugen Historieneinträge; `completed` setzt `completedAt`. Wechselt eine Aufgabe mit `recurrence` ungleich `none` auf `completed`, legt der Server im selben Schreibvorgang die Folgeaufgabe an (alles oder nichts) und liefert sie als `followUp` mit. Nur der Übergang zu `completed` zählt: ein weiteres PUT auf eine abgeschlossene Aufgabe erzeugt keine zweite Folgeaufgabe.",
+        "description": "Nur gesendete Felder ändern sich. Statuswechsel und Änderungen erzeugen Historieneinträge; `completed` setzt `completedAt`. Wechselt eine Aufgabe mit `recurrence` ungleich `none` auf `completed`, legt der Server im selben Schreibvorgang die Folgeaufgabe an (alles oder nichts) und liefert sie als `followUp` mit. Nur der Übergang zu `completed` zählt: ein weiteres PUT auf eine abgeschlossene Aufgabe erzeugt keine zweite Folgeaufgabe. Eine geänderte `plantId` muss in der Pflanzenbibliothek existieren (sonst 400); eine unverändert mitgesendete, inzwischen verwaiste `plantId` und `null` zum Entfernen sind immer erlaubt.",
         "security": [
           {
             "ApiKey": []
@@ -1181,6 +1189,9 @@
           "dueDate": {
             "$ref": "#/components/schemas/DueDate"
           },
+          "plantId": {
+            "$ref": "#/components/schemas/PlantId"
+          },
           "subtasks": {
             "type": "array",
             "maxItems": 50,
@@ -1246,6 +1257,9 @@
           },
           "dueDate": {
             "$ref": "#/components/schemas/DueDate"
+          },
+          "plantId": {
+            "$ref": "#/components/schemas/PlantId"
           },
           "createdAt": {
             "type": "string",
@@ -1368,6 +1382,9 @@
             "type": "string",
             "format": "date",
             "description": "Nur Aufgaben mit `dueDate` bis zu diesem Tag (inklusive)."
+          },
+          "plantId": {
+            "$ref": "#/components/schemas/PlantId"
           },
           "sort": {
             "type": "string",
@@ -1711,6 +1728,15 @@
             }
           }
         ]
+      },
+      "PlantId": {
+        "type": "string",
+        "nullable": true,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "minLength": 1,
+        "maxLength": 60,
+        "example": "tomato",
+        "description": "Optionale Pflanzenreferenz (Slug einer Pflanze der Bibliothek, `GET /api/plants`). `null` oder fehlend heißt „ohne Pflanze“; per `PUT` entfernt `null` die Referenz. Beim Anlegen und Ändern muss die Pflanze existieren (sonst 400). Wird die Pflanze später gelöscht, bleibt die Aufgabe gültig und behält die Kennung („verwaist“); ältere Aufgaben ohne Feld brauchen keine Migration. Als Filter ist die Kennung unkritisch in der URL."
       },
       "DueDate": {
         "type": "string",

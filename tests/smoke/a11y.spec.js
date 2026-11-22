@@ -63,6 +63,32 @@ async function seed(request) {
     });
     expect(res.status()).toBe(201);
   }
+  // Pflanzenreferenz (#347): vorhandene Pflanze (Link) und verwaiste Referenz (Text), damit axe beides prüft.
+  const withPlant = await request.post(`${app.baseURL}/api/tasks`, {
+    data: {
+      title: 'Mit Pflanze',
+      employee: 'Gert',
+      location: 'Beet',
+      plantId: 'tomato',
+    },
+  });
+  expect(withPlant.status()).toBe(201);
+  const temp = await request.post(`${app.baseURL}/api/plants`, {
+    data: { name: 'Zierkürbis', category: 'Gemüse' },
+  });
+  expect(temp.status()).toBe(201);
+  const orphan = await request.post(`${app.baseURL}/api/tasks`, {
+    data: {
+      title: 'Verwaiste Pflanze',
+      employee: 'Hanna',
+      location: 'Beet',
+      plantId: 'zierkurbis',
+    },
+  });
+  expect(orphan.status()).toBe(201);
+  expect(
+    (await request.delete(`${app.baseURL}/api/plants/zierkurbis`)).status(),
+  ).toBe(204);
 }
 
 async function openPage(page, name, theme = 'light') {

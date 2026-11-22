@@ -85,6 +85,15 @@ const Security = {
 			);
 		},
 
+		// Pflanzenreferenz: Slug wie auf dem Server (#347), z. B. "tomato"
+		plantId(value) {
+			return (
+				typeof value === "string" &&
+				value.length <= 60 &&
+				/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value)
+			);
+		},
+
 		// Select-Option validieren
 		option(value, allowedValues) {
 			return allowedValues.includes(value);
@@ -140,6 +149,11 @@ const Security = {
 			errors.push(
 				"Ungültiges Fälligkeitsdatum (JJJJ-MM-TT, zwischen 2000 und 2100)",
 			);
+		}
+
+		// Pflanzenreferenz (optional)
+		if (taskData.plantId && !this.validateInput.plantId(taskData.plantId)) {
+			errors.push("Ungültige Pflanzenauswahl");
 		}
 
 		// Status

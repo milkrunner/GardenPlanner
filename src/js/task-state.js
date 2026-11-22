@@ -19,6 +19,57 @@ GartenPlaner.prototype._setFieldError = (inputId, message) => {
 	}
 };
 
+// Pflanzenbibliothek laden (#347). Ohne Server (localStorage-Modus) oder bei einem Fehler bleibt `null`: die Auswahl
+// bietet dann nur "Keine Pflanze", und Karten zeigen keine Pflanze statt eine falsche "nicht mehr vorhanden"-Meldung.
+GartenPlaner.prototype.loadPlants = async function () {
+	if (!this.useAPI || typeof TaskAPI.getPlants !== "function") return null;
+	try {
+		var plants = await TaskAPI.getPlants();
+		return Array.isArray(plants) ? plants : null;
+	} catch (error) {
+		console.warn("Pflanzenbibliothek nicht geladen:", error.message);
+		return null;
+	}
+};
+
+GartenPlaner.prototype.getPlant = function (plantId) {
+	if (!plantId || !Array.isArray(this.plants)) return null;
+	return this.plants.find((p) => p.id === plantId) || null;
+};
+
+// Füllt ein Pflanzen-<select> mit DOM-Buildern (Pflanzennamen sind Daten, nie als HTML). Eine verwaiste Referenz
+// (Pflanze gelöscht) bleibt als eigener Eintrag ausgewählt, damit Speichern sie nicht stillschweigend entfernt.
+GartenPlaner.prototype.populatePlantSelect = function (selectId, selectedId) {
+	var select = document.getElementById(selectId);
+	if (!select) return;
+	var makeOption = (value, text) => {
+		var option = document.createElement("option");
+		option.value = value;
+		option.textContent = text;
+		return option;
+	};
+	var options = [makeOption("", "Keine Pflanze")];
+	var plants = Array.isArray(this.plants) ? [...this.plants] : [];
+	plants.sort((a, b) => String(a.name).localeCompare(String(b.name), "de"));
+	plants.forEach((plant) => {
+		options.push(
+			makeOption(plant.id, `${plant.icon || ""} ${plant.name}`.trim()),
+		);
+	});
+	if (selectedId && !plants.some((p) => p.id === selectedId)) {
+		options.push(
+			makeOption(
+				selectedId,
+				Array.isArray(this.plants)
+					? "Pflanze nicht mehr vorhanden"
+					: `Pflanze: ${selectedId}`,
+			),
+		);
+	}
+	select.replaceChildren(...options);
+	select.value = selectedId || "";
+};
+
 GartenPlaner.prototype.addTask = async function () {
 	const submitBtn = document.querySelector(
 		'#taskForm button[type="submit"], #taskForm .btn-primary',
@@ -47,6 +98,7 @@ GartenPlaner.prototype.addTask = async function () {
 
 		this._setFieldError("taskDueDate", "");
 		const dueDateInput = document.getElementById("taskDueDate");
+		const plantSelect = document.getElementById("taskPlant");
 		const taskData = {
 			title: Security.sanitizeText(document.getElementById("taskTitle").value),
 			employee: Security.sanitizeText(
@@ -59,6 +111,7 @@ GartenPlaner.prototype.addTask = async function () {
 				document.getElementById("taskDescription").value,
 			),
 			dueDate: dueDateInput && dueDateInput.value ? dueDateInput.value : null,
+			plantId: plantSelect && plantSelect.value ? plantSelect.value : null,
 			status: "pending",
 		};
 
@@ -272,7 +325,9 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		const oldLocation = task.location;
 		const oldDescription = task.description;
 		const oldDueDate = task.dueDate || null;
+		const oldPlantId = task.plantId || null;
 		const editDueDate = document.getElementById("editTaskDueDate");
+		const editPlant = document.getElementById("editTaskPlant");
 		const taskData = {
 			title: Security.sanitizeText(
 				document.getElementById("editTaskTitle").value,
@@ -287,6 +342,8 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 				document.getElementById("editTaskDescription").value,
 			),
 			dueDate: editDueDate && editDueDate.value ? editDueDate.value : null,
+			// Ohne Auswahlfeld (ältere Seite) bleibt die Referenz unberührt
+			plantId: editPlant ? editPlant.value || null : oldPlantId,
 			status: task.status,
 		};
 		const validation = Security.validateTask(taskData);
@@ -307,6 +364,7 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 		task.location = taskData.location;
 		task.description = taskData.description;
 		task.dueDate = taskData.dueDate;
+		task.plantId = taskData.plantId;
 		const changes = [];
 		if (oldTitle !== task.title)
 			changes.push(`Titel: "${oldTitle}" \u2192 "${task.title}"`);
@@ -320,6 +378,12 @@ GartenPlaner.prototype.saveEditedTask = async function (id) {
 			const dueLabel = (value) => (value ? `"${value}"` : "kein Termin");
 			changes.push(
 				`F\u00e4lligkeit: ${dueLabel(oldDueDate)} \u2192 ${dueLabel(task.dueDate)}`,
+			);
+		}
+		if (oldPlantId !== task.plantId) {
+			const plantLabel = (value) => (value ? `"${value}"` : "keine Pflanze");
+			changes.push(
+				`Pflanze: ${plantLabel(oldPlantId)} \u2192 ${plantLabel(task.plantId)}`,
 			);
 		}
 		if (this.useAPI) {

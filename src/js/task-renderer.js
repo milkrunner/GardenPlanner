@@ -224,6 +224,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                     <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Mitarbeiter: </span>${safeEmployee}</span>
                     <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Standort: </span>${safeLocation}</span>
                     ${this.renderDueDate(task)}
+                    ${this.renderPlantRef(task)}
                 </div>
                 ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
                 ${this.renderSubtasksProgress(task)}
@@ -263,6 +264,20 @@ GartenPlaner.prototype.renderDueDate = function (task) {
 		? `<span class="due-flag">${flags[status]}</span>`
 		: "";
 	return `<span class="task-due-date due-${status}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="sr-only">Fällig am: </span><time datetime="${Security.escapeHtml(task.dueDate)}">${Security.escapeHtml(label)}</time>${flag}</span>`;
+};
+
+// Pflanzenreferenz für die Karte (#347): Icon und Name mit Link zur Pflanzenseite. Eine gelöschte Pflanze
+// ("verwaist") ist kein Fehler und steht als Text da. Ohne geladene Bibliothek bleibt die Karte ohne Hinweis, statt
+// fälschlich "nicht mehr vorhanden" zu behaupten. Name und Icon kommen aus der Bibliothek und laufen durch escapeHtml.
+GartenPlaner.prototype.renderPlantRef = function (task) {
+	if (!task.plantId || !Array.isArray(this.plants)) return "";
+	var label = '<span class="sr-only">Pflanze: </span>';
+	var plant = this.getPlant(task.plantId);
+	if (!plant) {
+		return `<span class="task-plant task-plant-missing">${label}Pflanze nicht mehr vorhanden</span>`;
+	}
+	var href = "/plants?plant=" + encodeURIComponent(plant.id);
+	return `<span class="task-plant">${label}<a href="${Security.escapeHtml(href)}"><span aria-hidden="true">${Security.escapeHtml(plant.icon || "")}</span> ${Security.escapeHtml(plant.name)}</a></span>`;
 };
 
 GartenPlaner.prototype.switchView = function () {

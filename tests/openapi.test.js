@@ -229,6 +229,38 @@ describe('OpenAPI spec (#326)', () => {
         .send({ dueDate: null });
       expect(cleared.body.dueDate).toBeNull();
       await expectMatches('PUT', '/api/tasks/{id}', cleared);
+      const planted = await request(app)
+        .post('/api/tasks')
+        .send({ ...validTask, plantId: 'tomato' });
+      expect(planted.body.plantId).toBe('tomato');
+      await expectMatches('POST', '/api/tasks', planted);
+      await expectMatches(
+        'POST',
+        '/api/tasks',
+        await request(app)
+          .post('/api/tasks')
+          .send({ ...validTask, plantId: 'dragonfruit' }),
+      );
+      await expectMatches(
+        'GET',
+        '/api/tasks',
+        await request(app).get('/api/tasks?plantId=tomato'),
+      );
+      await expectMatches(
+        'GET',
+        '/api/tasks',
+        await request(app).get('/api/tasks?plantId=Tom%20ato'),
+      );
+      await expectMatches(
+        'POST',
+        '/api/tasks/search',
+        await request(app).post('/api/tasks/search').send({ plantId: 5 }),
+      );
+      const unplanted = await request(app)
+        .put(`/api/tasks/${planted.body.id}`)
+        .send({ plantId: null });
+      expect(unplanted.body.plantId).toBeNull();
+      await expectMatches('PUT', '/api/tasks/{id}', unplanted);
       await expectMatches(
         'POST',
         '/api/tasks/search',

@@ -1,3 +1,5 @@
+const { ID_REGEX, LIMITS: PLANT_LIMITS } = require('./plant-validator');
+
 // --- Validation ---
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -23,6 +25,13 @@ function isValidDueDate(value) {
     const date = new Date(Date.UTC(year, month - 1, day));
     const real = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
     return real && value >= DUE_DATE_MIN && value <= DUE_DATE_MAX;
+}
+
+// Pflanzenreferenz (#347): Slug einer Pflanze der Bibliothek (`tomato`). Hier wird nur das Format geprüft; ob die
+// Pflanze existiert, entscheidet der Task-Service gegen die Bibliothek, weil sie sich später ändern darf und
+// eine Aufgabe mit verwaister Referenz gültig bleibt (kein Fehler beim Lesen, Import oder unverändertem Speichern).
+function isValidPlantId(value) {
+    return typeof value === 'string' && value.length >= 1 && value.length <= PLANT_LIMITS.id && ID_REGEX.test(value);
 }
 
 function validateTask(taskData, partial = false) {
@@ -84,6 +93,13 @@ function validateTask(taskData, partial = false) {
             `F\u00e4lligkeitsdatum muss ein g\u00fcltiges Datum im Format JJJJ-MM-TT zwischen ${DUE_DATE_MIN} und ${DUE_DATE_MAX} sein oder null`,
         );
     }
+    if (taskData.plantId !== undefined && taskData.plantId !== null && !isValidPlantId(taskData.plantId)) {
+        errors.push(
+            'Pflanzen-ID muss ein Slug aus Kleinbuchstaben, Ziffern und Bindestrichen sein (max. ' +
+                PLANT_LIMITS.id +
+                ' Zeichen) oder null',
+        );
+    }
     if (taskData.subtasks !== undefined) {
         if (!Array.isArray(taskData.subtasks)) {
             errors.push('Unteraufgaben m\u00fcssen ein Array sein');
@@ -136,6 +152,7 @@ function sanitizeTaskData(data) {
     if (data.priority !== undefined) sanitized.priority = data.priority;
     if (data.recurrence !== undefined) sanitized.recurrence = data.recurrence;
     if (data.dueDate !== undefined) sanitized.dueDate = data.dueDate;
+    if (data.plantId !== undefined) sanitized.plantId = data.plantId;
     if (data.subtasks !== undefined) sanitized.subtasks = data.subtasks;
     return sanitized;
 }
@@ -180,12 +197,29 @@ function applyDueFilter(tasks, filter) {
     return result;
 }
 
+// Pflanzenfilter für GET /api/tasks (Query) und POST /api/tasks/search (Body). Leere Werte gelten als nicht
+// gesetzt, ein Slug ohne passende Pflanze liefert einfach keine Treffer (auch Aufgaben mit verwaister Referenz
+// bleiben so auffindbar); ein ungültiges Format wird abgelehnt statt still ignoriert.
+function parsePlantFilter(params) {
+    const source = params && typeof params === 'object' ? params : {};
+    const value = source.plantId;
+    if (value === undefined || value === null || value === '') return { valid: true, errors: [], plantId: null };
+    if (isValidPlantId(value)) return { valid: true, errors: [], plantId: value };
+    return {
+        valid: false,
+        errors: ['plantId muss ein g\u00fcltiger Pflanzen-Slug sein (z. B. tomato)'],
+        plantId: null,
+    };
+}
+
 module.exports = {
     validateTask,
     escapeHtml,
     sanitizeTaskData,
     validateIdParam,
     isValidDueDate,
+    isValidPlantId,
+    parsePlantFilter,
     parseDueFilter,
     applyDueFilter,
 };

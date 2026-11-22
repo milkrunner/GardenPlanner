@@ -6,6 +6,8 @@ class GartenPlaner {
 	constructor() {
 		this.tasks = [];
 		this.archivedTasks = [];
+		// Pflanzenbibliothek für Auswahl und Anzeige (#347); null = nicht geladen (offline, Fehler)
+		this.plants = null;
 		this.showArchive = false;
 		this.currentFilter = {
 			employee: "",
@@ -31,6 +33,8 @@ class GartenPlaner {
 		if (this.useAPI && window.GP?.Auth) await window.GP.Auth.ensureAccess();
 		this.tasks = await this.loadTasks();
 		this.archivedTasks = await this.loadArchivedTasks();
+		this.plants = await this.loadPlants();
+		this.populatePlantSelect("taskPlant", "");
 
 		if (window.logger) {
 			window.logger.info("GartenPlaner initialisiert", "app", {
