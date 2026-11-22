@@ -12,6 +12,8 @@ Releases steht in [docs/RELEASING.md](docs/RELEASING.md).
 - Release-Prozess: Workflow `release.yml` (Auslöser nur ein bewusst gepushter Tag
   `vX.Y.Z`), Docker-Tags `X.Y.Z`, `X.Y` und `latest` für `linux/amd64` und `linux/arm64`,
   automatische GitHub-Release-Notizen und Dependabot-Konfiguration (#333).
+- Pflanzenbibliothek pflegen: Pflanzen lassen sich auf der Pflanzenseite hinzufügen, bearbeiten und
+  nach Bestätigung löschen; Fehlermeldungen des Servers werden verständlich angezeigt (#330).
 
 ## Frühere Entwicklung
 

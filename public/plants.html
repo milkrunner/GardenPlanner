@@ -28,6 +28,14 @@
 
       <main>
         <section class="plant-controls">
+          <button
+            type="button"
+            class="btn btn-primary plant-add-btn"
+            id="plantAddBtn"
+            aria-haspopup="dialog"
+          >
+            ➕ Pflanze hinzufügen
+          </button>
           <div class="search-box">
             <input
               type="text"
@@ -47,6 +55,8 @@
             </button>
           </div>
         </section>
+
+        <p class="plant-notice" id="plantNotice" role="status"></p>
 
         <h2 class="sr-only" id="plantGridHeading">Pflanzen</h2>
         <section

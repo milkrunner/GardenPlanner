@@ -74,6 +74,7 @@ const TaskAPI = {
 				: body.error || `HTTP ${res.status}`;
 			const error = new Error(msg);
 			error.status = res.status;
+			if (Array.isArray(body.errors)) error.errors = body.errors;
 			throw error;
 		}
 		if (res.status === 204) return null;

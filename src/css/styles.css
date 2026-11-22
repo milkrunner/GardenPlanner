@@ -5208,3 +5208,165 @@ footer {
   color: var(--error);
   font-weight: 600;
 }
+
+/* ==========================================
+   Pflege der Bibliothek (#330): Hinzufügen, Bearbeiten, Löschen
+   ========================================== */
+
+.plant-controls .plant-add-btn {
+  margin: 0;
+}
+
+.plant-notice {
+  margin: 0 3rem;
+  padding: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.plant-notice:not(:empty) {
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 8px;
+}
+
+.plant-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.plant-detail-actions .btn {
+  margin: 0;
+}
+
+.plant-form-header {
+  padding: 1.5rem 30px 0;
+}
+
+.plant-form-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+.plant-form-content {
+  max-width: 680px;
+}
+
+.plant-form-content form .form-group {
+  margin-bottom: 1rem;
+}
+
+.plant-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0 1rem;
+}
+
+.plant-form-hint {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.plant-form-fieldset {
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.plant-form-fieldset legend {
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text);
+}
+
+[data-theme='dark'] .plant-form-fieldset legend {
+  color: var(--primary);
+}
+
+.plant-season-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.plant-season-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 0.9rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.plant-season-option input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.plant-form-error {
+  margin: 0 0 1rem;
+  color: var(--text);
+}
+
+.plant-form-error:not(:empty) {
+  padding: 0.75rem 1rem;
+  background: var(--error-light);
+  border: 1px solid var(--error);
+  border-radius: 8px;
+}
+
+.plant-form-error p {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+}
+
+.plant-form-error ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.plant-confirm-body {
+  padding: 1.25rem 30px 0;
+}
+
+.plant-confirm-body p {
+  margin: 0 0 1rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.plant-confirm-body .plant-form-error {
+  margin-bottom: 0;
+}
+
+@media (width <= 768px) {
+  .plant-notice {
+    margin: 0 1.5rem;
+  }
+
+  .plant-form-header {
+    padding: 1.25rem 1.25rem 0;
+  }
+
+  .plant-confirm-body {
+    padding: 1rem 1.25rem 0;
+  }
+
+  .plant-form-content form {
+    padding: 1.25rem;
+  }
+}

@@ -11,7 +11,7 @@ Moderne Webanwendung zur Verwaltung von Gartenaufgaben mit REST API und n8n-Inte
 - 🔄 **Echtzeit-Sync** - Automatische Tab-Synchronisation
 - 📄 **PDF-Export** - Aufgabenlisten exportieren
 - 🎨 **Dark Mode** - Helles & dunkles Theme
-- 🌱 **Pflanzenbibliothek** - Pflanzen mit Pflege-, Aussaat- und Nachbarschaftsinfos, per API abrufbar
+- 🌱 **Pflanzenbibliothek** - Pflanzen mit Pflege-, Aussaat- und Nachbarschaftsinfos, in der Oberfläche und per API pflegbar
 - 🌤️ **Wetter** - 7-Tage-Vorhersage je Standort (Open-Meteo, direkt im Browser)
 - 🕑 **Historie** - Änderungsverlauf je Aufgabe
 - 🌐 **REST API** - Externe Integration via API (z.B. n8n), siehe [API-Referenz](docs/API.md)
