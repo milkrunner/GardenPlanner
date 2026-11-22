@@ -273,7 +273,7 @@
       "put": {
         "tags": ["Tasks"],
         "summary": "Aufgabe ändern (partiell)",
-        "description": "Nur gesendete Felder ändern sich. Statuswechsel und Änderungen erzeugen Historieneinträge; `completed` setzt `completedAt`.",
+        "description": "Nur gesendete Felder ändern sich. Statuswechsel und Änderungen erzeugen Historieneinträge; `completed` setzt `completedAt`. Wechselt eine Aufgabe mit `recurrence` ungleich `none` auf `completed`, legt der Server im selben Schreibvorgang die Folgeaufgabe an (alles oder nichts) und liefert sie als `followUp` mit. Nur der Übergang zu `completed` zählt: ein weiteres PUT auf eine abgeschlossene Aufgabe erzeugt keine zweite Folgeaufgabe.",
         "security": [
           {
             "ApiKey": []
@@ -291,11 +291,11 @@
         },
         "responses": {
           "200": {
-            "description": "Aktualisierte Aufgabe",
+            "description": "Aktualisierte Aufgabe; bei einem Abschluss mit Wiederholung zusätzlich `followUp`",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskUpdateResult"
                 }
               }
             }
@@ -1053,7 +1053,7 @@
       "Recurrence": {
         "type": "string",
         "enum": ["none", "daily", "weekly", "monthly"],
-        "description": "Wiederholung wird nur gespeichert und angezeigt; der Server erzeugt keine Folgeaufgaben."
+        "description": "Wiederholung. Beim Wechsel einer Aufgabe auf `completed` erzeugt der Server die Folgeaufgabe (`daily`: +1 Tag, `weekly`: +7 Tage, `monthly`: +1 Monat, begrenzt auf das Monatsende)."
       },
       "SubtaskInput": {
         "oneOf": [
@@ -1238,8 +1238,44 @@
             "items": {
               "$ref": "#/components/schemas/HistoryEntry"
             }
+          },
+          "followUpId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Id der beim Abschluss erzeugten Folgeaufgabe (nur bei Wiederholung)."
+          },
+          "recurrenceOf": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Nur an Folgeaufgaben: Id der abgeschlossenen Aufgabe, aus der sie entstand."
+          },
+          "lastRecurrence": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Nur an Folgeaufgaben: Abschlusszeitpunkt der Vorgängerin."
+          },
+          "nextDue": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Nur an Folgeaufgaben: Fälligkeit = Abschlusszeit der Vorgängerin plus Intervall (Monatsende begrenzt, UTC)."
           }
         }
+      },
+      "TaskUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Task"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "followUp": {
+                "$ref": "#/components/schemas/Task"
+              }
+            },
+            "description": "`followUp` ist nur vorhanden, wenn dieses PUT eine Folgeaufgabe erzeugt hat."
+          }
+        ]
       },
       "TaskPage": {
         "type": "object",

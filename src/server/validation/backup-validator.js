@@ -63,6 +63,18 @@ function normalizeTask(raw, label, errors) {
             errors.push(`${label}: ${field} muss ein Datum (ISO 8601) oder null sein`);
         }
     }
+    // Verknüpfung wiederholender Aufgaben (#327): bleibt beim Wiederherstellen erhalten, sonst könnte eine
+    // wieder abgeschlossene Aufgabe eine zweite Folgeaufgabe erzeugen.
+    for (const field of ['followUpId', 'recurrenceOf']) {
+        if (raw[field] !== undefined && (typeof raw[field] !== 'string' || !UUID_REGEX.test(raw[field]))) {
+            errors.push(`${label}: ${field} muss eine UUID v4 sein`);
+        }
+    }
+    for (const field of ['lastRecurrence', 'nextDue']) {
+        if (raw[field] !== undefined && !isDateString(raw[field])) {
+            errors.push(`${label}: ${field} muss ein Datum (ISO 8601) sein`);
+        }
+    }
     if (raw.sortOrder !== undefined && !(typeof raw.sortOrder === 'number' && Number.isFinite(raw.sortOrder))) {
         errors.push(`${label}: sortOrder muss eine Zahl sein`);
     }
@@ -85,6 +97,9 @@ function normalizeTask(raw, label, errors) {
     if (raw.completedAt !== undefined) task.completedAt = raw.completedAt;
     if (raw.archivedAt !== undefined) task.archivedAt = raw.archivedAt;
     if (raw.sortOrder !== undefined) task.sortOrder = raw.sortOrder;
+    for (const field of ['followUpId', 'recurrenceOf', 'lastRecurrence', 'nextDue']) {
+        if (raw[field] !== undefined) task[field] = raw[field];
+    }
     task.subtasks = Array.isArray(clean.subtasks) ? buildSubtasks(clean.subtasks) : [];
     task.history = history;
     return task;
