@@ -6,7 +6,7 @@
     "property-no-vendor-prefix": [
       true,
       {
-        "ignoreProperties": ["-webkit-background-clip"]
+        "ignoreProperties": ["background-clip", "-webkit-background-clip"]
       }
     ],
     "selector-id-pattern": [
