@@ -99,6 +99,11 @@ const TaskAPI = {
 		return this._fetch(`/tasks${qs ? `?${qs}` : ""}`);
 	},
 
+	// Pflanzenbibliothek für die Pflanzenauswahl an Aufgaben (#347)
+	async getPlants() {
+		return this._fetch("/plants");
+	},
+
 	async getTask(id) {
 		return this._fetch(`/tasks/${encodeURIComponent(id)}`);
 	},

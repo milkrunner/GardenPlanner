@@ -5396,3 +5396,14 @@ footer {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Pflanzenreferenz (#347): Link zur Pflanzenseite, verwaiste Referenz kursiv als Text */
+.task-plant a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.task-plant-missing {
+  font-style: italic;
+}

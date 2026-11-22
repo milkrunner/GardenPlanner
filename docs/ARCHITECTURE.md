@@ -13,6 +13,11 @@
   follow-up of a recurring task in the same locked write as the status change to `completed` (#327).
   Tasks carry an optional `dueDate` (`YYYY-MM-DD`, no time or zone, #344); it is the only due date, so the
   follow-up gets the old `dueDate` plus the interval and the former `nextDue` is no longer written.
+  Tasks may reference a plant with an optional `plantId` (slug, #347): `validateTask` only checks the format,
+  `createTask`/`updateTask` check that a _new or changed_ reference exists in the library (`getPlant`, before any
+  mutation), so a task whose plant was deleted later stays valid (orphaned reference; reads, imports and PUTs that
+  resend the unchanged ID never fail). The follow-up of a recurring task copies it. `GET /api/tasks?plantId=`
+  filters by slug; deleting a plant is never blocked by tasks.
 - `validation/task-validator.js`, `validation/plant-validator.js`: validation and sanitization.
   `backup-validator.js` checks import bundles with the same task rules.
 - `storage/json-store.js`: JSON task/archive persistence, caching and
@@ -96,7 +101,12 @@ with `toLocaleDateString('de-DE')`, derives the status (overdue, today, next 7 d
 backs the due filter and sorting; the card shows the state as text, not only as color. The former browser
 `nextDue` of old `localStorage` copies is deliberately discarded: it is never read or sent, and the next
 successful load from the API replaces the copy (the server writes `dueDate` only). `localStorage` also supports
-fallback/browser state. Preserve escaping at HTML boundaries and inspect all pages
+fallback/browser state.
+Plant reference (#347): the task pages load `GET /api/plants` once (`loadPlants`, `null` when unavailable) to fill the
+`#taskPlant`/`#editTaskPlant` selects (`populatePlantSelect`, DOM builders; an orphaned reference stays selectable) and
+to render the card link (`renderPlantRef`: icon and name to `/plants?plant=<id>`, or the text "Pflanze nicht mehr
+vorhanden"; nothing while the library is not loaded). `plants.js` opens the detail dialog for `?plant=`.
+Preserve escaping at HTML boundaries and inspect all pages
 when changing script order. The smoke test exercises the creation page and
 dashboard task flow.
 
@@ -131,6 +141,9 @@ dashboard task flow.
   (light/dark) for the form, its error state and the delete dialog.
 - `tests/smoke/tasks.spec.js`: Chromium + real Express server + disposable storage.
 - `tests/smoke/due-date.spec.js`: create, edit and remove a due date, due filter and sorting in Chromium.
+- `tests/plant-reference.test.js`, `tests/plant-ref-ui.test.js`, `tests/smoke/plant-ref.spec.js`: plant reference (#347):
+  validation, library check, orphaned references, filter, legacy data, recurrence, export/import; card, select and
+  escaping in jsdom; select, card link, orphan text and plant page link in Chromium (axe light/dark).
 - `tests/due-date-ui.test.js`: due date helpers (also in other time zones), card rendering and filter in jsdom.
 - `tests/setup.js`: per-suite Jest storage/log isolation and cleanup.
 - `.github/workflows/test.yml`: reproducible local-equivalent validation.

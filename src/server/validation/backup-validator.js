@@ -97,6 +97,8 @@ function normalizeTask(raw, label, errors) {
     };
     // Ältere Bündel ohne dueDate bleiben gültig und bekommen es nicht ergänzt.
     if (clean.dueDate !== undefined) task.dueDate = clean.dueDate;
+    // Pflanzenreferenz (#347): nur das Format wird geprüft, die Pflanze darf in dieser Bibliothek fehlen (verwaist).
+    if (clean.plantId !== undefined) task.plantId = clean.plantId;
     if (raw.completedAt !== undefined) task.completedAt = raw.completedAt;
     if (raw.archivedAt !== undefined) task.archivedAt = raw.archivedAt;
     if (raw.sortOrder !== undefined) task.sortOrder = raw.sortOrder;

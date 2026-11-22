@@ -1,6 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { audit } = require('../logger');
 const { validateTask, sanitizeTaskData, applyDueFilter } = require('../validation/task-validator');
+const { getPlant } = require('./plant-service');
 const {
     readTasks,
     readArchivedTasks,
@@ -36,7 +37,13 @@ function paginate(tasks, query) {
 // `dueFilter` kommt aus parseDueFilter (Route prüft vorher und antwortet bei Fehlern mit 400).
 const NO_DUE_FILTER = { dueFrom: null, dueTo: null, sort: null };
 
-function listTasks(query, dueFilter = NO_DUE_FILTER) {
+// Pflanzenfilter (#347): `plantId` kommt aus parsePlantFilter (Route prüft vorher). Ein Slug ohne Pflanze in der
+// Bibliothek liefert die Aufgaben mit dieser (verwaisten) Referenz, sonst nichts.
+function applyPlantFilter(tasks, plantId) {
+    return plantId ? tasks.filter((t) => t.plantId === plantId) : tasks;
+}
+
+function listTasks(query, dueFilter = NO_DUE_FILTER, plantId = null) {
     let tasks = readTasks();
 
     // Only allow non-sensitive filter via query param
@@ -48,12 +55,12 @@ function listTasks(query, dueFilter = NO_DUE_FILTER) {
         }
     }
 
-    tasks = applyDueFilter(tasks, dueFilter);
+    tasks = applyPlantFilter(applyDueFilter(tasks, dueFilter), plantId);
     const paginated = paginate(tasks, query);
     return paginated || tasks;
 }
 
-function searchTasks(body, dueFilter = NO_DUE_FILTER) {
+function searchTasks(body, dueFilter = NO_DUE_FILTER, plantId = null) {
     let tasks = readTasks();
     const { status, employee, location, page, limit } = body;
 
@@ -70,7 +77,7 @@ function searchTasks(body, dueFilter = NO_DUE_FILTER) {
         tasks = tasks.filter((t) => t.location === location.trim());
     }
 
-    tasks = applyDueFilter(tasks, dueFilter);
+    tasks = applyPlantFilter(applyDueFilter(tasks, dueFilter), plantId);
     const paginated = paginate(tasks, { page, limit });
     return paginated || tasks;
 }
@@ -80,10 +87,15 @@ function getTask(id) {
     return tasks.find((t) => String(t.id) === String(id)) || null;
 }
 
+const UNKNOWN_PLANT = (plantId) => `Pflanze "${plantId}" ist in der Pflanzenbibliothek nicht vorhanden`;
+
 async function createTask(body) {
     const validation = validateTask(body);
     if (!validation.valid) {
         return { error: true, status: 400, errors: validation.errors };
+    }
+    if (body.plantId && !getPlant(body.plantId)) {
+        return { error: true, status: 400, errors: [UNKNOWN_PLANT(body.plantId)] };
     }
 
     const sanitized = sanitizeTaskData(body);
@@ -98,6 +110,7 @@ async function createTask(body) {
         priority: sanitized.priority || 'medium',
         recurrence: sanitized.recurrence || 'none',
         dueDate: sanitized.dueDate || null,
+        plantId: sanitized.plantId || null,
         createdAt: new Date().toISOString(),
         history: [
             {
@@ -108,6 +121,7 @@ async function createTask(body) {
                     employee: sanitized.employee,
                     location: sanitized.location,
                     ...(sanitized.dueDate ? { dueDate: sanitized.dueDate } : {}),
+                    ...(sanitized.plantId ? { plantId: sanitized.plantId } : {}),
                 },
             },
         ],
@@ -150,6 +164,8 @@ function buildFollowUpTask(task, completedAt) {
         recurrenceOf: task.id,
         lastRecurrence: completedAt,
         dueDate: calculateNextDueDate(task.recurrence, task.dueDate, completedAt),
+        // Pflanzenreferenz (#347) geht an die Folgeaufgabe, auch eine inzwischen verwaiste (reine Kopie).
+        plantId: task.plantId || null,
         history: [
             {
                 timestamp: now,
@@ -187,6 +203,13 @@ async function updateTask(id, body) {
         if (index === -1) return { tasks: undefined, notFound: true };
 
         const task = tasks[index];
+        // Pflanzenreferenz (#347): nur eine geänderte Referenz muss in der Bibliothek existieren. Unverändert (auch
+        // verwaist, z. B. weil die Pflanze gelöscht wurde) und `null` zum Entfernen bleiben immer erlaubt. Die Prüfung
+        // steht vor allen Änderungen, damit eine Ablehnung die gecachte Aufgabe nicht halb verändert hinterlässt.
+        const plantChanged = sanitized.plantId !== undefined && sanitized.plantId !== (task.plantId ?? null);
+        if (plantChanged && sanitized.plantId !== null && !getPlant(sanitized.plantId)) {
+            return { tasks: undefined, unknownPlant: sanitized.plantId };
+        }
         const changes = [];
         let followUp = null;
         let completing = false;
@@ -234,6 +257,11 @@ async function updateTask(id, body) {
             changes.push(`F\u00e4lligkeit: ${label(task.dueDate)} \u2192 ${label(sanitized.dueDate)}`);
             task.dueDate = sanitized.dueDate;
         }
+        if (plantChanged) {
+            const label = (value) => (value ? `"${value}"` : 'keine Pflanze');
+            changes.push(`Pflanze: ${label(task.plantId)} \u2192 ${label(sanitized.plantId)}`);
+            task.plantId = sanitized.plantId;
+        }
         if (sanitized.priority !== undefined) task.priority = sanitized.priority;
         if (sanitized.recurrence !== undefined) task.recurrence = sanitized.recurrence;
         if (sanitized.subtasks !== undefined) {
@@ -268,6 +296,7 @@ async function updateTask(id, body) {
     });
 
     if (result.notFound) return { error: true, status: 404, message: 'Task not found' };
+    if (result.unknownPlant) return { error: true, status: 400, errors: [UNKNOWN_PLANT(result.unknownPlant)] };
 
     audit('task_updated', { taskId: result.task.id, changes: result.changes });
     if (result.followUp) {

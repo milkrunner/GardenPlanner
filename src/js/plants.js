@@ -70,6 +70,27 @@
 		await loadCategories();
 		await loadPlants();
 		setupEventListeners();
+		openLinkedPlant();
+	}
+
+	// Link von einer Aufgabenkarte (#347): /plants?plant=<id> öffnet die Details dieser Pflanze.
+	// Gibt es sie nicht mehr, steht eine Meldung da statt eines leeren Dialogs.
+	function openLinkedPlant() {
+		let wanted = null;
+		try {
+			wanted = new URLSearchParams(window.location.search).get("plant");
+		} catch {
+			return;
+		}
+		if (!wanted) return;
+		if (!allPlants.some((p) => p.id === wanted)) {
+			notify("Die verknüpfte Pflanze ist nicht mehr vorhanden.");
+			return;
+		}
+		const card = Array.from(document.querySelectorAll(".plant-card")).find(
+			(c) => c.dataset.plantId === wanted,
+		);
+		openPlantDetail(wanted, card || null);
 	}
 
 	async function loadCategories() {

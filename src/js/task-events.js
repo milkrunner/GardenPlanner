@@ -260,6 +260,7 @@ GartenPlaner.prototype.openEditModal = function (id) {
 	document.getElementById("editTaskDescription").value = task.description || "";
 	const editDueDate = document.getElementById("editTaskDueDate");
 	if (editDueDate) editDueDate.value = task.dueDate || "";
+	this.populatePlantSelect("editTaskPlant", task.plantId || "");
 
 	// Subtasks rendern
 	this.renderSubtasksInModal(task);

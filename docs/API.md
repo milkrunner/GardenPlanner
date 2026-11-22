@@ -61,7 +61,7 @@ Unbekannte Pfade unter `/api` liefern Expresss Standard-`404` als HTML, nicht al
 Pflichtfelder beim Erstellen sind `title` (1–200 Zeichen) und `location` (1–100). Optional sind `employee`
 (max. 100), `description` (max. 2000), `notes` (max. 5000), `status` (`pending`, `in-progress`, `completed`),
 `priority` (`low`, `medium`, `high`), `recurrence` (`none`, `daily`, `weekly`, `monthly`), `dueDate`
-(siehe [Fälligkeitsdatum](#fälligkeitsdatum)) und `subtasks` (max. 50; Strings oder
+(siehe [Fälligkeitsdatum](#fälligkeitsdatum)), `plantId` (siehe [Pflanzenreferenz](#pflanzenreferenz)) und `subtasks` (max. 50; Strings oder
 `{"text": "…", "completed": false}`). Der Server vergibt `id`, `createdAt`, `sortOrder` und eine `history`.
 Bei `completed` setzt er `completedAt`. Zu `recurrence` siehe [Wiederholende Aufgaben](#wiederholende-aufgaben).
 
@@ -103,6 +103,40 @@ curl -H "X-API-Key: $API_KEY" \
   "http://localhost:8080/api/tasks?dueFrom=2026-03-01&dueTo=2026-03-31&sort=dueDate"
 ```
 
+### Pflanzenreferenz
+
+`plantId` verknüpft eine Aufgabe optional mit einer Pflanze der Bibliothek (#347), z. B. „Tomaten gießen“ mit
+`tomato`. Der Wert ist der Slug aus `GET /api/plants` (Kleinbuchstaben, Ziffern, Bindestriche, 1–60 Zeichen).
+
+- **Ohne Pflanze:** `null` oder weglassen. Neue Aufgaben ohne Pflanze liefern `"plantId": null`. Ältere Aufgaben
+  haben das Feld gar nicht und gelten ebenfalls als „ohne Pflanze“; eine Migration ist nicht nötig. Ein leerer
+  Text, eine Zahl oder ein ungültiges Format ergeben `400` mit `errors`.
+- **Anlegen und Ändern:** Die Pflanze muss in der Bibliothek existieren (Standardpflanzen plus `plants.json` im
+  Datenverzeichnis), sonst `400` mit `errors`. `PUT` setzt oder ändert die Referenz, `{"plantId": null}`
+  entfernt sie, ein `PUT` ohne `plantId` lässt sie unberührt. Jede echte Änderung steht in der `history`
+  (`Pflanze: "tomato" → "basil"`).
+- **Gelöschte Pflanzen:** Wird eine Pflanze später gelöscht, bleibt die Aufgabe gültig und behält ihre `plantId`
+  („verwaist“); Lesen, Export und Import liefern keinen Fehler. Die Oberfläche zeigt dann „Pflanze nicht mehr
+  vorhanden“. Eine unverändert mitgesendete verwaiste `plantId` ist bei `PUT` erlaubt, nur eine _geänderte_
+  Referenz wird gegen die Bibliothek geprüft. Das Löschen einer Pflanze wird durch bestehende Aufgaben nicht
+  gesperrt.
+- **Filter:** `GET /api/tasks?plantId=tomato` und `POST /api/tasks/search` mit `{"plantId": "tomato"}` liefern
+  nur Aufgaben dieser Pflanze, gemeinsam mit den übrigen Filtern und vor der Pagination. Ein Slug ohne
+  Pflanze in der Bibliothek liefert die Aufgaben mit verwaister Referenz (sonst ein leeres Ergebnis); ein
+  leerer Wert gilt als nicht gesetzt, ein ungültiges Format ergibt `400` mit `{"error": "…"}`. Der Slug enthält
+  keine personenbezogenen Daten und darf deshalb in der URL stehen.
+- **Wiederholung, Export und Import:** Die Folgeaufgabe übernimmt `plantId`. Export und Import
+  (`mode=merge`/`replace`) erhalten das Feld; beim Import wird nur das Format geprüft, die Pflanze darf in der
+  Zielbibliothek fehlen.
+
+```bash
+curl -X POST http://localhost:8080/api/tasks \
+  -H "Content-Type: application/json" -H "X-API-Key: $API_KEY" \
+  -d '{"title":"Tomaten gießen","location":"Gewächshaus","plantId":"tomato"}'
+
+curl -H "X-API-Key: $API_KEY" "http://localhost:8080/api/tasks?plantId=tomato"
+```
+
 ### Wiederholende Aufgaben
 
 Wechselt eine Aufgabe per `PUT /api/tasks/{id}` auf `completed` und hat sie `recurrence` `daily`, `weekly`
@@ -140,7 +174,8 @@ oder `monthly`, legt der Server die Folgeaufgabe an (#327). Die Antwort bleibt d
 Ohne `page` und `limit` liefert `GET /api/tasks` ein reines Array. Mit mindestens einem der beiden kommt
 ein Seitenobjekt `{"data": […], "total": 42, "page": 1, "limit": 50, "pages": 1}`. `limit` darf 1 bis 200
 sein, sonst gilt 50. Ein unbekannter `status` wird ignoriert. Zusätzlich gibt es die Datumsfilter und die
-Sortierung aus [Fälligkeitsdatum](#fälligkeitsdatum).
+Sortierung aus [Fälligkeitsdatum](#fälligkeitsdatum) sowie der Pflanzenfilter `plantId` aus
+[Pflanzenreferenz](#pflanzenreferenz).
 
 ```bash
 curl -H "X-API-Key: $API_KEY" "http://localhost:8080/api/tasks?status=pending&page=1&limit=20"
@@ -151,7 +186,7 @@ curl -H "X-API-Key: $API_KEY" "http://localhost:8080/api/tasks?status=pending&pa
 `employee` und `location` stehen bewusst nicht in der URL, weil Query-Strings in Request-Logs landen.
 `GET /api/tasks?employee=…` ergibt `400`. Stattdessen geht die Suche per Body; alle Felder sind optional,
 verglichen wird exakt, mehrere Felder gelten gemeinsam. `page` und `limit` funktionieren wie oben, ebenso
-`dueFrom`, `dueTo` und `sort`.
+`dueFrom`, `dueTo`, `sort` und `plantId`.
 
 ```bash
 curl -X POST http://localhost:8080/api/tasks/search \
