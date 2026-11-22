@@ -17,6 +17,10 @@ Releases steht in [docs/RELEASING.md](docs/RELEASING.md).
 - API: optionales Fälligkeitsdatum `dueDate` (`YYYY-MM-DD`) je Aufgabe mit Filter
   (`dueFrom`, `dueTo`) und Sortierung (`sort=dueDate`); die Folgeaufgabe einer wiederholenden
   Aufgabe erhält ein neues `dueDate`, das Altfeld `nextDue` wird nicht mehr geschrieben (#344).
+- Oberfläche: Fälligkeitsdatum im Formular und im Bearbeiten-Dialog, Anzeige auf den Karten
+  (deutsches Format, „Überfällig“ und „Heute fällig“ auch als Text), Kennzahl „Überfällige Aufgaben“,
+  Filter nach Fälligkeit und Sortierung im Dashboard. Das alte Browser-`nextDue` aus
+  `localStorage`-Kopien wird bewusst verworfen (#346).
 
 ## Frühere Entwicklung
 

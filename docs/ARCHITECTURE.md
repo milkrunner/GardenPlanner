@@ -89,7 +89,13 @@ in a dialog when the server requires one, retries after a 401 and shows the stat
 offline/error states. Only network failures may fall back to the `localStorage` copy, and
 that fallback is always announced; HTTP errors are reported, never masked. `task-state.js` changes task
 state and persists through the API; renderer produces markup; events wires inputs;
-filters handles search; export handles PDF generation. LocalStorage also supports
+filters handles search; export handles PDF generation.
+Due dates (#346): `dueDate` is a plain `YYYY-MM-DD` string. `task-filters.js` parses it into a local date
+(never `new Date('YYYY-MM-DD')`, which is UTC midnight and shows the previous day west of UTC), formats it
+with `toLocaleDateString('de-DE')`, derives the status (overdue, today, next 7 days) from the local day and
+backs the due filter and sorting; the card shows the state as text, not only as color. The former browser
+`nextDue` of old `localStorage` copies is deliberately discarded: it is never read or sent, and the next
+successful load from the API replaces the copy (the server writes `dueDate` only). `localStorage` also supports
 fallback/browser state. Preserve escaping at HTML boundaries and inspect all pages
 when changing script order. The smoke test exercises the creation page and
 dashboard task flow.
@@ -124,5 +130,7 @@ dashboard task flow.
 - `tests/smoke/plants.spec.js`: add, edit and delete plants through the UI against the real app, plus axe
   (light/dark) for the form, its error state and the delete dialog.
 - `tests/smoke/tasks.spec.js`: Chromium + real Express server + disposable storage.
+- `tests/smoke/due-date.spec.js`: create, edit and remove a due date, due filter and sorting in Chromium.
+- `tests/due-date-ui.test.js`: due date helpers (also in other time zones), card rendering and filter in jsdom.
 - `tests/setup.js`: per-suite Jest storage/log isolation and cleanup.
 - `.github/workflows/test.yml`: reproducible local-equivalent validation.

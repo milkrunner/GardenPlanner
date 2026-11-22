@@ -105,8 +105,13 @@ GartenPlaner.prototype.renderTasks = function () {
 		return;
 	}
 
-	// Sortieren nach manueller Reihenfolge (sortOrder) oder Erstellungsdatum
+	// Sortieren nach Fälligkeit (optional) und sonst nach manueller Reihenfolge (sortOrder) oder Erstellungsdatum
+	var byDueDate = this.sortBy === "dueDate";
 	filteredTasks.sort((a, b) => {
+		if (byDueDate) {
+			var dueDiff = this.compareDueDates(a, b);
+			if (dueDiff !== 0) return dueDiff;
+		}
 		// Wenn sortOrder vorhanden ist, nutze diese, sonst Erstellungsdatum
 		var orderA =
 			a.sortOrder !== undefined ? a.sortOrder : this.tasks.indexOf(a);
@@ -156,8 +161,9 @@ GartenPlaner.prototype.renderTasks = function () {
 			});
 
 			// Drag & Drop Event Listeners (nur für aktive Aufgaben und nicht auf mobilen Geräten)
+			// Bei Sortierung nach Fälligkeit bleibt die manuelle Reihenfolge unberührt: kein Ziehen.
 			var isMobile = window.innerWidth <= 768;
-			if (!isMobile) {
+			if (!isMobile && !byDueDate) {
 				card.addEventListener("dragstart", (e) =>
 					this.handleDragStart(e, task.id),
 				);
@@ -181,6 +187,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
 	var isCompleted = task.status === "completed";
 	var isSelected = this.selectedTasks.has(task.id);
 	var isArchived = this.showArchive;
+	var canDrag = !isArchived && this.sortBy !== "dueDate";
 
 	// Sanitize all user inputs for XSS protection
 	var safeTitle = Security.escapeHtml(task.title);
@@ -193,7 +200,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
 	return `
         <div class="task-card ${isCompleted ? "completed" : ""} ${isSelected ? "selected" : ""} ${isArchived ? "archived" : ""}"
              data-task-id="${task.id}"
-             draggable="${!isArchived}"
+             draggable="${canDrag}"
              role="article"
              aria-label="Aufgabe: ${safeTitle}"
              tabindex="0">
@@ -208,7 +215,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
 						}
             <div class="task-info">
                 <div class="task-header">
-                    ${!isArchived ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ""}
+                    ${canDrag ? '<span class="drag-handle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>' : ""}
                     <span class="task-title">${safeTitle}</span>
                     ${task.recurrence && task.recurrence !== "none" ? this.getRecurrenceBadge(task.recurrence) : ""}
                     ${isArchived && task.archivedAt ? `<span class="archived-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Archiviert am ${new Date(task.archivedAt).toLocaleDateString("de-DE")}</span>` : ""}
@@ -216,6 +223,7 @@ GartenPlaner.prototype.createTaskCard = function (task) {
                 <div class="task-meta">
                     <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Mitarbeiter: </span>${safeEmployee}</span>
                     <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="sr-only">Standort: </span>${safeLocation}</span>
+                    ${this.renderDueDate(task)}
                 </div>
                 ${safeDescription ? `<div class="task-description">${safeDescription}</div>` : ""}
                 ${this.renderSubtasksProgress(task)}
@@ -241,6 +249,20 @@ GartenPlaner.prototype.createTaskCard = function (task) {
             </div>
         </div>
     `;
+};
+
+// Fälligkeit für die Karte (#346). Überfällig und heute stehen zusätzlich als Text da, nicht nur als Farbe.
+// Der Text kommt aus formatDueDate (nur Ziffern und feste Wörter), läuft aber trotzdem durch escapeHtml.
+GartenPlaner.prototype.renderDueDate = function (task) {
+	if (!task.dueDate) return "";
+	var label = this.formatDueDate(task.dueDate);
+	if (!label) return "";
+	var status = this.getDueStatus(task);
+	var flags = { overdue: "Überfällig", today: "Heute fällig" };
+	var flag = flags[status]
+		? `<span class="due-flag">${flags[status]}</span>`
+		: "";
+	return `<span class="task-due-date due-${status}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle; margin-right: 4px;" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="sr-only">Fällig am: </span><time datetime="${Security.escapeHtml(task.dueDate)}">${Security.escapeHtml(label)}</time>${flag}</span>`;
 };
 
 GartenPlaner.prototype.switchView = function () {
@@ -321,7 +343,9 @@ GartenPlaner.prototype.updateStatistics = function () {
 		const statPending = document.getElementById("statPending");
 		const statCompleted = document.getElementById("statCompleted");
 		const statEmployees = document.getElementById("statEmployees");
+		const statOverdue = document.getElementById("statOverdue");
 
+		if (statOverdue) statOverdue.textContent = 0;
 		if (statPending) statPending.textContent = archivedPending;
 		if (statCompleted) statCompleted.textContent = archivedCompleted;
 		if (statEmployees) statEmployees.textContent = archivedCount;
@@ -335,7 +359,14 @@ GartenPlaner.prototype.updateStatistics = function () {
 		const statPending = document.getElementById("statPending");
 		const statCompleted = document.getElementById("statCompleted");
 		const statEmployees = document.getElementById("statEmployees");
+		const statOverdue = document.getElementById("statOverdue");
 
+		if (statOverdue) {
+			var today = this.todayString();
+			statOverdue.textContent = this.tasks.filter(
+				(t) => this.getDueStatus(t, today) === "overdue",
+			).length;
+		}
 		if (statPending) statPending.textContent = pending;
 		if (statCompleted) statCompleted.textContent = completed;
 		if (statEmployees) statEmployees.textContent = employees;

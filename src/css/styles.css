@@ -5396,3 +5396,32 @@ footer {
     padding: 1.25rem;
   }
 }
+
+/* Fälligkeitsdatum (#346): Zustand steht zusätzlich als Text (.due-flag), nicht nur als Farbe */
+.task-due-date {
+  font-weight: 600;
+}
+
+.task-due-date.due-overdue {
+  color: var(--danger);
+}
+
+.task-due-date.due-today {
+  color: var(--primary);
+}
+
+.task-due-date .due-flag {
+  padding: 0 0.5rem;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* Dashboard mit vier Kennzahlen: auf Tablets zwei statt drei Spalten */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body:has(#statOverdue) .stats-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
