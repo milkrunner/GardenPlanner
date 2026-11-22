@@ -216,10 +216,73 @@ async function deleteTask(id) {
     return { error: false };
 }
 
+// --- Archive/unarchive duplicate repair (#339) ---
 // Archive/unarchive touch two files. The destination is written first, so a failed second write leaves
-// a duplicate (recoverable) instead of losing the task. In-memory data is re-read from disk on failure.
+// the same task id in tasks.json AND archived-tasks.json (recoverable) instead of losing it. Such
+// duplicates are resolved under the storage locks before every archive/unarchive and once at start-up.
+//
+// Which copy wins: the one with the newer state. Its "last activity" is the latest valid timestamp of
+// `createdAt`, `archivedAt` and all `history[].timestamp` values (every state change appends a history
+// entry). A failed archive therefore resolves to the archive copy, a failed unarchive to the tasks copy,
+// and an edit made after a failed operation wins over the stale copy. Ties go to the copy with the
+// longer history, then to the archive copy. Only the losing copy is removed; the winner is never touched,
+// so a task cannot vanish from both files.
+
+function lastActivity(task) {
+    const stamps = [
+        task.createdAt,
+        task.archivedAt,
+        ...(Array.isArray(task.history) ? task.history : []).map((h) => h && h.timestamp),
+    ];
+    return stamps.reduce((latest, value) => {
+        const time = typeof value === 'string' ? Date.parse(value) : NaN;
+        return Number.isNaN(time) ? latest : Math.max(latest, time);
+    }, 0);
+}
+
+function archiveCopyWins(active, archived) {
+    const diff = lastActivity(archived) - lastActivity(active);
+    if (diff !== 0) return diff > 0;
+    const historyDiff = (archived.history || []).length - (active.history || []).length;
+    return historyDiff >= 0;
+}
+
+// Must run inside withLockedTasksAndArchive. Returns the resolved task ids.
+async function resolveArchiveDuplicates() {
+    const tasks = readTasks();
+    const archived = readArchivedTasks();
+    const archivedById = new Map(archived.map((t) => [String(t.id), t]));
+    const dropFromTasks = new Set();
+    const dropFromArchive = new Set();
+    const resolved = [];
+
+    for (const active of tasks) {
+        const id = String(active.id);
+        const archivedCopy = archivedById.get(id);
+        if (!archivedCopy || dropFromTasks.has(id) || dropFromArchive.has(id)) continue;
+        const keep = archiveCopyWins(active, archivedCopy) ? 'archive' : 'tasks';
+        (keep === 'archive' ? dropFromTasks : dropFromArchive).add(id);
+        resolved.push({ taskId: active.id, kept: keep, removed: keep === 'archive' ? 'tasks' : 'archive' });
+    }
+
+    if (resolved.length === 0) return [];
+    if (dropFromTasks.size > 0) await writeTasks(tasks.filter((t) => !dropFromTasks.has(String(t.id))));
+    if (dropFromArchive.size > 0) {
+        await writeArchivedTasks(archived.filter((t) => !dropFromArchive.has(String(t.id))));
+    }
+    for (const entry of resolved) audit('archive_duplicate_resolved', entry);
+    return resolved;
+}
+
+// Start-up entry point (server.js): repairs duplicates left by a crash or a failed second write.
+async function repairArchiveDuplicates() {
+    return withLockedTasksAndArchive(resolveArchiveDuplicates);
+}
+
+// In-memory data is re-read from disk on a failed write (see json-store writeJSON).
 async function archiveTask(id) {
     return withLockedTasksAndArchive(async () => {
+        await resolveArchiveDuplicates();
         const tasks = readTasks();
         const index = tasks.findIndex((t) => String(t.id) === String(id));
         if (index === -1) {
@@ -243,6 +306,7 @@ async function archiveTask(id) {
 
 async function unarchiveTask(id) {
     return withLockedTasksAndArchive(async () => {
+        await resolveArchiveDuplicates();
         const archived = readArchivedTasks();
         const index = archived.findIndex((t) => String(t.id) === String(id));
         if (index === -1) {
@@ -292,6 +356,7 @@ module.exports = {
     deleteTask,
     archiveTask,
     unarchiveTask,
+    repairArchiveDuplicates,
     listArchivedTasks,
     deleteArchivedTask,
 };

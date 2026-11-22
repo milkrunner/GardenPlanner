@@ -26,7 +26,18 @@ forward rejected promises); a test fails if a raw `async` handler is registered.
 failures reach the final error handler as HTTP 500 and are never swallowed: only a missing
 file is an empty collection, corrupt/unreadable files raise instead of being overwritten.
 Operations spanning tasks and archive lock in a fixed order (`withLockedTasksAndArchive`)
-and write the destination first, so a failed write duplicates rather than loses a task.
+and write the destination first, so a failed write duplicates rather than loses a task (#317).
+
+Such a duplicate (same `id` in `tasks.json` and `archived-tasks.json`) is repaired automatically
+(#339, `resolveArchiveDuplicates` in `services/task-service.js`): under both locks before every
+archive/unarchive and once in `server.js` before the server starts listening. The copy with the newer
+state wins: latest valid timestamp of `createdAt`, `archivedAt` and `history[].timestamp`; on a tie the
+longer history, then the archive copy. A failed archive thus resolves to the archived copy, a failed
+unarchive to the active copy, and an edit made after the failure keeps the active copy. Only the losing
+copy is removed (never both), each resolution is logged as audit event `archive_duplicate_resolved`
+(`taskId`, `kept`, `removed`), and a failing repair write changes nothing and is retried next time.
+Consequence: retrying a failed archive may answer 404, because the repair already archived the task.
+Until the next archive/unarchive or restart, reads can still list the task in both files.
 
 ## Betriebsgrenzen
 
@@ -74,6 +85,8 @@ dashboard task flow.
 
 ## Checks
 
+- `tests/archive-duplicates.test.js`: injected write failure during archive/unarchive and the
+  duplicate repair (#339).
 - `tests/server.test.js`: validation, service/API and middleware behavior.
 - `tests/openapi.test.js`: `docs/openapi.json` must list exactly the registered `/api` routes
   and match real responses (schemas, documented status codes). Update `docs/openapi.json` and
