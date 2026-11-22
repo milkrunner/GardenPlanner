@@ -1,0 +1,203 @@
+name: Release
+
+# Läuft ausschließlich, wenn bewusst ein Versions-Tag `vX.Y.Z` (oder `vX.Y.Z-beta.1`)
+# gepusht wird. Normale Pushes, Pull Requests (auch aus Forks) und Branches lösen
+# diesen Workflow nie aus. Ablauf und Rücknahme: docs/RELEASING.md.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# Standardmäßig nur lesen; einzelne Jobs erhalten bei Bedarf mehr.
+permissions:
+  contents: read
+
+# Pro Tag nur ein Lauf; ein laufender Release wird nie abgebrochen.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: milkrunner/gardenplanner
+
+jobs:
+  verify:
+    name: Tag prüfen
+    # Forks besitzen weder die Secrets noch das Docker-Hub-Repository.
+    if: github.repository == 'milkrunner/GardenPlanner'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      prerelease: ${{ steps.meta.outputs.prerelease }}
+      latest: ${{ steps.meta.outputs.latest }}
+      tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          # Vollständige Historie und alle Tags: für die main-Prüfung und die Tag-Ermittlung.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Tag, package.json und Branch prüfen, Docker-Tags ermitteln
+        id: meta
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          semver='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          if ! [[ "$TAG" =~ $semver ]]; then
+            echo "::error::Tag '$TAG' ist keine gültige Version (erwartet vX.Y.Z oder vX.Y.Z-beta.1)."
+            exit 1
+          fi
+          version="${TAG#v}"
+          prerelease=false
+          if [[ "$version" == *-* ]]; then
+            prerelease=true
+          fi
+
+          pkg_version="$(jq -r .version package.json)"
+          if [[ "$pkg_version" != "$version" ]]; then
+            echo "::error::Tag $TAG passt nicht zu package.json (version $pkg_version). Version anheben und neu taggen."
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Der getaggte Commit liegt nicht auf main. Releases entstehen nur aus main."
+            exit 1
+          fi
+
+          tags="$IMAGE:$version"
+          latest=false
+          if [[ "$prerelease" == false ]]; then
+            stable='^v[0-9]+\.[0-9]+\.[0-9]+$'
+            minor="${version%.*}"
+            # Nachträgliche Patch-Releases älterer Linien dürfen `latest` und `X.Y`
+            # nicht zurücksetzen: nur die höchste stabile Version bekommt sie.
+            highest_all="$(git tag --list 'v*' | grep -E "$stable" | sort -V | tail -n 1)"
+            highest_minor="$(git tag --list "v$minor.*" | grep -E "$stable" | sort -V | tail -n 1)"
+            if [[ "$highest_minor" == "$TAG" ]]; then
+              tags+=$'\n'"$IMAGE:$minor"
+            fi
+            if [[ "$highest_all" == "$TAG" ]]; then
+              tags+=$'\n'"$IMAGE:latest"
+              latest=true
+            fi
+          fi
+
+          {
+            echo "version=$version"
+            echo "prerelease=$prerelease"
+            echo "latest=$latest"
+            echo "tags<<EOF"
+            echo "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Docker-Tags:"
+          echo "$tags"
+
+  test:
+    name: Tests
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global npm@10.9.4
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:smoke
+
+  docker:
+    name: Docker-Image bauen und veröffentlichen
+    needs: [verify, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Zuerst nur lokal bauen und scannen (wie docker-image.yml), noch ohne Login und Push.
+      - name: Image für den Scan bauen (linux/amd64)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: gardenplanner:release-scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy-Schwachstellenscan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gardenplanner:release-scan
+          format: table
+          exit-code: '1'
+          severity: CRITICAL
+
+      - name: Bei Docker Hub anmelden
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Multi-Arch-Image bauen und pushen (amd64, arm64)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ needs.verify.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.verify.outputs.version }}
+          cache-from: type=gha
+
+  github-release:
+    name: GitHub-Release erstellen
+    needs: [verify, docker]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.verify.outputs.version }}
+      PRERELEASE: ${{ needs.verify.outputs.prerelease }}
+      LATEST: ${{ needs.verify.outputs.latest }}
+    steps:
+      # Kein Checkout nötig: gh arbeitet über GH_REPO direkt gegen die API. Die Kategorien
+      # der Notizen stehen in .github/release.yml.
+      - name: Release mit generierten Notizen anlegen
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG existiert bereits; nichts zu tun."
+            exit 0
+          fi
+          flags=(--verify-tag --generate-notes --title "$TAG")
+          if [[ "$PRERELEASE" == true ]]; then
+            flags+=(--prerelease)
+          elif [[ "$LATEST" == true ]]; then
+            flags+=(--latest)
+          else
+            flags+=(--latest=false)
+          fi
+          gh release create "$TAG" "${flags[@]}" \
+            --notes "Docker-Image: \`docker pull $IMAGE:$VERSION\`"

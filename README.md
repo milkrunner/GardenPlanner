@@ -159,3 +159,4 @@ In-Memory-Rate-Limit). Siehe [Architektur](docs/ARCHITECTURE.md#betriebsgrenzen)
 Setup, Prüfungen und PR-Ablauf: [CONTRIBUTING.md](CONTRIBUTING.md).
 Agent-Anleitung: [AGENTS.md](AGENTS.md).
 Code-Einstiegspunkte: [Architektur](docs/ARCHITECTURE.md).
+Releases und Docker-Tags: [Release-Prozess](docs/RELEASING.md), [Changelog](CHANGELOG.md).
