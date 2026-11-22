@@ -41,6 +41,34 @@
 		["autumn", "Herbst"],
 		["winter", "Winter"],
 	];
+	const MONTHS = [
+		"Jan",
+		"Feb",
+		"Mär",
+		"Apr",
+		"Mai",
+		"Jun",
+		"Jul",
+		"Aug",
+		"Sep",
+		"Okt",
+		"Nov",
+		"Dez",
+	];
+	const MONTH_NAMES = [
+		"Januar",
+		"Februar",
+		"März",
+		"April",
+		"Mai",
+		"Juni",
+		"Juli",
+		"August",
+		"September",
+		"Oktober",
+		"November",
+		"Dezember",
+	];
 	const ANGLE_BRACKETS = /[<>]/;
 
 	// Detail-Dialog schließen; Fokus geht (außer bei restoreFocus=false) zum auslösenden Element
@@ -509,6 +537,7 @@
 			sun: "full",
 			water: "medium",
 			season: [],
+			sowMonths: [],
 			companions: [],
 			avoid: [],
 		};
@@ -590,6 +619,25 @@
 			el("div", { className: "plant-season-options" }, seasonBoxes),
 		]);
 
+		// Aussaatmonate (#349): Grundlage der Aussaat-Vorschläge; ohne Auswahl gilt die Saison
+		const monthBoxes = MONTHS.map((label, index) => {
+			const box = el("input", { type: "checkbox", value: String(index + 1) });
+			box.checked = (values.sowMonths || []).includes(index + 1);
+			box.setAttribute("aria-label", MONTH_NAMES[index]);
+			return el("label", { className: "plant-season-option" }, [
+				box,
+				el("span", { text: label }),
+			]);
+		});
+		const monthSet = el("fieldset", { className: "plant-form-fieldset" }, [
+			el("legend", { text: "Aussaatmonate" }),
+			el("div", { className: "plant-season-options" }, monthBoxes),
+			el("small", {
+				className: "plant-form-hint",
+				text: "Für die Aussaat-Vorschläge. Ohne Auswahl gilt die Saison. Die Erntezeit wird nur aus Angaben wie „60-85 Tage“ berechnet.",
+			}),
+		]);
+
 		const errorBox = el("div", {
 			id: "plantFormError",
 			className: "plant-form-error",
@@ -628,6 +676,7 @@
 				group("water", "Wasser", select("water")),
 			]),
 			seasonSet,
+			monthSet,
 			el("div", { className: "plant-form-row" }, [
 				group("spacing", "Abstand", input(values.spacing), {
 					hint: `max. ${LIMITS.spacing} Zeichen`,
@@ -693,6 +742,9 @@
 			season: SEASONS.map(([value]) => value).filter(
 				(value) => seasonSet.querySelector(`input[value="${value}"]`).checked,
 			),
+			sowMonths: Array.from(monthSet.querySelectorAll("input"))
+				.filter((box) => box.checked)
+				.map((box) => Number(box.value)),
 			spacing: controls.spacing.value.trim(),
 			germination: controls.germination.value.trim(),
 			harvest: controls.harvest.value.trim(),

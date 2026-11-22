@@ -32,6 +32,7 @@ const validPlant = {
   sun: 'partial',
   water: 'medium',
   season: ['spring', 'autumn'],
+  sowMonths: [3, 4, 9],
   spacing: '25cm',
   germination: '5-10 Tage',
   harvest: '50-70 Tage',
@@ -95,6 +96,7 @@ describe('plant library CRUD', () => {
         sun: 'full',
         water: 'medium',
         season: [],
+        sowMonths: [],
         spacing: '',
         germination: '',
         harvest: '',
@@ -170,6 +172,30 @@ describe('plant library CRUD', () => {
       );
     });
 
+    test('validates, sorts and de-duplicates the sowing months (#349)', async () => {
+      const ok = await request(app)
+        .post('/api/plants')
+        .send({ ...validPlant, sowMonths: [9, 3, 3, 4] });
+      expect(ok.status).toBe(201);
+      expect(ok.body.sowMonths).toEqual([3, 4, 9]);
+
+      for (const sowMonths of [
+        'März',
+        [0],
+        [13],
+        [1.5],
+        ['3'],
+        [null],
+        { 3: true },
+      ]) {
+        const bad = await request(app)
+          .post('/api/plants')
+          .send({ ...validPlant, id: 'bad-months', sowMonths });
+        expect(bad.status).toBe(400);
+        expect(bad.body.errors.join(' ')).toMatch(/Aussaatmonate/);
+      }
+    });
+
     test('sanitizes whitespace and control characters', async () => {
       const res = await request(app)
         .post('/api/plants')
@@ -239,6 +265,22 @@ describe('plant library CRUD', () => {
   });
 
   describe('PUT /api/plants/:id', () => {
+    test('changes only the sowing months with PUT (#349)', async () => {
+      const res = await request(app)
+        .put('/api/plants/tomato')
+        .send({ sowMonths: [5, 3] });
+      expect(res.status).toBe(200);
+      expect(res.body.sowMonths).toEqual([3, 5]);
+      expect(res.body.name).toBe('Tomate');
+      expect(
+        (
+          await request(app)
+            .put('/api/plants/tomato')
+            .send({ sowMonths: [14] })
+        ).status,
+      ).toBe(400);
+    });
+
     test('changes only the sent fields and persists them', async () => {
       const res = await request(app)
         .put('/api/plants/tomato')
@@ -523,6 +565,23 @@ describe('validatePlant / sanitizePlantData', () => {
       name: 'A',
       season: ['spring', 'winter'],
     });
+  });
+
+  test('sowMonths: empty list is allowed, sanitizing sorts and de-duplicates', () => {
+    const base = { name: 'A', category: 'B' };
+    expect(validatePlant({ ...base, sowMonths: [] }).valid).toBe(true);
+    expect(validatePlant({ ...base, sowMonths: [12, 1] }).valid).toBe(true);
+    expect(validatePlant({ ...base, sowMonths: [0] }).valid).toBe(false);
+    expect(sanitizePlantData({ sowMonths: [12, 1, 12, 6] })).toEqual({
+      sowMonths: [1, 6, 12],
+    });
+  });
+
+  test('all default plants pass validation and carry readable sowing data (#349)', () => {
+    for (const plant of DEFAULTS) {
+      expect(validatePlant(plant).valid).toBe(true);
+      expect(Array.isArray(plant.sowMonths)).toBe(true);
+    }
   });
 
   test('slugify handles umlauts, sharp s, punctuation and length', () => {

@@ -203,8 +203,22 @@ rückgängig. `GET /api/archived-tasks` liefert immer ein Array ohne Pagination.
 
 `GET /api/plants` liefert ein Array. `category` vergleicht exakt, `search` sucht ohne Beachtung der
 Groß-/Kleinschreibung in Name, Kategorie und Tipps. Eine Pflanze hat `id` (Slug, z. B. `tomato`), `name`,
-`category`, `icon`, `difficulty`, `sun`, `water`, `season`, `spacing`, `germination`, `harvest`,
+`category`, `icon`, `difficulty`, `sun`, `water`, `season`, `sowMonths`, `spacing`, `germination`, `harvest`,
 `companions`, `avoid` und `tips`.
+
+**Aussaat- und Ernte-Vorschläge:** Die Oberfläche berechnet sie im Browser aus den Pflanzendaten; es gibt dafür
+keinen eigenen Endpunkt, und es wird nie automatisch eine Aufgabe angelegt. Grundlage:
+
+- `sowMonths`: Liste ganzer Zahlen von 1 (Januar) bis 12 (Dezember), aufsteigend und ohne Duplikate. Leer oder
+  fehlend (ältere eigene `plants.json`) bedeutet „keine Angabe“, dann gelten die Monate der `season`
+  (Frühling 3–5, Sommer 6–8, Herbst 9–11, Winter 12–2).
+- `harvest` und `germination` bleiben Freitext. Gelesen werden nur Angaben der Form `N Tage`, `N-M Tage`
+  (auch `–`, `Tag`/`Tagen`) und `N Wochen`/`N-M Wochen`; alles andere (`mehrjährig`, `-`, leer) ergibt keinen
+  Erntetermin. So entsteht kein zweites Format neben dem Freitext.
+- Aussaattermin: heute, wenn der aktuelle Monat in `sowMonths` liegt, sonst der Erste des nächsten passenden
+  Monats (auch über den Jahreswechsel); nur Fenster, die in höchstens 30 Tagen beginnen, werden vorgeschlagen.
+  Frühester Erntetermin: Aussaattermin plus die kürzeste Dauer in `harvest` (Kalendertage, Schaltjahre und
+  Sommerzeit stimmen). Es sind allgemeine Richtwerte ohne Wetter und regionales Klima.
 
 **Speicherung:** Die 20 Standardpflanzen liegen in `src/server/defaults/default-plants.json` und bleiben im
 Repository unverändert. Existiert `DATA_DIR/plants.json`, ersetzt diese Datei die Standards vollständig. Der
@@ -229,7 +243,7 @@ löschen Sie sie, dann geht es weiter.
 werden transkribiert, z. B. „Süße Möhre“ → `susse-mohre`), `icon` (1–8 Zeichen, Standard 🌱), `difficulty`
 (`easy`, `medium`, `hard`; Standard `medium`), `sun` (`full`, `partial`, `shade`; Standard `full`), `water`
 (`low`, `medium`, `high`; Standard `medium`), `season` (Liste aus `spring`, `summer`, `autumn`, `winter`),
-`spacing` (max. 30), `germination` (max. 40), `harvest` (max. 60), `companions` und `avoid` (je max. 30
+`sowMonths` (Liste ganzer Zahlen 1–12, Duplikate entfallen, Ausgabe aufsteigend; Standard `[]`), `spacing` (max. 30), `germination` (max. 40), `harvest` (max. 60), `companions` und `avoid` (je max. 30
 Einträge mit 1–60 Zeichen) sowie `tips` (max. 1000). Text wird getrimmt und von Steuerzeichen befreit, doppelte
 Listeneinträge entfallen, unbekannte Felder werden ignoriert. Die Zeichen `<` und `>` sind in allen Textfeldern
 unzulässig (`400`). Eine vergebene ID ergibt `409`, auch wenn sie nur durch den Namen entsteht.

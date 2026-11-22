@@ -5494,3 +5494,70 @@ footer {
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
+
+/* Aussaat- und Ernte-Vorschläge (#349) */
+.suggestions-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+.suggestions-section h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.suggestions-note {
+  margin-bottom: var(--space-md);
+  color: var(--text);
+}
+
+.suggestions-list,
+.suggestion-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space-md);
+}
+
+.suggestion-item {
+  padding: var(--space-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.suggestion-title {
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-base);
+  color: var(--text);
+}
+
+.suggestion-lines {
+  margin-bottom: var(--space-md);
+}
+
+.suggestion-lines li {
+  margin-bottom: var(--space-xs);
+}
+
+.suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.suggestion-actions .btn {
+  min-height: 44px;
+}
+
+.suggestion-empty {
+  grid-column: 1 / -1;
+}

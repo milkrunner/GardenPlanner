@@ -33,6 +33,15 @@ GartenPlaner.prototype.formatIsoDate = (date) =>
 		String(date.getDate()).padStart(2, "0"),
 	].join("-");
 
+// Verschiebt ein ISO-Datum um ganze Kalendertage (Wochenansicht #348, Vorschläge #349); null bei ungültigem Datum.
+GartenPlaner.prototype.shiftIsoDate = function (iso, days) {
+	var date = this.parseDueDate(iso);
+	if (!date) return null;
+	return this.formatIsoDate(
+		new Date(date.getFullYear(), date.getMonth(), date.getDate() + days),
+	);
+};
+
 GartenPlaner.prototype.todayString = function (now = new Date()) {
 	return this.formatIsoDate(now);
 };

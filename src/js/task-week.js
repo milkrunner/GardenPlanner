@@ -1,6 +1,6 @@
 // task-week.js - Wochenansicht der Aufgaben nach Fälligkeit (#348), nur auf dem Dashboard
 // Extends GartenPlaner.prototype - must be loaded AFTER app.js and task-filters.js/task-renderer.js
-// (nutzt parseDueDate, formatIsoDate, getDueStatus, _el) und BEFORE task-events.js.
+// (nutzt parseDueDate, formatIsoDate, shiftIsoDate, getDueStatus, _el) und BEFORE task-events.js.
 // Do NOT add defer or async to script tags.
 //
 // Tage sind reine Kalendertage `YYYY-MM-DD` (wie `dueDate`). Wochen beginnen am Montag. Es wird nie mit
@@ -8,15 +8,6 @@
 // Sommerzeitumstellung ein Tag. Aufgabendaten erscheinen nur über DOM-Builder (textContent).
 
 var WEEK_LOCALE = "de-DE";
-
-// Verschiebt ein ISO-Datum um ganze Kalendertage; null bei ungültigem Datum.
-GartenPlaner.prototype.shiftIsoDate = function (iso, days) {
-	var date = this.parseDueDate(iso);
-	if (!date) return null;
-	return this.formatIsoDate(
-		new Date(date.getFullYear(), date.getMonth(), date.getDate() + days),
-	);
-};
 
 // Montag der Woche, in der `iso` liegt (Sonntag gehört zur Woche davor); null bei ungültigem Datum.
 GartenPlaner.prototype.getWeekStart = function (iso) {

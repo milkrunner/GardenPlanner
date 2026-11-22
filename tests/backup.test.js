@@ -55,6 +55,7 @@ const customPlant = {
   sun: 'full',
   water: 'medium',
   season: ['spring'],
+  sowMonths: [3, 4],
   spacing: '25cm',
   germination: '7 Tage',
   harvest: '60 Tage',
@@ -413,6 +414,11 @@ describe('invalid bundles write nothing', () => {
     ]),
     'duplicate ID in tasks': bundleOf([bundleTask(1), bundleTask(1)]),
     'same ID in tasks and archive': bundleOf([bundleTask(1)], [bundleTask(1)]),
+    'invalid sowMonths': bundleOf(
+      [],
+      [],
+      [{ id: 'kohlrabi', name: 'x', category: 'y', sowMonths: [13] }],
+    ),
     'invalid plant': bundleOf(
       [],
       [],

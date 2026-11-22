@@ -214,6 +214,20 @@
           </form>
         </section>
 
+        <!-- Aussaat- und Ernte-Vorschläge aus den Pflanzendaten (#349); Inhalt kommt aus task-suggestions.js -->
+        <section
+          class="suggestions-section"
+          aria-labelledby="suggestions-heading"
+        >
+          <h2 id="suggestions-heading">Empfohlene Aufgaben</h2>
+          <p class="suggestions-note">
+            Vorschläge aus den Pflanzendaten, nach allgemeinen Richtwerten ohne
+            Wetter und regionales Klima. „Übernehmen“ füllt nur das Formular
+            oben; angelegt wird die Aufgabe erst, wenn Sie sie hinzufügen.
+          </p>
+          <ul id="suggestionsList" class="suggestions-list"></ul>
+        </section>
+
         <!-- Schnellübersicht -->
         <section class="stats-section" aria-labelledby="stats-heading">
           <h2 id="stats-heading" class="sr-only">Statistiken</h2>
@@ -283,6 +297,7 @@
     <script src="../src/js/task-state.js"></script>
     <script src="../src/js/task-filters.js"></script>
     <script src="../src/js/task-renderer.js"></script>
+    <script src="../src/js/task-suggestions.js"></script>
     <script src="../src/js/task-events.js"></script>
     <script src="../src/js/task-export.js"></script>
 

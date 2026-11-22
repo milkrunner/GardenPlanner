@@ -96,6 +96,10 @@ offline/error states. Only network failures may fall back to the `localStorage` 
 that fallback is always announced; HTTP errors are reported, never masked. `task-state.js` changes task
 state and persists through the API; renderer produces markup; events wires inputs;
 filters handles search; export handles PDF generation.
+Aussaat-/Ernte-Vorschläge (#349): `task-suggestions.js` (nur Erstellseite, nach `task-renderer.js`) berechnet sie im
+Browser aus `plants` und dem lokalen Datum (Monate aus `sowMonths`, sonst `season`; Dauer aus dem Freitext `harvest`,
+Datumsrechnung über `shiftIsoDate` ohne Millisekunden). Es gibt keinen Endpunkt; „Übernehmen“ füllt nur das Formular,
+angelegt wird erst durch Absenden (`addTask`). Format und Grenzen: [API.md](API.md).
 Due dates (#346): `dueDate` is a plain `YYYY-MM-DD` string. `task-filters.js` parses it into a local date
 (never `new Date('YYYY-MM-DD')`, which is UTC midnight and shows the previous day west of UTC), formats it
 with `toLocaleDateString('de-DE')`, derives the status (overdue, today, next 7 days) from the local day and
@@ -154,6 +158,8 @@ dashboard task flow.
 - `tests/plant-reference.test.js`, `tests/plant-ref-ui.test.js`, `tests/smoke/plant-ref.spec.js`: plant reference (#347):
   validation, library check, orphaned references, filter, legacy data, recurrence, export/import; card, select and
   escaping in jsdom; select, card link, orphan text and plant page link in Chromium (axe light/dark).
+- `tests/plant-suggestions.test.js`: Datumsrechnung der Vorschläge (Jahreswechsel, Schaltjahr, Zeitzonen, unlesbare Angaben), Darstellung und Übernahme ins Formular in jsdom.
+- `tests/smoke/suggestions.spec.js`: Vorschläge zu festem Datum in Chromium, Übernahme ohne Anlegen, axe (hell/dunkel).
 - `tests/due-date-ui.test.js`: due date helpers (also in other time zones), card rendering and filter in jsdom.
 - `tests/setup.js`: per-suite Jest storage/log isolation and cleanup.
 - `.github/workflows/test.yml`: reproducible local-equivalent validation.
